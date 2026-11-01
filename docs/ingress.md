@@ -116,7 +116,7 @@ automatically. Hide one with `homepage: { enabled: false }`. To change how it lo
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `serviceName` | the app's Service | Send traffic to a different Service (`name` still works as an alias) |
+| `serviceName` | the app's Service | Send traffic to a different Service |
 | `type` | `internal` | `internal`, `public` or `public-protected` |
 | `host` | — | Public types: the domain (required). `internal`: the Tailscale machine name (default: the app's name) |
 | `servicePort` | `80` | Service port to send traffic to |

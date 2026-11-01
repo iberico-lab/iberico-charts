@@ -16,6 +16,7 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
   `service.headless.*`, `workload.serviceName` → `service.headless.name`. The old keys fail with a
   message saying where they went.
 - `service.targetPort` defaults to `workload.applicationPort` (was `80`).
+- `ingresses[].name` renamed to `ingresses[].serviceName`; the old key fails with a message.
 - Unknown or mistyped values are rejected by `values.schema.json`.
 
 ### Added
@@ -28,7 +29,7 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
   `workload.podManagementPolicy`, `workload.reloadOnSecretChange` (Stakater Reloader).
 - `extraManifests` for shipping extra objects with the release.
 - `helm test` support: a pod that checks every Service port accepts connections (`helmTest`).
-- `service.portName`; `ingresses[].serviceName` (`name` kept as an alias); `homepage.enabled` per ingress.
+- `service.portName`; `homepage.enabled` per ingress.
 - `global.version` and an `app.kubernetes.io/version` label taken from the image tag.
 - Safe security defaults: seccomp `RuntimeDefault`, `allowPrivilegeEscalation: false`.
 - One switch for secrets: `external-secrets.enabled` (1Password is on by default inside it).

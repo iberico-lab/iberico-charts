@@ -25,6 +25,9 @@ Usage: include "ingress.validate" .
 {{- define "ingress.validate" -}}
 {{- $seen := dict -}}
 {{- range $i, $ing := .Values.ingresses -}}
+{{- if hasKey $ing "name" -}}
+{{- fail (printf "ingress.ingresses[%d].name was renamed to serviceName in 0.3.0 (same meaning: the backend Service). See docs/upgrading.md" $i) -}}
+{{- end -}}
 {{- $type := $ing.type | default "" -}}
 {{- if not (has $type (list "internal" "public" "public-protected")) -}}
 {{- fail (printf "ingress.ingresses[%d].type must be internal, public or public-protected (got %q)" $i $type) -}}
@@ -59,10 +62,9 @@ Usage: include "ingress.machineName" (dict "ingress" . "root" $ "index" $i)
 {{- end }}
 
 {{/*
-Backend Service for an ingress entry: serviceName, then the older `name`
-alias, then the app's own Service.
+Backend Service for an ingress entry: serviceName, or the app's own Service.
 Usage: include "ingress.serviceName" (dict "ingress" . "root" $)
 */}}
 {{- define "ingress.serviceName" -}}
-{{- .ingress.serviceName | default .ingress.name | default (include "helm-helpers.fullname" .root) -}}
+{{- .ingress.serviceName | default (include "helm-helpers.fullname" .root) -}}
 {{- end }}

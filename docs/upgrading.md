@@ -87,6 +87,12 @@ helm upgrade <release> ./charts/app -f values-myapp.yaml
 
 Deployments, and StatefulSets without `persistence`, need nothing.
 
+### Ingress `name` is now `serviceName`
+
+Each entry in `ingress.ingresses` used `name` for the Service to send traffic
+to. It's now `serviceName`, which says what it is. Rename the key; the chart
+stops with a message if it finds the old one.
+
 ### Safer security defaults
 
 Pods now get `seccompProfile: RuntimeDefault`, the main container gets

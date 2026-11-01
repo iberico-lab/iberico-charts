@@ -45,7 +45,7 @@
           },
           "name": {
             "type": "string",
-            "description": "Deprecated alias for serviceName"
+            "description": "Removed: use serviceName"
           },
           "type": {
             "enum": [

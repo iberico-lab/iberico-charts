@@ -55,14 +55,20 @@ tests:
     asserts:
       - equal: { path: 'spec.rules[0].http.paths[0].backend.service.name', value: shop }
 
-  - it: honours serviceName and the older name alias
+  - it: sends traffic to serviceName
     templates: [templates/ingress-public.yaml, templates/ingress-internal.yaml]
     set:
       ingresses:
         - { type: public, host: a.example.com, serviceName: api }
-        - { type: internal, name: legacy }
+        - { type: internal, serviceName: web }
     asserts:
       - equal: { path: 'spec.rules[0].http.paths[0].backend.service.name', value: api }
         template: templates/ingress-public.yaml
-      - equal: { path: spec.defaultBackend.service.name, value: legacy }
+      - equal: { path: spec.defaultBackend.service.name, value: web }
         template: templates/ingress-internal.yaml
+
+  - it: says the old name key was renamed
+    templates: [templates/validate.yaml]
+    set: { ingresses: [{ type: internal, name: web }] }
+    asserts:
+      - failedTemplate: { errorPattern: 'name was renamed to serviceName' }
