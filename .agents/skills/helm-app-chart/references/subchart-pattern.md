@@ -1,125 +1,41 @@
-# The Subchart Pattern
+# How the charts fit together
 
-`app` is a **parent chart** that composes reusable subcharts. Consumers enable
-bundled capabilities by toggling values; they never add charts themselves.
+`charts/app` is the only chart people install. It bundles three charts from
+the same repo, all released together with the same version:
 
-## How the parent composes subcharts
+| Chart | Role | Turned on by |
+|-------|------|--------------|
+| `charts/helm-helpers` | Library: names, labels, selectors, namespace, version label | always |
+| `charts/external-secrets` | 1Password → ExternalSecrets for env vars and files | `external-secrets.enabled` |
+| `charts/ingress` | Tailscale (`internal`) and Traefik (`public`, `public-protected`) Ingresses | `ingress.enabled` |
 
-`charts/app/Chart.yaml` declares dependencies with local `file://` repositories and a
-`condition` that maps to a values flag:
+`charts/app/Chart.yaml` lists them with `repository: "file://../<name>"` and a
+`condition`. Fetch them with `make deps` (it runs `helm dependency update`; the
+`.tgz` files and `Chart.lock` are gitignored).
 
-```yaml
-# charts/app/Chart.yaml
-dependencies:
-  - name: helm-helpers
-    version: "0.1.0"
-    repository: "file://../helm-helpers"
-  - name: external-secrets
-    version: "0.1.0"
-    repository: "file://../external-secrets"
-    condition: external-secrets.enabled
-  - name: ingress
-    version: "0.1.0"
-    repository: "file://../ingress"
-    condition: ingress.enabled
-```
+## Values flow
 
-Key points:
+- A subchart's settings live under its name in the app values:
+  `ingress: {...}`, `external-secrets: {...}`. The app's `values.yaml` has a stub
+  for each, and the app schema leaves them to the subchart's own
+  `values.schema.json`.
+- `global.*` (`name`, `version`, overrides) is shared by every chart, so all
+  objects get the same names and labels.
+- The app chart **reads** subchart settings where the pod needs them, e.g.
+  `app.onepassword.has` decides whether to add `envFrom` and the
+  `/etc/secrets/onepassword` mount. Keep that wiring in `charts/app/templates/_helpers.tpl`.
 
-- `helm-helpers` has **no condition** → always installed. It provides the
-  naming/label/selector template functions (`helm-helpers.fullname`,
-  `helm-helpers.appName`, `helm-helpers.labels`, `helm-helpers.selectorLabels`,
-  `helm-helpers.namespace`) used across every chart.
-- `external-secrets` and `ingress` are **gated** by their `enabled` flag. Setting
-  `external-secrets.enabled: true` (or `ingress.enabled: true`) activates the
-  subchart; its own values live under the same key.
-- `charts/app/values.yaml` already contains an empty stub for each subchart
-  (`external-secrets: { enabled: false, onepassword: {} }`, `ingress: { enabled:
-  false }`), so consumers just fill them in.
+## Adding a new bundled chart
 
-Subcharts are resolved into `charts/app/charts/*.tgz` by:
+Only for a capability that produces its own objects and that many apps will
+toggle. For a one-off, use `extraManifests`; for a pod setting, add it to the app chart.
 
-```bash
-helm dependency update ./charts/app
-```
-
-(The `charts/*.tgz` and `Chart.lock` files are gitignored — regenerate locally.)
-
-## Enabling a bundled subchart
-
-Nothing to add — only toggle values:
-
-```yaml
-ingress:
-  enabled: true
-  ingresses:
-    - name: my-app
-      type: public
-      host: my-app.example.com
-
-external-secrets:
-  enabled: true
-  onepassword:
-    enabled: true
-    secrets:
-      - envVars:
-          - secretKey: credentials-database
-            mappings:
-              DB_PASSWORD: password
-```
-
-## Adding a NEW subchart
-
-To add a new reusable capability (e.g. `monitoring`):
-
-1. **Create the sibling chart** at the repo root, mirroring existing ones:
-   `monitoring/Chart.yaml`, `monitoring/values.yaml`, `monitoring/templates/`.
-2. **Reuse helm-helpers** by declaring it as a dependency (so naming/labels are
-   consistent):
-
-   ```yaml
-   # monitoring/Chart.yaml
-   apiVersion: v2
-   name: monitoring
-   version: "0.1.0"
-   type: application
-   dependencies:
-     - name: helm-helpers
-       version: "0.1.0"
-       repository: "file://../helm-helpers"
-   ```
-
-3. **Wire it into the parent** `charts/app/Chart.yaml` with a condition:
-
-   ```yaml
-   - name: monitoring
-     version: "0.1.0"
-     repository: "file://../monitoring"
-     condition: monitoring.enabled
-   ```
-
-4. **Add a stub to `charts/app/values.yaml`** so the schema is discoverable:
-
-   ```yaml
-   monitoring:
-     enabled: false
-   ```
-
-5. **Resolve and validate**:
-
-   ```bash
-   helm dependency update ./charts/app
-   helm lint ./charts/app
-   helm template my-app ./charts/app -f values-myapp.yaml
-   ```
-
-6. If the new subchart needs to inject into the app's pod (env, volumes,
-   mounts), extend `charts/app/templates/_helpers.tpl` following the existing
-   `external-secrets` handling as the reference implementation.
-
-## Why this pattern
-
-- **One chart to install** per app; features are values toggles.
-- **Shared naming/labels** via `helm-helpers` guarantee consistent selectors
-  across parent and subcharts.
-- **Conditional install** keeps disabled subcharts out of the rendered output.
+1. Create `charts/<name>/` with `Chart.yaml` (same version as the others),
+   `values.yaml`, `templates/`, `tests/`, `README.md`, `.helmignore`.
+2. Depend on `helm-helpers` (`repository: "file://../helm-helpers"`) and use its
+   `fullname`, `labels` and `namespace` helpers.
+3. Wire it into `charts/app/Chart.yaml` with `condition: <name>.enabled`, and add
+   `<name>: { enabled: false }` to `charts/app/values.yaml`.
+4. Add its schema to `hack/gen-values-schema.py`, then run `make schema`.
+5. Add `docs/<name>.md`, a row in `docs/index.md`, an example, and a CHANGELOG entry.
+6. Run `make deps lint test validate examples`.

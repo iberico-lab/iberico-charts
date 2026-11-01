@@ -46,7 +46,7 @@ schema: ## Regenerate values.schema.json files (run after changing values)
 schema-check: ## Fail if values.schema.json files are out of date
 	python3 hack/gen-values-schema.py . && git diff --exit-code -- 'charts/*/values.schema.json'
 
-docs-check: ## Fail if a setting in the app schema isn't documented in docs/
+docs-check: ## Fail if a setting is undocumented, or the docs mention one that doesn't exist
 	python3 hack/check-docs.py .
 
 clean: ## Remove vendored sub-chart artifacts and lock files
