@@ -1,10 +1,7 @@
-{{- if eq .Values.workload.type "Deployment" -}}
-{{- if .Values.service.enabled | default false -}}
-{{- include "app.service" . -}}
-{{- end -}}
-{{- else if eq .Values.workload.type "StatefulSet" -}}
+{{- $type := include "app.workloadType" . -}}
+{{- if eq $type "StatefulSet" -}}
 {{- include "app.serviceHeadless" . -}}
+{{- end -}}
 {{- if .Values.service.enabled | default false -}}
 {{- include "app.service" . -}}
-{{- end -}}
 {{- end -}}

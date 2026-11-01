@@ -13,6 +13,18 @@ Create the name of the service account to use
 
 
 {{/*
+Validated workload type: "Deployment" (default) or "StatefulSet".
+Fails on anything else (e.g. a lowercase typo) instead of rendering nothing.
+*/}}
+{{- define "app.workloadType" -}}
+{{- $type := .Values.workload.type | default "Deployment" -}}
+{{- if not (has $type (list "Deployment" "StatefulSet")) -}}
+{{- fail (printf "workload.type must be \"Deployment\" or \"StatefulSet\" (got %q)" $type) -}}
+{{- end -}}
+{{- $type -}}
+{{- end }}
+
+{{/*
 Render a complete probe block (handler + timings) based on type.
 When probe.custom is true the probe.spec is emitted verbatim (nothing when spec empty).
 Usage: {{ include "app.probe" (dict "probe" .Values.workload.livenessProbe "applicationPort" .Values.workload.applicationPort) }}

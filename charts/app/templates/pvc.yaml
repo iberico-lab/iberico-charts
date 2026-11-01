@@ -1,4 +1,4 @@
-{{- if and (.Values.workload.enabled | default false) (eq (.Values.workload.type | default "Deployment") "Deployment") -}}
+{{- if and (.Values.workload.enabled | default false) (eq (include "app.workloadType" .) "Deployment") -}}
 {{- range .Values.persistence }}
 ---
 apiVersion: v1

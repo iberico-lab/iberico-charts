@@ -61,6 +61,8 @@ workload:
 
 - **Never put passwords in `environment`.** Anyone who can read the values file
   can see them. Use [External Secrets](external-secrets.md) instead.
+- `type` is case-sensitive: only `Deployment` or `StatefulSet`. Anything else stops
+  the render with an error.
 - Changing `applicationPort`? Also set `service.targetPort`. See [Service](service.md).
 
 ---
