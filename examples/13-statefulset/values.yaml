@@ -43,3 +43,4 @@ service:
   enabled: true
   port: 5432
   targetPort: 5432
+  portName: postgres  # names the port in the pod and both Services

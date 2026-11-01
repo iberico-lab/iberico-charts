@@ -282,7 +282,7 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
       protocol: {{ .protocol | default "TCP" }}
     {{- end }}
     {{- else }}
-    - name: http
+    - name: {{ .Values.service.portName | default "http" }}
       containerPort: {{ .Values.workload.applicationPort }}
       protocol: TCP
     {{- end }}

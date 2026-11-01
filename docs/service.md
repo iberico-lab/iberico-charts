@@ -68,6 +68,7 @@ When `service.ports` is set, `service.port` and `service.targetPort` are ignored
 | `service.type` | `ClusterIP` | Who can reach it (see above) |
 | `service.port` | `80` | Port others connect to |
 | `service.targetPort` | `80` | Port on your container |
+| `service.portName` | `http` | Name of the single port, e.g. `postgres` (max 15 characters) |
 | `service.annotations` | `{}` | Extra annotations (e.g. cloud LB settings) |
 | `service.ports` | `[]` | Several ports: `name`, `port`, `targetPort`, `protocol` (default `TCP`) |
 

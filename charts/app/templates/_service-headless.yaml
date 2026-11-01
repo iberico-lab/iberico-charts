@@ -29,7 +29,7 @@ spec:
     - port: {{ .Values.workload.service.port | default .Values.workload.applicationPort }}
       targetPort: {{ .Values.workload.service.targetPort | default .Values.workload.applicationPort }}
       protocol: TCP
-      name: "http"
+      name: {{ .Values.service.portName | default "http" | quote }}
     {{- end }}
 
 {{- end -}}

@@ -156,6 +156,9 @@ service:
   type: ClusterIP
   port: 80
   targetPort: 80
+  # Name of the single port (container, Service and headless Service), e.g.
+  # "postgres". Max 15 chars. Ignored when service.ports / workload.ports are set.
+  portName: http
   annotations: {}
 
 # Service Account configuration
