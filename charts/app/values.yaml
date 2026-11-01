@@ -40,6 +40,7 @@ workload:
 
   pod:
     annotations: {}
+    labels: {}  # extra pod labels; can't override the chart's own labels
 
   # Environment variables
   environment: {}

@@ -58,6 +58,7 @@ For explanations and examples, follow the  link in each section.
 | `workload.annotations` | `{}` | Annotations on the Deployment/StatefulSet |
 | `workload.reloadOnSecretChange` | `false` | Restart pods when 1Password secrets change (needs Reloader) |
 | `workload.pod.annotations` | `{}` | Annotations on each pod |
+| `workload.pod.labels` | `{}` | Extra labels on each pod |
 | `workload.strategy` | `RollingUpdate`, `maxUnavailable: 1`, `maxSurge: 1` | Deployment update style |
 | `workload.terminationGracePeriodSeconds` | `30` | Seconds the app gets to shut down cleanly |
 

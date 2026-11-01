@@ -105,6 +105,7 @@ workload:
 | `workload.resources` | see above | CPU and memory |
 | `workload.annotations` | `{}` | Annotations on the Deployment/StatefulSet |
 | `workload.pod.annotations` | `{}` | Annotations on each pod |
+| `workload.pod.labels` | `{}` | Extra labels on each pod (the chart's own labels can't be overridden) |
 | `workload.strategy` | rolling update, 1 at a time | How a Deployment rolls out updates |
 | `workload.terminationGracePeriodSeconds` | `30` | Seconds the app gets to shut down cleanly |
 
