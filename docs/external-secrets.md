@@ -55,7 +55,6 @@ The chart syncs from 1Password every `10m` by default.
   **only once** across all entries, or the chart stops with an error.
 - File contents are copied **as-is**. If a 1Password field holds base64 text,
   the file will contain base64 text.
-- The setting is called `secretKey`. Ignore the old `secretPath` mentioned in some comments.
 
 ---
 

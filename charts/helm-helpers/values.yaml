@@ -4,4 +4,3 @@ global:
   # Optional overrides
   nameOverride: ""
   fullnameOverride: ""
-  namespaceOverride: ""

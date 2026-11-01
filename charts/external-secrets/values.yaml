@@ -5,18 +5,17 @@ global:
 onepassword:
     enabled: false
     refreshInterval: "10m"
+    # Name of an existing ClusterSecretStore; this chart does not create one.
     clusterSecretStoreRef: onepassword-cluster
-    secretStore:
-      enabled: true
-      name: ""  # Will be generated using helm-helpers
+    # All entries are merged into one ExternalSecret for env vars
+    # (<app>-onepassword-env) and one for files (<app>-onepassword-files).
     # secrets:
-    #   - name: ""  # Will be generated using helm-helpers
-    #     envVars:
-    #       - secretPath: "credentials-example-secret-path"
+    #   - envVars:
+    #       - secretKey: "credentials-example"   # 1Password item
     #         mappings:
-    #           EXAMPLE_USERNAME: username
+    #           EXAMPLE_USERNAME: username       # ENV_VAR: 1Password field
     #           EXAMPLE_PASSWORD: password
     #     files:
-    #       - secretPath: "certificates/fisglobal-truststore"
+    #       - secretKey: "certificates-example"
     #         mappings:
-    #           fisglobal.truststore.jks: trust-jksBase64  # Files are stored as base64
+    #           truststore.jks: truststore       # file name: 1Password field (copied as-is)

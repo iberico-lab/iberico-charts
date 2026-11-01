@@ -29,9 +29,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ .name | default $.Values.defaultServiceName | default (include "helm-helpers.fullname" $) }}
+                name: {{ .name | default (include "helm-helpers.fullname" $) }}
                 port:
-                  number: {{ .servicePort | default $.Values.defaultServicePort | default 80 }}
+                  number: {{ .servicePort | default 80 }}
   tls:
     - hosts:
         - {{ $host | quote }}
