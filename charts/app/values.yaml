@@ -84,14 +84,15 @@ workload:
   #     image: busybox:1.36
   #     command: ["sh", "-c", "until nc -z db 5432; do sleep 2; done"]
 
-  # Resources
+  # CPU and memory. Small defaults; raise them for heavy apps (docs/workload.md).
+  # No CPU limit on purpose: it slows the app down even when the node is idle.
+  # The memory limit stops a leaking app from taking down the whole node.
   resources:
     requests:
-      cpu: "300m"
-      memory: "512Mi"
+      cpu: "100m"
+      memory: "128Mi"
     limits:
-      cpu: "1000m"
-      memory: "800Mi"
+      memory: "512Mi"
 
   # Health checks (docs/probes.md). Set only the fields you want to change.
   livenessProbe:

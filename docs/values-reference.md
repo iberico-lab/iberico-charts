@@ -63,7 +63,7 @@ For explanations and examples, follow the  link in each section.
 | `workload.lifecycle` | `{}` | `postStart` / `preStop` hooks |
 | `workload.extraContainers` | `[]` | Sidecars ([docs](sidecars.md)) |
 | `workload.extraInitContainers` | `[]` | Init containers ([docs](sidecars.md)) |
-| `workload.resources` | requests `300m`/`512Mi`, limits `1000m`/`800Mi` | CPU and memory |
+| `workload.resources` | requests `100m`/`128Mi`, limit `512Mi` memory (no CPU limit) | CPU and memory ([docs](workload.md)) |
 | `workload.livenessProbe` | HTTP `/` | Restart check ([docs](probes.md)) |
 | `workload.readinessProbe` | HTTP `/` | Traffic check ([docs](probes.md)) |
 | `workload.startupProbe` | HTTP `/` | Startup check ([docs](probes.md)) |

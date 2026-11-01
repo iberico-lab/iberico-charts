@@ -74,11 +74,13 @@ workload:
 ```yaml
 workload:
   resources:
-    requests: { cpu: 300m, memory: 512Mi }    # what it's guaranteed
-    limits:   { cpu: 1000m, memory: 800Mi }   # the most it can use
+    requests: { cpu: 500m, memory: 1Gi }   # what it's guaranteed (and how pods are placed)
+    limits:   { memory: 2Gi }              # the most memory it can use
 ```
 
-> The values above are the defaults.
+> Defaults: requests `100m` CPU / `128Mi` memory, limit `512Mi` memory, **no CPU
+> limit**. A CPU limit slows your app down even when the node has CPU to spare,
+> so add one only if you need to cap a noisy app: `limits: { cpu: "1" }`.
 
 **Open more than one port**: see [Service → multiple ports](service.md#more-than-one-port).
 
@@ -90,6 +92,8 @@ workload:
   can see them. Use [External Secrets](external-secrets.md) instead.
 - `type` is case-sensitive: only `Deployment` or `StatefulSet`. Anything else stops
   the render with an error.
+- **Pod killed with `OOMKilled`?** It used more than the memory limit (`512Mi` by
+  default). Raise `resources.limits.memory`.
 - **Always quote the image tag:** `tag: "1.10"`. Unquoted, YAML reads `1.10` as the
   number `1.1`, so the chart stops with an error asking you to quote it.
 - **Want the exact same image every time?** A tag like `1.25` can be re-pushed

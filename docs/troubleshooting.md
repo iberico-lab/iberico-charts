@@ -39,6 +39,10 @@ These come from the chart and stop **before** anything is created.
 | `… which entry … already creates` | Two ingresses of the same type | Keep one per type |
 | `serviceMonitor.port "…" is not a Service port name` | Prometheus would scrape a port that doesn't exist | Use one of the names listed in the error |
 | `… is mapped more than once in onepassword.secrets` | Same env var or file name used twice | Rename one of them |
+| `… was removed in 0.3.0` / `… was renamed to serviceName` | Your values use a 0.2.x setting | The message names the new key. See [Upgrading](upgrading.md) |
+| `… this is the Tailscale machine name only` | A full domain in an `internal` ingress `host` | `host: store`, and the tailnet in `ingress.tailnetDomain` |
+| `… is not a valid Tailscale machine name` | Uppercase, `_` or too long | Up to 63 lowercase letters, numbers and `-` |
+| `workload.configFiles: … must be a full file path` / `invalid propertyName` | A config file path without a leading `/` | Write the full path: `/etc/app/config.yaml` |
 | `field is immutable` (on upgrade) | A locked field changed | See [Upgrading](upgrading.md) |
 | `updates to statefulset spec for fields other than ... are forbidden` | StatefulSet installed with 0.2.x and has disks | One-time `--cascade=orphan` step in [Upgrading](upgrading.md#statefulsets-with-disks-one-time-step) |
 
@@ -50,6 +54,7 @@ These come from the chart and stop **before** anything is created.
 |----------|---------------|-----|
 | `ImagePullBackOff` / `ErrImagePull` | Wrong image name/tag, or a private registry | Check `workload.image`; for private registries set `imagePullSecrets` |
 | `CrashLoopBackOff` | The app keeps exiting | `kubectl logs <pod> --previous`. Often a missing setting or secret |
+| `OOMKilled` (in `kubectl describe pod`) | The app used more memory than its limit (`512Mi` by default) | Raise `workload.resources.limits.memory` |
 | Restarts every minute or so, logs look fine | Liveness probe fails | Fix `path`/`port`, or use `type: tcp`. See [Health checks](probes.md) |
 | `Running` but `0/1 READY` | Readiness probe fails | Same as above: check the probe matches your app |
 | `Pending` with `unbound PersistentVolumeClaims` | Disk can't be created | Check `storageClassName` exists (`kubectl get storageclass`) and supports the access mode |

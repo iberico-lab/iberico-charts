@@ -93,6 +93,27 @@ Each entry in `ingress.ingresses` used `name` for the Service to send traffic
 to. It's now `serviceName`, which says what it is. Rename the key; the chart
 stops with a message if it finds the old one.
 
+### Smaller default resources
+
+If you never set `workload.resources`, your pods now ask for less:
+
+| | Before | Now |
+|-|--------|-----|
+| CPU request | `300m` | `100m` |
+| Memory request | `512Mi` | `128Mi` |
+| CPU limit | `1000m` | none |
+| Memory limit | `800Mi` | `512Mi` |
+
+**Apps that need more than 512Mi of memory will be `OOMKilled`.** Keep the old
+values by adding them to your values file:
+
+```yaml
+workload:
+  resources:
+    requests: { cpu: 300m, memory: 512Mi }
+    limits:   { cpu: 1000m, memory: 800Mi }
+```
+
 ### Safer security defaults
 
 Pods now get `seccompProfile: RuntimeDefault`, the main container gets
