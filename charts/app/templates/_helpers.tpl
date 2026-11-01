@@ -191,10 +191,13 @@ Usage: {{ include "app.volume" . }}
     claimName: {{ .persistentVolumeClaim.claimName }}
   {{- end }}
 {{- end }}
+{{- /* StatefulSets get these volumes from volumeClaimTemplates instead */ -}}
+{{- if eq (include "app.workloadType" .) "Deployment" }}
 {{- range .Values.persistence }}
 - name: {{ .name }}
   persistentVolumeClaim:
     claimName: {{ printf "%s-%s" (include "helm-helpers.fullname" $) .name }}
+{{- end }}
 {{- end }}
 {{- if include "app.onepassword.has" (dict "root" . "field" "files") }}
 - name: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" .) }}
