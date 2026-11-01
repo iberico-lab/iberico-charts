@@ -19,7 +19,7 @@ the same repo, all released together with the same version:
   `ingress: {...}`, `external-secrets: {...}`. The app's `values.yaml` has a stub
   for each, and the app schema leaves them to the subchart's own
   `values.schema.json`.
-- `global.*` (`name`, `version`, overrides) is shared by every chart, so all
+- `global.*` (`name` and the name overrides) is shared by every chart, so all
   objects get the same names and labels.
 - The app chart **reads** subchart settings where the pod needs them, e.g.
   `app.onepassword.has` decides whether to add `envFrom` and the
