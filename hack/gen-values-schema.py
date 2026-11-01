@@ -59,11 +59,14 @@ def app():
         "strategy": ANYMAP, "serviceName": S(), "podManagementPolicy": {"enum": ["", "OrderedReady", "Parallel"]},
         "updateStrategy": ANYMAP, "terminationGracePeriodSeconds": I(mn=0),
         "service": obj({"annotations": STRMAP, "port": NULLPORT, "targetPort": {"type": ["integer", "string", "null"]},
-                        "ports": LIST(svcport)}),
+                        "ports": LIST(svcport)}, desc="Deprecated: use service.headless"),
     })
     service = obj({"enabled": B(), "type": {"enum": ["ClusterIP", "NodePort", "LoadBalancer"]},
                    "port": PORT, "targetPort": {"type": ["integer", "string", "null"]},
-                   "portName": {"type": "string", "maxLength": 15}, "annotations": STRMAP, "ports": LIST(svcport)})
+                   "portName": {"type": "string", "maxLength": 15}, "annotations": STRMAP, "ports": LIST(svcport),
+                   "headless": obj({"annotations": STRMAP, "port": NULLPORT,
+                                    "targetPort": {"type": ["integer", "string", "null"]}, "ports": LIST(svcport)},
+                                   desc="StatefulSet headless Service")})
     persistence = LIST(obj({"name": S(), "size": S(), "mountPath": S(), "accessModes": LIST({"type": "string"}),
                             "storageClassName": S(), "readOnly": B(), "annotations": STRMAP,
                             "rclone": obj({"storagePath": S(), "umask": {"type": ["string", "number"]}, "annotations": STRMAP})},

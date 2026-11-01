@@ -144,12 +144,6 @@ workload:
   updateStrategy:  # Optional: StatefulSet update strategy
     type: RollingUpdate
   terminationGracePeriodSeconds: 30  # Seconds pods get to shut down (Deployment and StatefulSet)
-  service:  # StatefulSet headless service
-    annotations: {}
-    port: null        # null => use workload.applicationPort
-    targetPort: null  # null => use workload.applicationPort
-    ports: []
-
 # Service configuration (for external access)
 service:
   enabled: true
@@ -160,6 +154,13 @@ service:
   # "postgres". Max 15 chars. Ignored when service.ports / workload.ports are set.
   portName: http
   annotations: {}
+  # StatefulSet only: the headless Service that gives each pod its own address.
+  # (Replaces workload.service, which still works as a deprecated alias.)
+  headless:
+    annotations: {}
+    port: null        # null => use workload.applicationPort
+    targetPort: null  # null => use workload.applicationPort
+    ports: []
 
 # Service Account configuration
 serviceAccount:

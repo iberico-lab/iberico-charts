@@ -29,3 +29,14 @@ tests:
     asserts:
       - equal: { path: 'spec.ports[0].targetPort', value: 8080 }
       - equal: { path: 'spec.ports[0].port', value: 80 }
+
+  - it: reads headless settings from service.headless, with workload.service as a fallback
+    set:
+      workload.type: StatefulSet
+      workload.service: { port: 99, annotations: { old: "yes" } }
+      service.headless: { port: 77 }
+    asserts:
+      - equal: { path: 'spec.ports[0].port', value: 77 }
+        documentIndex: 0
+      - equal: { path: metadata.annotations.old, value: "yes" }
+        documentIndex: 0

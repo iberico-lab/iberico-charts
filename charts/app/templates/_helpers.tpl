@@ -13,6 +13,17 @@ Create the name of the service account to use
 
 
 {{/*
+Settings for the StatefulSet headless Service as a dict: service.headless,
+falling back to the deprecated workload.service for any key left empty.
+Usage: $h := include "app.headless" . | fromYaml
+*/}}
+{{- define "app.headless" -}}
+{{- $new := deepCopy (.Values.service.headless | default dict) -}}
+{{- $old := deepCopy (.Values.workload.service | default dict) -}}
+{{- toYaml (merge $new $old) -}}
+{{- end }}
+
+{{/*
 Validated workload type: "Deployment" (default) or "StatefulSet".
 Fails on anything else (e.g. a lowercase typo) instead of rendering nothing.
 */}}

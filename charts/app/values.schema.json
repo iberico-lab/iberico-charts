@@ -565,7 +565,8 @@
               }
             }
           },
-          "additionalProperties": false
+          "additionalProperties": false,
+          "description": "Deprecated: use service.headless"
         }
       },
       "additionalProperties": false
@@ -642,6 +643,72 @@
               "port"
             ]
           }
+        },
+        "headless": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number",
+                  "boolean"
+                ]
+              }
+            },
+            "port": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "targetPort": {
+              "type": [
+                "integer",
+                "string",
+                "null"
+              ]
+            },
+            "ports": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                  },
+                  "targetPort": {
+                    "type": [
+                      "integer",
+                      "string"
+                    ]
+                  },
+                  "protocol": {
+                    "enum": [
+                      "TCP",
+                      "UDP",
+                      "SCTP"
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "port"
+                ]
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "StatefulSet headless Service"
         }
       },
       "additionalProperties": false

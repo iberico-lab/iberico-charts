@@ -50,6 +50,12 @@ persistence:
 If you set `targetPort` yourself, nothing changes. If you relied on the old
 value while `applicationPort` was something else, set `service.targetPort: 80`.
 
+### Headless Service settings moved
+
+StatefulSet headless Service settings moved from `workload.service` to
+`service.headless`, next to the normal Service. `workload.service` still works
+for now, but please move it.
+
 ### Safer security defaults
 
 Pods now get `seccompProfile: RuntimeDefault`, the main container gets
@@ -93,4 +99,4 @@ updates it in place.
 
 - **StatefulSet headless Service port:** it now follows `workload.applicationPort`
   (it was always `80`). Helm updates the Service in place. Set
-  `workload.service.port` / `targetPort` if you want to keep `80`.
+  `service.headless.port` / `targetPort` if you want to keep `80`.

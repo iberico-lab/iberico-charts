@@ -152,10 +152,10 @@ service: { port: 5672, targetPort: 5672 }
 | `workload.serviceName` | `""` | Name of the headless Service (`""` = `<app>-cluster`) |
 | `workload.updateStrategy` | `{type: RollingUpdate}` | How pods are updated |
 | `workload.podManagementPolicy` | `""` | `OrderedReady` (one pod at a time) or `Parallel` (all at once) |
-| `workload.service.port` | `null` | Headless Service port (`null` = `applicationPort`) |
-| `workload.service.targetPort` | `null` | Headless Service target port (`null` = `applicationPort`) |
-| `workload.service.ports` | `[]` | Several ports for the headless Service |
-| `workload.service.annotations` | `{}` | Headless Service annotations |
+| `service.headless.port` | `null` | Headless Service port (`null` = `applicationPort`) |
+| `service.headless.targetPort` | `null` | Headless Service target port (`null` = `applicationPort`) |
+| `service.headless.ports` | `[]` | Several ports for the headless Service |
+| `service.headless.annotations` | `{}` | Headless Service annotations |
 
 Everything else (image, probes, sidecars, secrets…) works the same as for a
 Deployment. See [Workload](workload.md).
