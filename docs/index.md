@@ -1,44 +1,35 @@
-# iberico-charts Documentation
+# iberico-charts docs
 
-The `app` chart is a reusable **"Lego block" application chart**. It bundles
-everything a Kubernetes app needs — workload, service, probes, secrets, ingress —
-so you add features by **toggling values**, not by writing manifests.
+> **In one line:** the `app` chart runs your app on Kubernetes. You write a short
+> values file, and the chart creates everything else.
 
-> New here? Start with **[Getting Started](getting-started.md)**.
+**New here?** Go to **[Getting Started](getting-started.md)**. It takes about 5 minutes.
 
-## Table of contents
+---
 
-| Doc | What it covers |
-|-----|----------------|
-| [Getting Started](getting-started.md) | Install your first app in 5 minutes |
-| [Architecture](architecture.md) | How the parent chart composes subcharts |
-| [Workload](workload.md) | Deployment vs StatefulSet, image, replicas, command/args |
-| [Probes](probes.md) | Liveness, readiness, startup health checks |
-| [Sidecars & Init Containers](sidecars.md) | Extra containers in the pod |
-| [Persistence](persistence.md) | Persistent storage (PVCs / volumeClaimTemplates) |
-| [Volumes](volumes.md) | ConfigMaps, secrets, emptyDir, existing PVCs |
-| [Service](service.md) | Exposing the app inside the cluster |
-| [StatefulSet](statefulset.md) | Stable identity + per-pod storage |
-| [StatefulSet Guide](statefulset-guide.md) | End-to-end StatefulSet walkthrough with worked examples |
-| [External Secrets](external-secrets.md) | 1Password secrets → env vars / files |
-| [Ingress](ingress.md) | Tailscale internal + Traefik public routing |
-| [Values Reference](values-reference.md) | Every field, type, and default |
+## I want to…
 
-## Feature cheat sheet
+| I want to… | Read this |
+|------------|-----------|
+| Run my first app | [Getting Started](getting-started.md) |
+| Change the image, replicas or start command | [Workload](workload.md) |
+| Tell Kubernetes when my app is healthy | [Health checks (probes)](probes.md) |
+| Run a helper container next to my app | [Sidecars & init containers](sidecars.md) |
+| Keep data when the app restarts | [Persistence](persistence.md) |
+| Mount a config file, secret or temp folder | [Volumes](volumes.md) |
+| Let other apps in the cluster reach mine | [Service](service.md) |
+| Run a database or anything with "state" | [StatefulSet](statefulset.md) |
+| Use passwords from 1Password | [External Secrets](external-secrets.md) |
+| Put my app on a URL (private or public) | [Ingress](ingress.md) |
+| Look up one exact setting | [Values Reference](values-reference.md) |
+| Understand how the charts fit together | [Architecture](architecture.md) |
 
-| I want to… | Go to |
-|------------|-------|
-| Deploy a simple web app | [Getting Started](getting-started.md) |
-| Run a database with stable storage | [StatefulSet](statefulset.md) + [Persistence](persistence.md) |
-| Mount a config file | [Volumes](volumes.md) |
-| Add a health check | [Probes](probes.md) |
-| Run a log shipper next to my app | [Sidecars](sidecars.md) |
-| Inject a password from 1Password | [External Secrets](external-secrets.md) |
-| Expose my app on the internet | [Ingress](ingress.md) |
+Want working files to copy? See **[examples/](../examples/README.md)**.
 
-## Design principles
+---
 
-- **Sensible defaults** — every feature has a working default in `charts/app/values.yaml`.
-- **Partial overrides** — set only what changes; the rest inherits defaults.
-- **Fail-loud** — bad config aborts the render with a clear error instead of
-  producing a broken manifest.
+## Three ideas behind the chart
+
+1. **Good defaults.** Every feature already works out of the box. You only set what you want to change.
+2. **Change one thing, keep the rest.** If you set one field in a block, every other field in that block keeps its default.
+3. **Loud errors.** If a setting is wrong, the chart stops with a clear message. It won't quietly create something broken.

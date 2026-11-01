@@ -1,33 +1,29 @@
-# 03 - Environment Variables
+# 03 · Environment variables
 
-## What this shows
+> **In one line:** Pass plain settings (log level, mode…) to your app as environment variables.
 
-Declaring plain environment variables with the `workload.environment` map.
-Each key/value pair renders as an `env:` entry on the main container, with the
-value quoted.
+**Use this when:**
+- You have settings that are **not secret**
 
-## When to use
+## Try it
 
-For non-sensitive configuration such as log levels, feature flags, or runtime
-ports. For secrets, use the `external-secrets` sub-chart instead of putting
-them here.
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/charts/app -f values.yaml
+helm template demo charts/app -f examples/03-environment/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-The main container contains:
+## What you get
 
-```yaml
-env:
-  - name: APP_PORT
-    value: "80"
-  - name: LOG_LEVEL
-    value: "info"
-  - name: NODE_ENV
-    value: "production"
-```
+- `NODE_ENV=production`, `LOG_LEVEL=info`, `APP_PORT=80` on the main container
+
+## Watch out
+
+- **Not for passwords!** Use [External Secrets](../../docs/external-secrets.md) for those
+- Values are always quoted, so numbers become text (`"80"`)
+
+---
+
+Learn more: [Workload](../../docs/workload.md) · Next: [04 · Sidecars](../04-sidecars/README.md)

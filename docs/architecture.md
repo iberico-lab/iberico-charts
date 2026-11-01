@@ -1,52 +1,64 @@
 # Architecture
 
-## Overview
+> **In one line:** `app` is the main chart. It uses three smaller charts, and you
+> switch each one on or off in your values file.
 
-The `app` chart is a **parent chart**. It composes three subcharts declared in
-`charts/app/Chart.yaml` and driven by a single `workload:` block.
+You don't need this page to use the chart. It helps when you want to know *why*
+things are laid out this way, or where a new feature should go.
 
-| Subchart | Purpose | Enabled by |
-|----------|---------|------------|
-| `helm-helpers` | Naming, labels, selectors | always (no toggle) |
-| `external-secrets` | 1Password secrets → env vars / files | `external-secrets.enabled: true` |
-| `ingress` | Tailscale internal + Traefik public ingress | `ingress.enabled: true` |
+---
 
-## When to use
+## The pieces
 
-You don't choose this — it's how the chart is built. Understand it so you know
-**why** features are grouped the way they are, and where a new capability should
-live. If you need a brand-new reusable capability, add a sibling chart and wire
-it into `charts/app/Chart.yaml`.
+```text
+charts/app  ← you install this one
+ ├── helm-helpers      always on   naming + labels (shared code)
+ ├── external-secrets  optional    secrets from 1Password
+ └── ingress           optional    URLs via Tailscale / Traefik
+```
 
-## How names are built
+| Chart | What it does | How to turn it on |
+|-------|--------------|-------------------|
+| `helm-helpers` | Builds names and labels for everything | Always on |
+| `external-secrets` | Pulls secrets from 1Password | `external-secrets.enabled: true` |
+| `ingress` | Creates private or public URLs | `ingress.enabled: true` |
 
-`helm-helpers` derives every resource name from `global.name`:
+ Settings for an optional chart go under a key with the **same name**. For
+example, ingress settings live under `ingress:`.
 
-| Value | Default | Result |
-|-------|---------|--------|
-| `global.name` | `""` | falls back to the chart name |
-| `global.nameOverride` | `""` | overrides chart name |
-| `global.fullnameOverride` | `""` | overrides the full name |
+---
 
-Names are lowercased and truncated to 63 characters.
+## How names are picked
 
-## Values
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `global.name` | string | `""` | Base name for resources |
-| `global.nameOverride` | string | `""` | Override chart name |
-| `global.fullnameOverride` | string | `""` | Override full resource name |
-| `global.namespaceOverride` | string | `""` | Override namespace |
-
-## Example
+Everything the chart creates is named from `global.name`:
 
 ```yaml
 global:
-  name: "my-app"          # -> Deployment "my-app", Service "my-app"
+  name: "my-app"    # → Deployment "my-app", Service "my-app", …
 ```
 
-## Related
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| `global.name` | `""` | The base name. If empty, the chart name is used. |
+| `global.fullnameOverride` | `""` | Wins over `global.name` if set |
+| `global.nameOverride` | `""` | Changes the `app.kubernetes.io/name` label only |
 
-- [Workload](workload.md)
-- [Values Reference](values-reference.md)
+Names are made lowercase and cut to 63 characters, which is a Kubernetes limit.
+
+**Namespace:** everything is created in the namespace you install into, so use
+`helm install -n <namespace>`.
+
+---
+
+## Adding a new feature chart
+
+1. Create `charts/<new-chart>/` next to the others.
+2. Add it to `dependencies:` in `charts/app/Chart.yaml` with `repository: "file://../<new-chart>"` and a `condition:`.
+3. Add an empty `<new-chart>:` block to `charts/app/values.yaml` so people can find it.
+4. Run `make lint` to check everything.
+
+---
+
+## Next
+
+- [Values Reference](values-reference.md) — every setting

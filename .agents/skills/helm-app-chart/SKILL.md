@@ -277,4 +277,4 @@ Deployment/StatefulSet, Service, Ingress, and ExternalSecret objects.
 - `references/subchart-pattern.md` — composing subcharts and adding a new one.
 - `references/conventions.md` — defaults, partial overrides, fail-loud rules.
 - `charts/app/values.yaml` — authoritative schema (read this first).
-- `charts/app/values.example.yaml`, `README.md`, `docs/statefulset-guide.md` — worked examples.
+- `charts/app/values.example.yaml`, `README.md`, `docs/statefulset.md`, `examples/` — worked examples.

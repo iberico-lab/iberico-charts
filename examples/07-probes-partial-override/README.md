@@ -1,28 +1,26 @@
-# 07 - Partial Probe Overrides
+# 07 · Change one probe setting
 
-## What this shows
+> **In one line:** Change **just one field** of a health check. Everything else keeps its default.
 
-Partial probe overrides. Because the chart merges user values over its
-`values.yaml` defaults, you can override a single field (for example
-`periodSeconds`) and every other field keeps its default. This example:
+**Use this when:**
+- The defaults are *almost* right
 
-- tunes only `livenessProbe.periodSeconds`
-- changes only `readinessProbe.path`
-- disables `startupProbe` with `enabled: false`
+## Try it
 
-## When to use
-
-When the defaults are almost right and you only need to nudge one or two
-settings, avoiding the noise of restating the whole probe block.
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/charts/app -f values.yaml
+helm template demo charts/app -f examples/07-probes-partial-override/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-- `livenessProbe`: HTTP GET `/` on port 8080 with `periodSeconds: 20`.
-- `readinessProbe`: HTTP GET `/ready` on port 8080.
-- No `startupProbe` block at all.
+## What you get
+
+- Liveness: checks every **20s** (the rest stays default)
+- Readiness: checks **`/ready`** instead of `/`
+- Startup: **turned off**
+
+---
+
+Learn more: [Health checks](../../docs/probes.md) · Next: [08 · Custom health checks](../08-probes-custom/README.md)

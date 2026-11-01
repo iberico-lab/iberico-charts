@@ -1,30 +1,31 @@
-# 13 - StatefulSet
+# 13 · Database (StatefulSet)
 
-## What this shows
+> **In one line:** Run a 3-copy PostgreSQL where **each copy has its own disk** and a fixed name.
 
-Running a stateful workload with `workload.type: StatefulSet`. Compared with a
-Deployment, the chart additionally renders:
+**Use this when:**
+- You run a database, queue or anything that needs its own disk per copy
 
-- a **headless Service** named `<app>-cluster` (or `workload.serviceName`),
-- **`volumeClaimTemplates`** from the top-level `persistence` list (one PVC per
-  pod, stable per-pod storage),
-- StatefulSet-specific fields `updateStrategy`, `serviceName`, and
-  `terminationGracePeriodSeconds`.
+## Try it
 
-## When to use
-
-For databases, queues, and other workloads needing stable network identity and
-per-pod persistent storage — here a 3-replica PostgreSQL cluster.
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/charts/app -f values.yaml
+helm template demo charts/app -f examples/13-statefulset/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-A headless `Service` (`postgresql-cluster`, `clusterIP: None`), a regular
-`Service` on port 5432, and a `StatefulSet` with `serviceName:
-postgresql-cluster`, a `volumeClaimTemplates` entry for `data` (20Gi), and TCP
-probes.
+## What you get
+
+- StatefulSet with pods `postgresql-0`, `-1`, `-2`
+- A 20Gi disk **per pod**
+- Headless Service `postgresql-cluster` + normal Service on 5432
+- TCP health checks (databases don't speak HTTP)
+
+## Watch out
+
+- 3 copies is not the same as a Postgres cluster. Postgres itself has to be set up for replication
+
+---
+
+Learn more: [StatefulSet](../../docs/statefulset.md) · Next: [14 · Several ports](../14-multi-port-service/README.md)

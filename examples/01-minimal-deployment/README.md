@@ -1,25 +1,26 @@
-# 01 - Minimal Deployment
+# 01 · Minimal app
 
-## What this shows
+> **In one line:** The smallest working setup: one nginx container plus a Service in front of it.
 
-The smallest runnable configuration for the `app` chart: one `Deployment`
-running `nginx:1.25` with a single container port and a `ClusterIP` Service
-in front of it. Everything else inherits the chart defaults (probes, resources,
-rolling-update strategy).
+**Use this when:**
+- You're starting a new app and want a clean base to copy
 
-## When to use
+## Try it
 
-As the starting point for any stateless web workload, or as the baseline to
-copy before layering on more features.
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/charts/app -f values.yaml
+helm template demo charts/app -f examples/01-minimal-deployment/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-Renders a `Deployment` (1 replica, `nginx:1.25`, container port 80) and a
-`ClusterIP` `Service` exposing port 80. The three default HTTP probes
-(liveness/readiness/startup on `/`) are included automatically.
+## What you get
+
+- 1 Deployment running `nginx:1.25` on port 80
+- 1 Service on port 80 (inside the cluster only)
+- The 3 default health checks (HTTP `/`)
+
+---
+
+Learn more: [Workload](../../docs/workload.md) · Next: [02 · Change the start command](../02-command-args/README.md)

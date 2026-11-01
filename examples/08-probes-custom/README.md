@@ -1,30 +1,30 @@
-# 08 - Custom Probes
+# 08 · Custom health checks
 
-## What this shows
+> **In one line:** Three other kinds of check: raw YAML, a command, and a plain port check.
 
-The three ways to take full control of a probe:
+**Use this when:**
+- HTTP on `/` isn't right for your app
 
-- `livenessProbe` with `custom: true` and a raw `spec` — emitted verbatim,
-  including `httpHeaders`.
-- `readinessProbe` with `type: "exec"` and a `command` (required for exec).
-- `startupProbe` with `type: "tcp"`.
+## Try it
 
-## When to use
-
-When the built-in HTTP/`/` handler is not enough: probes needing custom
-headers, host/scheme, exec commands, gRPC, or timing semantics the builder does
-not express. The chart still fails loudly on unsupported types or `exec`
-without a `command`.
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/charts/app -f values.yaml
+helm template demo charts/app -f examples/08-probes-custom/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-- `livenessProbe` matches the verbatim `spec` (httpGet `/live`, header
-  `X-Probe`, `periodSeconds: 20`).
-- `readinessProbe` is an `exec` probe running `["cat", "/tmp/healthy"]`.
-- `startupProbe` is a `tcpSocket` on port 8080.
+## What you get
+
+- Liveness: your **raw** probe YAML, copied as-is (with a custom header)
+- Readiness: runs `cat /tmp/healthy`
+- Startup: checks that port 8080 is open (TCP)
+
+## Watch out
+
+- `type: exec` **needs** a `command`, or the chart stops with an error
+
+---
+
+Learn more: [Health checks](../../docs/probes.md) · Next: [09 · Keep data (disks)](../09-persistence/README.md)

@@ -1,64 +1,92 @@
 # Workload
 
-## Overview
+> **In one line:** the `workload:` block says **what to run**: the image, how many
+> copies, which port, and which kind of workload.
 
-The `workload:` block defines your application: what image to run, how many
-replicas, which port, and whether it is a **Deployment** or a **StatefulSet**.
+---
 
-## When to use
+## Which kind do I need?
 
-- **Deployment** (default) — stateless apps: web servers, APIs, workers. Pods are
-  interchangeable.
-- **StatefulSet** — stateful apps needing stable identity and per-pod storage:
-  databases, queues, clusters. See [StatefulSet](statefulset.md).
+| Pick… | When your app… | Examples |
+|-------|----------------|----------|
+| **`Deployment`** (default) | Doesn't care which copy handles a request | websites, APIs, workers |
+| **`StatefulSet`** | Needs a fixed name and **its own disk per copy** | databases, queues |
 
-## Values
+Not sure? Use `Deployment`. For the other one, see [StatefulSet](statefulset.md).
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `workload.enabled` | bool | `true` | Render the workload |
-| `workload.type` | string | `Deployment` | `Deployment` or `StatefulSet` |
-| `workload.image.repository` | string | `nginx` | Container image repository |
-| `workload.image.tag` | string | `1.25` | Image tag |
-| `workload.image.pullPolicy` | string | `IfNotPresent` | Image pull policy |
-| `workload.replicas` | int | `2` | Number of pod replicas |
-| `workload.applicationPort` | int | `80` | Port the app listens on |
-| `workload.command` | list | `[]` | Override entrypoint (`[]` = image default) |
-| `workload.args` | list | `[]` | Override args (`[]` = image default) |
-| `workload.annotations` | map | `{}` | Annotations on the workload object |
-| `workload.pod.annotations` | map | `{}` | Annotations on the pod template |
-| `workload.environment` | map | `{}` | Environment variables (`KEY: value`) |
-| `workload.resources` | map | see below | CPU/memory requests and limits |
-| `workload.strategy` | map | RollingUpdate | Deployment rollout strategy |
+---
 
-Default resources:
+## Copy-paste starter
 
 ```yaml
 workload:
-  resources:
-    requests: { cpu: 300m, memory: 512Mi }
-    limits:   { cpu: 1000m, memory: 800Mi }
-```
-
-## Example
-
-```yaml
-workload:
-  enabled: true
   type: "Deployment"
   image:
     repository: ghcr.io/example/app
     tag: "1.2.3"
-  replicas: 3
-  applicationPort: 8080
-  environment:
+  replicas: 3                 # number of copies
+  applicationPort: 8080       # port the app listens on
+  environment:                # plain (not secret) settings
     LOG_LEVEL: "info"
-  command: ["/bin/sh"]
-  args: ["-c", "exec my-app"]
 ```
 
-## Related
+---
 
-- [StatefulSet](statefulset.md)
-- [Probes](probes.md)
-- [Sidecars & Init Containers](sidecars.md)
+## Common tweaks
+
+**Change the start command**: leave these out to use the image's own command.
+
+```yaml
+workload:
+  command: ["/bin/sh"]                 # replaces the image's ENTRYPOINT
+  args: ["-c", "exec my-app --fast"]   # replaces the image's CMD
+```
+
+**Give it more (or less) CPU and memory:**
+
+```yaml
+workload:
+  resources:
+    requests: { cpu: 300m, memory: 512Mi }    # what it's guaranteed
+    limits:   { cpu: 1000m, memory: 800Mi }   # the most it can use
+```
+
+> The values above are the defaults.
+
+**Open more than one port**: see [Service → multiple ports](service.md#more-than-one-port).
+
+---
+
+## Gotchas
+
+- **Never put passwords in `environment`.** Anyone who can read the values file
+  can see them. Use [External Secrets](external-secrets.md) instead.
+- Changing `applicationPort`? Also set `service.targetPort`. See [Service](service.md).
+
+---
+
+## All settings
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| `workload.enabled` | `true` | Turn the whole workload on/off |
+| `workload.type` | `Deployment` | `Deployment` or `StatefulSet` |
+| `workload.image.repository` | `nginx` | Image to run |
+| `workload.image.tag` | `1.25` | Image version |
+| `workload.image.pullPolicy` | `IfNotPresent` | When to download the image again |
+| `workload.replicas` | `2` | Number of copies |
+| `workload.applicationPort` | `80` | Port the app listens on |
+| `workload.ports` | `[]` | List of named ports. If set, used instead of `applicationPort` |
+| `workload.command` | `[]` | Start command (`[]` = image default) |
+| `workload.args` | `[]` | Start arguments (`[]` = image default) |
+| `workload.environment` | `{}` | Plain settings as `KEY: value` |
+| `workload.resources` | see above | CPU and memory |
+| `workload.annotations` | `{}` | Annotations on the Deployment/StatefulSet |
+| `workload.pod.annotations` | `{}` | Annotations on each pod |
+| `workload.strategy` | rolling update, 1 at a time | How a Deployment rolls out updates |
+
+---
+
+## Next
+
+- [Health checks](probes.md) · [Sidecars](sidecars.md) · [StatefulSet](statefulset.md)

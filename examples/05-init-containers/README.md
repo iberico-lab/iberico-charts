@@ -1,24 +1,30 @@
-# 05 - Init Containers (extraInitContainers)
+# 05 · Init containers
 
-## What this shows
+> **In one line:** Run setup steps **before** your app starts: wait for a database, then write a file.
 
-Declaring init containers via `workload.extraInitContainers`. Init containers
-run to completion in order before the main container starts. Each entry is
-emitted verbatim and **must** define `name`.
+**Use this when:**
+- Your app must wait for something, or needs a setup step first
 
-## When to use
+## Try it
 
-For bootstrapping that must finish before the app starts: waiting for a
-dependency (database, queue), seeding a config volume, running migrations, or
-fetching artifacts.
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/charts/app -f values.yaml
+helm template demo charts/app -f examples/05-init-containers/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-The pod spec contains an `initContainers:` list with `wait-for-db` and
-`seed-config`, and the main `containers:` list is unchanged.
+## What you get
+
+- 2 init containers run in order: `wait-for-db`, then `seed-config`
+- Your app starts only after both finish
+
+## Watch out
+
+- Every entry **must** have a `name`
+- If an init container never finishes, your app never starts
+
+---
+
+Learn more: [Sidecars & init containers](../../docs/sidecars.md) · Next: [06 · Default health checks](../06-probes-basic/README.md)

@@ -1,89 +1,118 @@
-# Probes
+# Health checks (probes)
 
-## Overview
+> **In one line:** probes are small checks Kubernetes runs on your app. Their
+> results decide when to **send traffic** and when to **restart** it.
 
-Health checks tell Kubernetes whether your container is alive and ready to serve
-traffic. The chart supports three probes: **liveness**, **readiness**, and
-**startup**.
+**You get all three by default.** They make an HTTP request to `/` on your
+app's port. Many apps need no changes here.
 
-## When to use
+---
 
-| Probe | When to use |
-|-------|-------------|
-| **liveness** | Restart the container if it hangs or deadlocks. |
-| **readiness** | Stop sending traffic until the app is ready (e.g. still warming up). |
-| **startup** | Give slow-starting apps time before liveness checks begin. |
+## The three probes
 
-All three are **enabled by default** with an HTTP check on `path: /`. Disable any
-you don't need.
+| Probe | Question it asks | If it fails… |
+|-------|------------------|--------------|
+| **startup** | "Has the app finished starting?" | Keep waiting (up to ~2.5 min by default) |
+| **readiness** | "Can it take requests right now?" | Stop sending it traffic for now |
+| **liveness** | "Is it still alive?" | Restart the container |
 
-> **No global health-path value.** Probes rely solely on each probe's own `path`
-> (last-resort default `"/"`). There is no shared health endpoint setting.
+---
 
-## Values
+## Copy-paste recipes
 
-Each probe (`livenessProbe`, `readinessProbe`, `startupProbe`) shares these keys:
-
-| Key | Type | Default (liveness / readiness / startup) | Description |
-|-----|------|------------------------------------------|-------------|
-| `enabled` | bool | `true` / `true` / `true` | Render this probe |
-| `type` | string | `http` | `http`, `tcp`, `grpc`, or `exec` |
-| `path` | string | `/` | HTTP path (type `http`) |
-| `port` | int/null | `null` | Port; `null` uses `workload.applicationPort` |
-| `custom` | bool | `false` | Emit `spec` verbatim instead |
-| `spec` | map | `{}` | Raw probe spec (used when `custom: true`) |
-| `initialDelaySeconds` | int | `0` / `0` / `5` | Delay before first check |
-| `periodSeconds` | int | `10` / `5` / `5` | Seconds between checks |
-| `timeoutSeconds` | int | `1` / `1` / `3` | Per-check timeout |
-| `failureThreshold` | int | `3` / `3` / `30` | Failures before action |
-| `successThreshold` | int | `1` / `1` / `1` | Successes to be considered healthy |
-
-Type-specific keys:
-
-| Type | Extra keys |
-|------|-----------|
-| `http` | `host`, `scheme` (`HTTP`/`HTTPS`), `httpHeaders` |
-| `tcp` | `host` |
-| `grpc` | `service` |
-| `exec` | `command` (**required**) |
-
-## Example
-
-Partial override — set only what changes:
+**My health endpoint isn't `/`:**
 
 ```yaml
 workload:
   readinessProbe:
-    periodSeconds: 15          # everything else stays default
+    path: "/healthz"
   livenessProbe:
-    type: "tcp"                # switch handler type
-  startupProbe:
-    enabled: false             # disable a probe
+    path: "/healthz"
 ```
 
-`exec` probe (command required):
+**My app isn't HTTP (database, queue…)**, so just check that the port is open:
+
+```yaml
+workload:
+  livenessProbe:  { type: "tcp" }
+  readinessProbe: { type: "tcp" }
+  startupProbe:   { type: "tcp" }
+```
+
+**Check every 15 seconds instead of 5**: change one field and keep the rest.
+
+```yaml
+workload:
+  readinessProbe:
+    periodSeconds: 15
+```
+
+**Turn a probe off:**
+
+```yaml
+workload:
+  startupProbe:
+    enabled: false
+```
+
+**Run a command as the check:**
 
 ```yaml
 workload:
   livenessProbe:
     type: "exec"
-    command: ["cat", "/tmp/healthy"]
+    command: ["cat", "/tmp/healthy"]    # required for exec
 ```
 
-Fully custom probe:
+**I need full control**: write the raw Kubernetes probe yourself.
 
 ```yaml
 workload:
   livenessProbe:
-    custom: true
+    custom: true          # ignore all other fields
     spec:
-      httpGet:
-        path: /live
-        port: 8080
+      httpGet: { path: /live, port: 8080 }
       initialDelaySeconds: 10
 ```
 
-## Related
+---
 
-- [Workload](workload.md)
-- [Values Reference](values-reference.md)
+## Gotchas
+
+- `type: exec` **without** `command` stops the render with an error. That's on purpose.
+- Only `http`, `tcp`, `grpc` and `exec` are allowed. Anything else is an error.
+- A liveness probe that is too strict can restart your app over and over.
+  If your app is slow to start, give the **startup** probe more time. Don't loosen liveness.
+- There's no shared "health path" setting. Each probe has its own `path`.
+
+---
+
+## All settings
+
+Same keys for `livenessProbe`, `readinessProbe` and `startupProbe`.
+Defaults are shown as **liveness / readiness / startup**.
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| `enabled` | `true` / `true` / `true` | Turn the probe on/off |
+| `type` | `http` | `http`, `tcp`, `grpc` or `exec` |
+| `path` | `/` | URL path (http only) |
+| `port` | `null` | `null` = use `workload.applicationPort` |
+| `initialDelaySeconds` | `0` / `0` / `5` | Wait this long before the first check |
+| `periodSeconds` | `10` / `5` / `5` | Seconds between checks |
+| `timeoutSeconds` | `1` / `1` / `3` | How long one check may take |
+| `failureThreshold` | `3` / `3` / `30` | Failures in a row before acting |
+| `successThreshold` | `1` / `1` / `1` | Successes needed to count as healthy |
+| `custom` | `false` | Use `spec` as-is and ignore everything above |
+| `spec` | `{}` | Raw probe (only with `custom: true`) |
+
+Extra keys by type: **http** → `host`, `scheme` (`HTTP`/`HTTPS`), `httpHeaders` ·
+**tcp** → `host` · **grpc** → `service` · **exec** → `command` (required).
+
+---
+
+## Next
+
+- Examples: [06 basic](../examples/06-probes-basic/README.md) ·
+  [07 change one field](../examples/07-probes-partial-override/README.md) ·
+  [08 custom](../examples/08-probes-custom/README.md)

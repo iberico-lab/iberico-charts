@@ -1,62 +1,74 @@
-# External Secrets
+# External Secrets (1Password)
 
-## Overview
+> **In one line:** keep passwords in **1Password**, not in git. The chart copies them
+> into your app as **environment variables** or **files**.
 
-The `external-secrets:` block pulls secrets from **1Password** and delivers them
-to your app two ways: as **environment variables** or as **mounted files**.
+Off by default.
 
-## When to use
+---
 
-Use it whenever your app needs credentials (DB passwords, API keys, certs) and
-you want them managed in 1Password rather than baked into the image or committed
-to git. Off by default.
-
-## How it works
-
-| Delivery | Behavior |
-|----------|----------|
-| `envVars` | Injected into the main container automatically via `envFrom`. |
-| `files` | Mounted at `/etc/secrets/onepassword/` (read-only). Files are base64-encoded. |
-
-Each entry creates an `ExternalSecret` that syncs from the 1Password
-`ClusterSecretStore`.
-
-## Values
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `external-secrets.enabled` | bool | `false` | Enable the subchart |
-| `external-secrets.onepassword.enabled` | bool | `false` | Enable 1Password sync |
-| `external-secrets.onepassword.refreshInterval` | string | `10m` | Sync interval |
-| `external-secrets.onepassword.clusterSecretStoreRef` | string | `onepassword-cluster` | ClusterSecretStore name |
-| `external-secrets.onepassword.secrets` | list | `[]` | Secret definitions |
-| `external-secrets.onepassword.secrets[].envVars` | list | — | `secretKey` + `mappings` |
-| `external-secrets.onepassword.secrets[].files` | list | — | `secretKey` + `mappings` |
-
-## Example
+## Copy-paste starter
 
 ```yaml
 external-secrets:
-  enabled: true
+  enabled: true                  # (1) turn on the feature
   onepassword:
-    enabled: true
-    refreshInterval: "10m"
-    clusterSecretStoreRef: onepassword-cluster
+    enabled: true                # (2) turn on 1Password (yes, both are needed)
     secrets:
-      - envVars:
-          - secretKey: "credentials-database"
+      - envVars:                       # → environment variables
+          - secretKey: "credentials-database"   # 1Password item name
             mappings:
-              DATABASE_PASSWORD: password
-        files:
+              DB_USER: username        # ENV_VAR_NAME: 1Password field
+              DB_PASSWORD: password
+
+        files:                         # → files on disk
           - secretKey: "certificates-tls"
             mappings:
-              tls.crt: cert
+              tls.crt: certificate     # file name: 1Password field
+              tls.key: private-key
 ```
 
-The `mappings` keys become the Kubernetes keys; the values are the 1Password
-field names.
+**How to read `mappings`:** the left side is the name **your app** sees.
+The right side is the field name **in 1Password**.
 
-## Related
+---
 
-- [Volumes](volumes.md)
-- [Values Reference](values-reference.md)
+## Where do the secrets show up?
+
+| You used… | Your app gets… |
+|-----------|----------------|
+| `envVars` | Environment variables. Nothing else to set up. |
+| `files` | Files in **`/etc/secrets/onepassword/`** (read-only), e.g. `/etc/secrets/onepassword/tls.crt` |
+
+The chart syncs from 1Password every `10m` by default.
+
+---
+
+## Gotchas
+
+- **You need both** `external-secrets.enabled: true` **and**
+  `onepassword.enabled: true`. With only one of them, nothing happens.
+- The cluster needs the External Secrets Operator and a `ClusterSecretStore`
+  named `onepassword-cluster` (or set `clusterSecretStoreRef`).
+- File contents are copied **as-is**. If a 1Password field holds base64 text,
+  the file will contain base64 text.
+- The setting is called `secretKey`. Ignore the old `secretPath` mentioned in some comments.
+
+---
+
+## All settings
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| `external-secrets.enabled` | `false` | Turn the feature on |
+| `external-secrets.onepassword.enabled` | `false` | Turn 1Password on |
+| `external-secrets.onepassword.refreshInterval` | `10m` | How often to sync |
+| `external-secrets.onepassword.clusterSecretStoreRef` | `onepassword-cluster` | Which secret store to use |
+| `external-secrets.onepassword.secrets[].envVars[]` | — | `secretKey` + `mappings` → env vars |
+| `external-secrets.onepassword.secrets[].files[]` | — | `secretKey` + `mappings` → files |
+
+---
+
+## Next
+
+- [Volumes](volumes.md) · [Workload](workload.md)
