@@ -117,6 +117,13 @@ workload:
     limits:   { cpu: 1000m, memory: 800Mi }
 ```
 
+### Pods spread across nodes
+
+Pods now **prefer** to run on different nodes (`topologySpread`, on by default),
+so one node failing doesn't take them all. It's a preference, so pods still start
+on a single-node cluster. Nothing to do. To turn it off:
+`topologySpread.enabled: false`.
+
 ### Safer security defaults
 
 Pods now get `seccompProfile: RuntimeDefault`, the main container gets

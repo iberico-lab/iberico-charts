@@ -25,7 +25,10 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 
 - `values.schema.json` for the app, ingress and external-secrets charts.
 - Install notes that print in-cluster DNS, Tailscale/public URLs and a port-forward command; `ingress.tailnetDomain`.
-- `podDisruptionBudget`, `autoscaling` (HPA), `topologySpread` preset, `topologySpreadConstraints`, `priorityClassName`.
+- `podDisruptionBudget`, `autoscaling` (HPA), `topologySpread` preset (on by default: pods prefer
+  different nodes), `topologySpreadConstraints`, `priorityClassName`.
+- Install notes warn when fewer than 2 replicas run, note that 3 is needed for high availability,
+  and warn when nothing spreads the pods across nodes.
 - `metrics.serviceMonitor` (Prometheus Operator).
 - `workload.extraEnv`, `workload.extraEnvFrom`, `workload.pod.labels`, `workload.lifecycle`,
   `workload.podManagementPolicy`, `workload.reloadOnSecretChange` (Stakater Reloader).

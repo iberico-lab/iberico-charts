@@ -24,7 +24,7 @@ For explanations and examples, follow the  link in each section.
 | `podDisruptionBudget` | `{enabled: false, minAvailable: null, maxUnavailable: 1}` | Pods allowed down during maintenance ([docs](availability.md)) |
 | `podSecurityContext` | `seccompProfile: RuntimeDefault` | Security settings for the pod ([docs](security.md)) |
 | `securityContext` | `allowPrivilegeEscalation: false` | Security settings for the main container ([docs](security.md)) |
-| `topologySpread` | `{enabled: false, topologyKey: kubernetes.io/hostname, maxSkew: 1, whenUnsatisfiable: ScheduleAnyway}` | Spread pods across nodes/zones ([docs](availability.md)) |
+| `topologySpread` | `{enabled: true, topologyKey: kubernetes.io/hostname, maxSkew: 1, whenUnsatisfiable: ScheduleAnyway}` | Spread pods across nodes/zones ([docs](availability.md)) |
 | `topologySpreadConstraints` | `[]` | Raw spread rules, copied as-is |
 | `priorityClassName` | `""` | PriorityClass for the pods |
 | `nodeSelector` | `{}` | Only run on nodes with these labels |

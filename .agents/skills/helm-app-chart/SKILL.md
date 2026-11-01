@@ -154,7 +154,10 @@ workload:
   `workload.resources.requests.cpu` (and memory if you target memory).
 - `podDisruptionBudget`: `minAvailable` wins over `maxUnavailable` and must be
   lower than the replica count.
-- `topologySpread.enabled: true` spreads pods across nodes (the selector is filled in).
+- Replicas: 2 is the minimum for anything people rely on, 3 for high availability.
+  The install notes warn below 2.
+- `topologySpread` is on by default (`ScheduleAnyway` across nodes; the selector is
+  filled in). `whenUnsatisfiable: DoNotSchedule` makes it strict.
 - `metrics.serviceMonitor.port` is a Service port **name**; needs the Prometheus Operator CRDs.
 
 **Resources and security**

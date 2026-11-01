@@ -15,18 +15,20 @@ workload:
       exec:
         command: ["sh", "-c", "sleep 10"]
 
-# Between 2 and 6 pods, aiming for 70% CPU. workload.replicas is ignored.
+# Between 3 and 6 pods, aiming for 70% CPU. workload.replicas is ignored.
+# 3 is the minimum for high availability: one pod can fail while another updates.
 autoscaling:
   enabled: true
-  minReplicas: 2
+  minReplicas: 3
   maxReplicas: 6
   targetCPUUtilizationPercentage: 70
 
-# Node drains and upgrades never take the last pod away.
+# Node drains and upgrades keep at least 2 pods running.
 podDisruptionBudget:
   enabled: true
-  minAvailable: 1
+  minAvailable: 2
 
-# Prefer putting pods on different nodes.
+# Never put two pods on the same node, so a node dying takes at most one.
+# (On by default as a preference; DoNotSchedule makes it a rule.)
 topologySpread:
-  enabled: true
+  whenUnsatisfiable: DoNotSchedule

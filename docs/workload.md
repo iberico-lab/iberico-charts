@@ -113,7 +113,7 @@ workload:
 | `workload.image.tag` | `1.25` | Image version |
 | `workload.image.digest` | `""` | Pin the exact image (`sha256:...`); wins over the tag |
 | `workload.image.pullPolicy` | `IfNotPresent` | When to download the image again |
-| `workload.replicas` | `2` | Number of copies |
+| `workload.replicas` | `2` | Number of copies. 2 is the minimum to survive a pod or node going down; 3 for high availability ([why](availability.md#how-many-replicas)) |
 | `workload.applicationPort` | `80` | Port the app listens on |
 | `workload.ports` | `[]` | List of named ports. If set, used instead of `applicationPort` |
 | `workload.command` | `[]` | Start command (`[]` = image default) |

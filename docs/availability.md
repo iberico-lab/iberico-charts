@@ -3,7 +3,30 @@
 > **In one line:** keep your app running while the cluster does maintenance,
 > and let it grow or shrink with traffic.
 
-All of these are **off by default**. Turn on what you need.
+Spreading pods across nodes is **on by default**. Everything else is **off**
+until you turn it on.
+
+---
+
+## How many replicas?
+
+| Replicas | What survives | Use it for |
+|----------|---------------|------------|
+| `1` | Nothing: the app is down whenever its pod restarts, is moved, or its node fails | Dev, or apps that can't run twice (one disk, one writer) |
+| `2` (default) | One pod or one node going down | **The minimum** for anything people rely on |
+| `3` or more | One pod failing **while** another is being updated or moved | **High availability** |
+
+```yaml
+workload:
+  replicas: 3
+```
+
+After every install and upgrade, the notes print a **WARNING** below 2 and a
+**NOTE** at 2. With autoscaling on, they check `autoscaling.minReplicas` instead.
+
+To survive a node dying, you need **both**: at least 2 replicas, **and** those
+pods on different nodes. The chart does the second part for you (see
+[Don't put all pods on one node](#dont-put-all-pods-on-one-node-topology-spread)).
 
 ---
 
@@ -59,19 +82,35 @@ autoscaling:
 
 ## Don't put all pods on one node (topology spread)
 
+**On by default.** Kubernetes is asked to put your pods on different nodes, so
+one node dying doesn't take them all. You don't have to set anything.
+
+The default is a **preference** (`ScheduleAnyway`): if there aren't enough
+nodes, pods still start, some sharing a node. To make it a **rule**, or to
+spread across zones:
+
 ```yaml
 topologySpread:
-  enabled: true
-  topologyKey: kubernetes.io/hostname    # spread across nodes
-  # topologyKey: topology.kubernetes.io/zone   # or across zones
-  whenUnsatisfiable: ScheduleAnyway      # best effort; DoNotSchedule = strict
+  topologyKey: kubernetes.io/hostname    # spread across nodes (the default)
+  # topologyKey: topology.kubernetes.io/zone   # or across zones (cloud clusters)
+  whenUnsatisfiable: DoNotSchedule       # strict: never two pods on one node
 ```
 
-The chart fills in which pods to spread (yours), so that's all you need. For
-anything fancier, add raw entries to `topologySpreadConstraints: []`.
+The chart fills in which pods to spread (yours). For anything fancier, add raw
+entries to `topologySpreadConstraints: []`.
 
-**Watch out:** with `DoNotSchedule`, pods stay **Pending** if there aren't
-enough nodes or zones. Start with `ScheduleAnyway`.
+**Watch out**
+
+- **Strict (`DoNotSchedule`) needs enough nodes.** With 3 replicas and 2 nodes,
+  the third pod stays **Pending**, and so can a rolling update's extra pod.
+- **The preference is checked only when a pod starts.** If a node was down and
+  comes back, pods don't move back to it on their own. They spread out again
+  at the next rollout (`kubectl rollout restart`).
+- **A node dying is not a drain.** A PodDisruptionBudget only protects against
+  planned work (drains, upgrades). Against a node dying, only replicas on
+  different nodes help.
+- Turned it off (`topologySpread.enabled: false`) and set no
+  `topologySpreadConstraints` or pod anti-affinity? The notes print a WARNING.
 
 ---
 
@@ -99,7 +138,7 @@ can push lower-priority pods out.
 | `autoscaling.targetCPUUtilizationPercentage` | `80` | Add pods above this % of requested CPU (`null` = off) |
 | `autoscaling.targetMemoryUtilizationPercentage` | `null` | Same for memory (`null` = off) |
 | `autoscaling.behavior` | `{}` | Scale-up/down tuning, copied as-is |
-| `topologySpread.enabled` | `false` | Spread pods with the preset |
+| `topologySpread.enabled` | `true` | Spread pods with the preset |
 | `topologySpread.topologyKey` | `kubernetes.io/hostname` | Spread across nodes, or `topology.kubernetes.io/zone` |
 | `topologySpread.maxSkew` | `1` | Allowed difference in pod count between nodes/zones |
 | `topologySpread.whenUnsatisfiable` | `ScheduleAnyway` | `ScheduleAnyway` (best effort) or `DoNotSchedule` (strict) |

@@ -30,7 +30,7 @@ workload:
     tag: "1.25"
     digest: ""  # e.g. "sha256:..." pins the exact image (the tag is then just a label)
     pullPolicy: IfNotPresent
-  replicas: 2
+  replicas: 2   # 2 = minimum to stay up when a pod or node goes down; 3 for high availability
   applicationPort: 80
 
   # Explicit container ports; empty = single port from applicationPort.
@@ -231,9 +231,10 @@ securityContext:
   allowPrivilegeEscalation: false
 
 # Spread pods across nodes (or zones) so one failure doesn't take them all.
-# The selector is filled in for you.
+# On by default as a preference (ScheduleAnyway): pods still start when there
+# aren't enough nodes. The selector is filled in for you.
 topologySpread:
-  enabled: false
+  enabled: true
   topologyKey: kubernetes.io/hostname   # or topology.kubernetes.io/zone
   maxSkew: 1
   whenUnsatisfiable: ScheduleAnyway      # or DoNotSchedule (strict)

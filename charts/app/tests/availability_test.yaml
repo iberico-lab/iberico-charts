@@ -74,7 +74,58 @@ tests:
               labelSelector: { matchLabels: { app.kubernetes.io/name: shop, app.kubernetes.io/instance: shop } }
       - equal: { path: spec.template.spec.priorityClassName, value: high }
 
-  - it: renders no spread constraints by default
+  - it: spreads pods across nodes by default, as a preference
     templates: [templates/workload.yaml]
     asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].topologyKey
+          value: kubernetes.io/hostname
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].whenUnsatisfiable
+          value: ScheduleAnyway
+
+  - it: renders no spread constraints when turned off
+    templates: [templates/workload.yaml]
+    set: { topologySpread.enabled: false }
+    asserts:
       - notExists: { path: spec.template.spec.topologySpreadConstraints }
+
+  - it: warns in NOTES about a single replica
+    templates: [templates/NOTES.txt]
+    set: { workload.replicas: 1 }
+    asserts:
+      - matchRegexRaw: { pattern: 'WARNING: workload.replicas is 1\.' }
+      - matchRegexRaw: { pattern: 'Use at least 2; 3 for high availability' }
+
+  - it: notes that 2 replicas is the minimum, not high availability
+    templates: [templates/NOTES.txt]
+    asserts:
+      - matchRegexRaw: { pattern: 'NOTE: workload.replicas is 2' }
+      - notMatchRegexRaw: { pattern: 'WARNING' }
+
+  - it: prints no replica note from 3 replicas with spread on
+    templates: [templates/NOTES.txt]
+    set: { workload.replicas: 3 }
+    asserts:
+      - notMatchRegexRaw: { pattern: 'replicas is|WARNING' }
+
+  - it: checks autoscaling.minReplicas instead of replicas
+    templates: [templates/NOTES.txt]
+    set: { workload.replicas: 5, autoscaling: { enabled: true, minReplicas: 1, targetCPUUtilizationPercentage: 80 } }
+    asserts:
+      - matchRegexRaw: { pattern: 'WARNING: autoscaling.minReplicas is 1\.' }
+
+  - it: warns when nothing spreads the pods across nodes
+    templates: [templates/NOTES.txt]
+    set: { workload.replicas: 3, topologySpread.enabled: false }
+    asserts:
+      - matchRegexRaw: { pattern: 'WARNING: topologySpread is off' }
+
+  - it: accepts pod anti-affinity in place of the spread preset
+    templates: [templates/NOTES.txt]
+    set:
+      workload.replicas: 3
+      topologySpread.enabled: false
+      affinity: { podAntiAffinity: { preferredDuringSchedulingIgnoredDuringExecution: [] } }
+    asserts:
+      - notMatchRegexRaw: { pattern: 'topologySpread is off' }
