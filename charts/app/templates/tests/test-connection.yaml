@@ -12,7 +12,10 @@ metadata:
   name: {{ $name }}-test-connection
   namespace: {{ include "helm-helpers.namespace" . }}
   labels:
-    {{- include "helm-helpers.labels" . | nindent 4 }}
+    {{- /* no app.kubernetes.io/name: the Service, PDB and ServiceMonitor select on
+           it, and this pod must not receive traffic or count as an app pod */}}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "helm-helpers.metaLabels" . | nindent 4 }}
     app.kubernetes.io/component: test
   annotations:
     helm.sh/hook: test

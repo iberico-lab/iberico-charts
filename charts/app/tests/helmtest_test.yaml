@@ -9,6 +9,12 @@ tests:
       - equal: { path: 'metadata.annotations["helm.sh/hook"]', value: test }
       - matchRegex: { path: 'spec.containers[0].command[2]', pattern: 'nc -z -w 5 shop 80' }
 
+  - it: is not selected by the Service or PDB (no app.kubernetes.io/name label)
+    asserts:
+      - notExists: { path: 'metadata.labels["app.kubernetes.io/name"]' }
+      - equal: { path: 'metadata.labels["app.kubernetes.io/instance"]', value: shop }
+      - equal: { path: 'metadata.labels["app.kubernetes.io/component"]', value: test }
+
   - it: can be turned off
     set: { helmTest.enabled: false }
     asserts:
