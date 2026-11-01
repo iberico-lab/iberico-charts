@@ -105,8 +105,10 @@ ingress:
 - **A Gateway in another namespace must accept routes from yours.** Its listener
   needs `allowedRoutes.namespaces.from: All` (or a selector that matches). If not,
   `kubectl describe httproute` shows `NotAllowedByListeners`.
-- The cluster needs the Gateway API CRDs. Without them, the install fails with
-  `no matches for kind "HTTPRoute"`.
+- The cluster needs the Gateway API CRDs, version 1.0 or newer (the chart uses
+  the stable `v1` HTTPRoute). Without them, the install fails with
+  `no matches for kind "HTTPRoute"`. On Kubernetes 1.30, install Gateway API
+  1.4: 1.5 and newer need Kubernetes 1.31+.
 - Login (SSO) and other Traefik middlewares: add them as `filters`, e.g.
   `{type: ExtensionRef, extensionRef: {group: traefik.io, kind: Middleware, name: network-sso}}`.
   The Middleware must be in the app's namespace.

@@ -50,7 +50,7 @@
         "/^hack/e2e\\.sh$/"
       ],
       "matchStrings": [
-        "GATEWAY_API_VERSION=(?<currentValue>\\S+)"
+        "GATEWAY_API_VERSION=(?<currentValue>v\\S+)"
       ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "kubernetes-sigs/gateway-api"

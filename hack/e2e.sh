@@ -19,7 +19,8 @@ ADDONS_NS="$NS-addons"
 ESO_VERSION=2.14.0             # https://charts.external-secrets.io
 PROM_CRDS_VERSION=32.0.2       # prometheus-community/prometheus-operator-crds
 GATEWAY_API_VERSION=v1.7.0     # https://github.com/kubernetes-sigs/gateway-api/releases
-GATEWAY_API_URL="https://github.com/kubernetes-sigs/gateway-api/releases/download/$GATEWAY_API_VERSION/standard-install.yaml"
+# Gateway API 1.5+ CRDs use CEL's isIP(), which Kubernetes adds in 1.31.
+GATEWAY_API_VERSION_K8S_1_30=v1.4.1
 INSTALLED_GATEWAY_API=false
 CTX_ARGS=()
 [ -n "${KUBE_CONTEXT:-}" ] && CTX_ARGS=(--kube-context "$KUBE_CONTEXT")
@@ -28,6 +29,10 @@ KCTX_ARGS=()
 
 helm() { command helm "${CTX_ARGS[@]}" "$@"; }
 kubectl() { command kubectl "${KCTX_ARGS[@]}" "$@"; }
+
+KUBE_MINOR=$(kubectl version -o json | sed -n 's/.*"minor": *"\([0-9]*\).*/\1/p' | tail -n1)
+[ "${KUBE_MINOR:-99}" -lt 31 ] && GATEWAY_API_VERSION=$GATEWAY_API_VERSION_K8S_1_30
+GATEWAY_API_URL="https://github.com/kubernetes-sigs/gateway-api/releases/download/$GATEWAY_API_VERSION/standard-install.yaml"
 
 cleanup() {
   echo "==> cleaning up namespaces $NS and $ADDONS_NS"
