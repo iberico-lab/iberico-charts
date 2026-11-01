@@ -1,64 +1,95 @@
-1. App chart (parent) has been deployed successfully!
+{{- $name := include "helm-helpers.fullname" . -}}
+{{- $ns := .Release.Namespace -}}
+{{- $type := include "app.workloadType" . -}}
+{{- $svcPort := .Values.service.port -}}
+{{- if .Values.service.ports }}{{ $svcPort = (first .Values.service.ports).port }}{{ end -}}
+{{- if .Values.workload.enabled -}}
+{{ $name }} is deployed as a {{ $type }} in namespace "{{ $ns }}"
+  image:    {{ include "app.image" . }}
+  replicas: {{ .Values.workload.replicas }}
+{{- else -}}
+workload.enabled is false: no pods or Services were created for {{ $name }}.
+{{- end }}
+{{- if and .Values.workload.enabled .Values.service.enabled }}
 
-2. The following sub-charts have been deployed:
-   {{- if and (index .Values "external-secrets") (index .Values "external-secrets" "onepassword") (index .Values "external-secrets" "onepassword" "enabled") }}
-   - External Secrets: Manages secrets from 1Password
-   {{- end }}
-   {{- if .Values.ingress.enabled }}
-   - Ingress: Tailscale-based ingress configuration
-   {{- end }}
-   - App: Application deployment with secret and volume management
+INSIDE THE CLUSTER (other apps, ingress controllers)
+{{- if .Values.service.ports }}
+{{- range .Values.service.ports }}
+  {{ $name }}.{{ $ns }}.svc.cluster.local:{{ .port }}   ({{ .name }})
+{{- end }}
+{{- else }}
+  {{ $name }}.{{ $ns }}.svc.cluster.local:{{ $svcPort }}
+{{- end }}
+  (from the same namespace, just {{ $name }}:{{ $svcPort }})
+{{- end }}
+{{- if and .Values.workload.enabled (eq $type "StatefulSet") }}
+{{- $headless := .Values.workload.serviceName | default (printf "%s-cluster" $name) }}
+{{- $podPort := .Values.workload.service.port | default .Values.workload.applicationPort }}
 
-3. Application resources created:
-   {{- if eq (.Values.workload.type | default "Deployment") "Deployment" }}
-   - Deployment: {{ include "helm-helpers.fullname" . }}
-   {{- else }}
-   - StatefulSet: {{ include "helm-helpers.fullname" . }}
-   {{- end }}
-   - Service: {{ include "helm-helpers.fullname" . }}
+  Each pod has its own address (headless Service "{{ $headless }}"):
+{{- range $i, $_ := until (min (int .Values.workload.replicas) 3 | int) }}
+  {{ $name }}-{{ $i }}.{{ $headless }}.{{ $ns }}.svc.cluster.local:{{ $podPort }}
+{{- end }}
+{{- if gt (int .Values.workload.replicas) 3 }}
+  ... up to {{ $name }}-{{ sub (int .Values.workload.replicas) 1 }}
+{{- end }}
+{{- end }}
+{{- if .Values.workload.enabled }}
 
-4. Application configuration:
-   - Image: {{ .Values.workload.image.repository }}:{{ .Values.workload.image.tag }}
-   - Replicas: {{ .Values.workload.replicas }}
-   - Port: {{ .Values.workload.applicationPort }}
-   - Health probe: {{ .Values.workload.livenessProbe.type | default "http" }}{{ if eq (.Values.workload.livenessProbe.type | default "http") "http" }} {{ .Values.workload.livenessProbe.path | default "/" }}{{ end }}
+FROM OUTSIDE THE CLUSTER
+{{- if .Values.ingress.enabled }}
+{{- $tailnet := .Values.ingress.tailnetDomain }}
+{{- range .Values.ingress.ingresses }}
+{{- if eq .type "internal" }}
+  Tailscale only:   https://{{ .host | default $name }}.{{ $tailnet | default "<your-tailnet>.ts.net" }}
+{{- else if eq .type "public" }}
+  Public:           https://{{ .host }}
+{{- else if eq .type "public-protected" }}
+  Public + login:   https://{{ .host }}   (SSO via the network-sso middleware)
+{{- end }}
+{{- if and (ne .type "internal") (eq (.certManagerIssuer | default "letsencrypt-staging") "letsencrypt-staging") }}
+                    ! uses the letsencrypt-staging issuer: browsers will show a
+                      certificate warning. Set certManagerIssuer for real use.
+{{- end }}
+{{- end }}
+{{- if not $tailnet }}
+{{- range .Values.ingress.ingresses }}{{ if eq .type "internal" }}
+  (set ingress.tailnetDomain, e.g. "tail1234.ts.net", to print the full Tailscale URL)
+{{- break }}{{ end }}{{ end }}
+{{- end }}
+{{- else }}
+  No ingress. To give the app a URL, set ingress.enabled: true
+  (see docs/ingress.md).
+{{- end }}
+{{- end }}
+{{- if and .Values.workload.enabled .Values.service.enabled }}
 
-5. Your application is accessible via the configured ingress hostname
+FROM YOUR MACHINE (quick test, no ingress needed)
+{{- $local := ternary 8080 $svcPort (lt (int $svcPort) 1024) }}
+{{- $portName := .Values.service.portName | default "http" }}
+{{- if .Values.service.ports }}{{ $portName = (first .Values.service.ports).name | default "" }}{{ end }}
+  kubectl port-forward -n {{ $ns }} svc/{{ $name }} {{ $local }}:{{ $svcPort }}
+{{- if contains "http" $portName }}
+  then open http://localhost:{{ $local }}
+{{- else }}
+  then connect to localhost:{{ $local }}
+{{- end }}
+{{- end }}
+{{- $es := index .Values "external-secrets" | default dict }}
+{{- if and $es.enabled ($es.onepassword | default dict).enabled }}
 
-6. Secret management:
-   {{- if .Values.workload.volumes }}
-   - Volume mounts:
-     {{- range .Values.workload.volumes }}
-     - {{ .name }} → {{ .mountPath }}
-     {{- end }}
-   {{- end }}
+SECRETS (1Password)
+{{- if include "app.onepassword.has" (dict "root" . "field" "envVars") }}
+  env vars from ExternalSecret {{ $name }}-onepassword-env
+{{- end }}
+{{- if include "app.onepassword.has" (dict "root" . "field" "files") }}
+  files in /etc/secrets/onepassword/ from ExternalSecret {{ $name }}-onepassword-files
+{{- end }}
+  check sync: kubectl get externalsecrets -n {{ $ns }}
+{{- end }}
+{{- if .Values.workload.enabled }}
 
-7. Health checks:
-   {{- if .Values.workload.livenessProbe.enabled }}
-   - Liveness probe: {{ .Values.workload.livenessProbe.type | default "http" }}{{ if eq (.Values.workload.livenessProbe.type | default "http") "http" }} {{ .Values.workload.livenessProbe.path | default "/" }}{{ end }}
-   {{- end }}
-   {{- if .Values.workload.readinessProbe.enabled }}
-   - Readiness probe: {{ .Values.workload.readinessProbe.type | default "http" }}{{ if eq (.Values.workload.readinessProbe.type | default "http") "http" }} {{ .Values.workload.readinessProbe.path | default "/" }}{{ end }}
-   {{- end }}
-   {{- if .Values.workload.startupProbe.enabled }}
-   - Startup probe: {{ .Values.workload.startupProbe.type | default "http" }}{{ if eq (.Values.workload.startupProbe.type | default "http") "http" }} {{ .Values.workload.startupProbe.path | default "/" }}{{ end }}
-   {{- end }}
-
-8. To check the status of all resources:
-   kubectl get all -n {{ .Release.Namespace }}
-
-9. To check external secrets status:
-   kubectl get externalsecrets,secretstore -n {{ .Release.Namespace }}
-
-10. To check ingress status:
-    kubectl get ingress -n {{ .Release.Namespace }}
-
-11. To view application logs:
-    kubectl logs -l app.kubernetes.io/name={{ include "helm-helpers.appName" . }} -n {{ .Release.Namespace }}
-
-12. To scale the application:
-    {{- if eq (.Values.workload.type | default "Deployment") "Deployment" }}
-    kubectl scale deployment {{ include "helm-helpers.fullname" . }} --replicas=<desired-count> -n {{ .Release.Namespace }}
-    {{- else }}
-    kubectl scale statefulset {{ include "helm-helpers.fullname" . }} --replicas=<desired-count> -n {{ .Release.Namespace }}
-    {{- end }}
+CHECK ON IT
+  kubectl get pods -n {{ $ns }} -l app.kubernetes.io/instance={{ .Release.Name }}
+  kubectl logs -n {{ $ns }} -l app.kubernetes.io/instance={{ .Release.Name }} -f
+{{- end }}

@@ -55,6 +55,14 @@ ingress:
       certManagerIssuer: "letsencrypt-prod"
 ```
 
+**Want the full Tailscale URL in the install message?** Tell the chart your
+tailnet domain (find it in the Tailscale admin console under DNS):
+
+```yaml
+ingress:
+  tailnetDomain: "tail1234.ts.net"
+```
+
 You can list **several** ingresses to get, say, a private and a public URL at the same time.
 
 ---
@@ -104,6 +112,7 @@ automatically. Hide one with `homepage: { enabled: false }`. To change how it lo
 | `certManagerIssuer` | `letsencrypt-staging` | TLS certificate issuer (public types) |
 | `tailscaleExpose` | `false` | Turn on Tailscale "serve" (`internal` only) |
 | `annotations` | `{}` | Extra annotations (`internal` only) |
+| `tailnetDomain` (top level, not per ingress) | `""` | Your tailnet, e.g. `tail1234.ts.net`. Only used to print URLs |
 | `homepage` | — | `enabled` (default `true`), `name`, `description`, `group`, `icon` |
 
 ---
