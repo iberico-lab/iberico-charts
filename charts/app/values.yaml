@@ -1,16 +1,23 @@
-global:
-  name: ""
+# Default values for the `app` chart.
+#
+# Everything here has a working default: set only what you want to change.
+# Every setting is explained in docs/values-reference.md, and unknown keys are
+# rejected by values.schema.json, so typos fail loudly.
 
-# External Secrets sub-chart configuration
+# Shared with every chart in this repo.
+global:
+  name: ""  # base name for all resources; "" = the Helm release name
+
+# Secrets from 1Password, as env vars or files (docs/external-secrets.md).
 external-secrets:
   enabled: false
   onepassword: {}
 
-# Ingress sub-chart configuration
+# URLs via Tailscale (private) or Traefik (public) (docs/ingress.md).
 ingress:
   enabled: false
 
-# Unified workload configuration (Deployment or StatefulSet)
+# What to run (docs/workload.md).
 workload:
   enabled: true
   type: "Deployment"  # or "StatefulSet"
@@ -42,17 +49,19 @@ workload:
     annotations: {}
     labels: {}  # extra pod labels; can't override the chart's own labels
 
-  # Environment variables
+  # Plain (non-secret) environment variables as KEY: value
   environment: {}
   # Raw env entries, copied as-is (use for valueFrom: fieldRef, secretKeyRef...)
   extraEnv: []
   # Raw envFrom entries, copied as-is (load a whole ConfigMap or Secret)
   extraEnvFrom: []
+  # Mount existing ConfigMaps, Secrets, emptyDirs or PVCs (docs/volumes.md)
   volumes: []
 
-  # Sidecar containers rendered verbatim; each entry MUST define `name`
   # Container lifecycle hooks, copied as-is (postStart / preStop)
   lifecycle: {}
+
+  # Sidecar containers rendered verbatim; each entry MUST define a unique `name`
   extraContainers: []
   # extraContainers:
   #   - name: metrics-exporter
@@ -61,7 +70,7 @@ workload:
   #       - name: metrics
   #         containerPort: 9102
 
-  # Extra init containers rendered verbatim; each entry MUST define `name`
+  # Init containers rendered verbatim; each entry MUST define a unique `name`
   extraInitContainers: []
   # extraInitContainers:
   #   - name: wait-for-db
@@ -77,7 +86,7 @@ workload:
       cpu: "1000m"
       memory: "800Mi"
 
-  # Health checks
+  # Health checks (docs/probes.md). Set only the fields you want to change.
   livenessProbe:
     enabled: true
     type: "http"
@@ -144,7 +153,8 @@ workload:
   updateStrategy:  # Optional: StatefulSet update strategy
     type: RollingUpdate
   terminationGracePeriodSeconds: 30  # Seconds pods get to shut down (Deployment and StatefulSet)
-# Service configuration (for external access)
+
+# Stable address inside the cluster (docs/service.md).
 service:
   enabled: true
   type: ClusterIP
@@ -162,7 +172,7 @@ service:
     targetPort: null  # null => use workload.applicationPort
     ports: []
 
-# Service Account configuration
+# Kubernetes identity for the pods (docs/security.md).
 serviceAccount:
   create: false
   # Mount a Kubernetes API token into the pods. Most apps don't talk to the
@@ -198,7 +208,9 @@ podDisruptionBudget:
   minAvailable: null
   maxUnavailable: 1
 
-# Persistence configuration (used for both Deployment PVCs and StatefulSet volumeClaimTemplates)
+# Disks the chart creates: PVCs for a Deployment, one per pod for a StatefulSet
+# (docs/persistence.md). Each entry: name, size, mountPath (+ accessModes,
+# storageClassName, readOnly, annotations). accessModes default: ReadWriteOnce.
 persistence: []
 
 # Pod Security Context. Safe defaults that work with any image; see
@@ -225,16 +237,12 @@ topologySpreadConstraints: []
 # PriorityClass for the pods (must already exist in the cluster)
 priorityClassName: ""
 
-# Node Selector
+# Where pods may run, copied as-is
 nodeSelector: {}
-
-# Affinity
 affinity: {}
-
-# Tolerations
 tolerations: []
 
-# Image Pull Secrets
+# Login details for private registries, e.g. [{name: my-registry}]
 imagePullSecrets: []
 
 # `helm test <release>` support: a pod that checks every Service port accepts
