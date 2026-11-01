@@ -79,7 +79,7 @@ automatically. To change how it looks:
 - **Public HTTPS uses `letsencrypt-staging` by default.** Browsers will show a
   warning. For real use, set `certManagerIssuer` to your production issuer
   (often `letsencrypt-prod`).
-- `public` and `public-protected` **need a `host`**.
+- `public` and `public-protected` **need a `host`**. Without one, the chart stops with an error.
 - If you set `ingress.enabled: true` but don't list any `ingresses`, you get
   **one `internal` ingress** by default.
 - `servicePort` must match your [Service](service.md) port (default `80`).

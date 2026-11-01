@@ -5,6 +5,7 @@ Uses Traefik with network-sso middleware
 {{- if .Values.ingresses }}
 {{- range .Values.ingresses }}
 {{- if eq .type "public-protected" }}
+{{- $host := required (printf "ingress.ingresses[]: type %q requires a host" .type) .host }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -20,7 +21,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: {{ .host | quote }}
+    - host: {{ $host | quote }}
       http:
         paths:
           - path: /
@@ -32,8 +33,8 @@ spec:
                   number: {{ .servicePort | default $.Values.defaultServicePort | default 80 }}
   tls:
     - hosts:
-        - {{ .host | quote }}
-      secretName: {{ .host }}-tls
+        - {{ $host | quote }}
+      secretName: {{ $host }}-tls
 ---
 {{- end }}
 {{- end }}
