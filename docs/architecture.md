@@ -44,6 +44,8 @@ global:
 | `global.nameOverride` | `""` | Changes the `app.kubernetes.io/name` label only |
 
 Names are made lowercase and cut to 63 characters, which is a Kubernetes limit.
+Allowed characters are lowercase letters, digits and `-` (no `_` or `.`). Anything
+else stops the render with an error.
 
 **Namespace:** everything is created in the namespace you install into, so use
 `helm install -n <namespace>`.

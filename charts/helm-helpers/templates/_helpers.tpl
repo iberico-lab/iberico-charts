@@ -14,19 +14,22 @@ Expand the name of the chart.
 
 {{/*
 Returns the fully qualified application name.
-- Uses .Values.global.fullnameOverride if set.
-- Otherwise, uses .Values.global.name.
+- Uses .Values.global.fullnameOverride if set, otherwise helm-helpers.appName.
 - Always lowercases and truncates to 63 characters.
+- Fails unless the result is a valid DNS-1123 label (Kubernetes would
+  otherwise reject it only at install time).
 Examples:
   - example-service
 */}}
 {{- define "helm-helpers.fullname" -}}
-{{- if .Values.global.fullnameOverride }}
-{{- .Values.global.fullnameOverride | trunc 63 | trimSuffix "-" | lower }}
-{{- else }}
-{{- include "helm-helpers.appName" . }}
-{{- end }}
-
+{{- $name := include "helm-helpers.appName" . -}}
+{{- if .Values.global.fullnameOverride -}}
+{{- $name = .Values.global.fullnameOverride | trunc 63 | trimSuffix "-" | lower -}}
+{{- end -}}
+{{- if not (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$" $name) -}}
+{{- fail (printf "invalid name %q (from global.name / global.fullnameOverride / release name): use only lowercase letters, digits and '-', starting and ending with a letter or digit" $name) -}}
+{{- end -}}
+{{- $name -}}
 {{- end }}
 
 
