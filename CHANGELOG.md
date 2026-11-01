@@ -28,6 +28,8 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 
 ### Added
 
+- Releases: tag `vX.Y.Z` to publish all four charts to `oci://ghcr.io/alexbaeza/charts` (signed with
+  cosign once the repo is public) with a GitHub Release.
 - `values.schema.json` for the app, ingress and external-secrets charts.
 - Install notes that print in-cluster DNS, Tailscale/public URLs and a port-forward command; `ingress.tailnetDomain`.
 - `podDisruptionBudget`, `autoscaling` (HPA), `topologySpread` preset (on by default: pods prefer

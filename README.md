@@ -25,6 +25,12 @@ You get:
 - A Deployment running 2 copies of your app
 - A Service on port 80, reachable inside the cluster
 
+**From the registry instead of a checkout** (released versions, see [Versions](docs/versioning.md)):
+
+```bash
+helm install my-app oci://ghcr.io/alexbaeza/charts/app --version 0.3.0 -f values-my-app.yaml
+```
+
 After installing, Helm prints how to reach the app: in-cluster address, URLs and
 a port-forward command.
 
@@ -68,8 +74,8 @@ charts/
 docs/                # Guides, one per feature. Start at docs/index.md
 examples/            # Working values files, numbered 01-19
 .github/
-  configs/           # ct.yaml, cr.yaml, lintconf.yaml
-  workflows/         # Lint + release pipelines
+  configs/           # ct.yaml, lintconf.yaml
+  workflows/         # Lint/test + release (to ghcr.io) pipelines
 Makefile             # Shortcuts, see below
 ```
 
