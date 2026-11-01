@@ -14,7 +14,7 @@ KUBECONFORM := kubeconform -strict -summary -schema-location default \
 # configured Helm repos (a single broken repo would otherwise fail the build).
 HELM_DEP   := HELM_REPOSITORY_CONFIG=/dev/null helm dependency update --skip-refresh
 
-.PHONY: help deps lint test validate template examples schema schema-check docs-check clean
+.PHONY: help deps lint test validate e2e template examples schema schema-check docs-check clean
 
 help: ## Show available targets
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-10s %s\n", $$1, $$2}'
@@ -30,6 +30,9 @@ test: deps ## Run unit tests (needs the helm-unittest plugin)
 
 validate: deps ## Check rendered manifests against Kubernetes schemas (needs kubeconform)
 	@for f in $(EXAMPLES) $(CI_VALUES); do echo "==> $$f"; helm template t $(CHARTS_DIR)/app -f $$f | $(KUBECONFORM) || exit 1; done
+
+e2e: deps ## Install every hack/e2e scenario on a throwaway cluster (KUBE_CONTEXT=...)
+	hack/e2e.sh
 
 template: deps ## Render the umbrella app chart with default values
 	helm template app $(CHARTS_DIR)/app

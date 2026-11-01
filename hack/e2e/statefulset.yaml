@@ -1,0 +1,16 @@
+# Redis StatefulSet with a disk per pod (default storage class).
+workload:
+  type: StatefulSet
+  image: {repository: redis, tag: "7-alpine"}
+  replicas: 2
+  applicationPort: 6379
+  podManagementPolicy: Parallel
+  livenessProbe: {type: tcp}
+  readinessProbe: {type: tcp}
+  startupProbe: {type: tcp}
+  resources:
+    requests: {cpu: 10m, memory: 32Mi}
+    limits: {cpu: 200m, memory: 128Mi}
+service: {port: 6379, portName: redis}
+persistence:
+  - {name: data, size: 1Gi, mountPath: /data}

@@ -84,6 +84,7 @@ together in `charts/`.
 | `make test` | Run the unit tests (needs the [helm-unittest](https://github.com/helm-unittest/helm-unittest) plugin) |
 | `make template` | Show the YAML the `app` chart creates with default values |
 | `make examples` | Check that every example still works |
+| `make e2e` | Install every `hack/e2e` scenario on a throwaway cluster and run `helm test` |
 | `make validate` | Check the rendered YAML against Kubernetes schemas (needs [kubeconform](https://github.com/yannh/kubeconform)) |
 | `make schema` | Regenerate `values.schema.json` after changing values |
 | `make clean` | Delete downloaded chart files |

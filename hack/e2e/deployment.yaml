@@ -1,0 +1,23 @@
+# nginx Deployment with most options on, using only built-in Kubernetes kinds.
+workload:
+  replicas: 2
+  extraEnvFrom:
+    - configMapRef: {name: deployment-settings}
+  extraEnv:
+    - name: POD_NAME
+      valueFrom: {fieldRef: {fieldPath: metadata.name}}
+  lifecycle:
+    preStop: {exec: {command: ["sh", "-c", "sleep 2"]}}
+  pod:
+    labels: {e2e: "true"}
+  resources:
+    requests: {cpu: 10m, memory: 32Mi}
+    limits: {cpu: 200m, memory: 128Mi}
+podDisruptionBudget: {enabled: true}
+topologySpread: {enabled: true}
+extraManifests:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: '{{ include "helm-helpers.fullname" . }}-settings'
+    data: {MODE: e2e}

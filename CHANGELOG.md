@@ -31,7 +31,8 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 - Safe security defaults: seccomp `RuntimeDefault`, `allowPrivilegeEscalation: false`.
 - One switch for secrets: `external-secrets.enabled` (1Password is on by default inside it).
 - Docs: security, availability & scaling, metrics, extra manifests, troubleshooting, per-chart READMEs.
-- CI: unit tests (helm-unittest), schema freshness check, kubeconform validation.
+- CI: unit tests (helm-unittest), schema freshness check, kubeconform validation, and an
+  end-to-end install, `helm test` and upgrade of real scenarios on a kind cluster (`make e2e`).
 
 ### Fixed
 
