@@ -39,9 +39,13 @@
       "items": {
         "type": "object",
         "properties": {
+          "serviceName": {
+            "type": "string",
+            "description": "Backend Service name (default: the app's Service)"
+          },
           "name": {
             "type": "string",
-            "description": "Backend Service name (default: app name)"
+            "description": "Deprecated alias for serviceName"
           },
           "type": {
             "enum": [

@@ -29,7 +29,7 @@ spec:
   ingressClassName: tailscale
   defaultBackend:
     service:
-      name: {{ .name | default (include "helm-helpers.fullname" $) }}
+      name: {{ include "ingress.serviceName" (dict "ingress" . "root" $) }}
       port:
         {{- if .servicePortName }}
         name: {{ .servicePortName }}

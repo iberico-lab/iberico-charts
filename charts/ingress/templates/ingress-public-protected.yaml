@@ -30,7 +30,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ .name | default (include "helm-helpers.fullname" $) }}
+                name: {{ include "ingress.serviceName" (dict "ingress" . "root" $) }}
                 port:
                   number: {{ .servicePort | default 80 }}
   tls:

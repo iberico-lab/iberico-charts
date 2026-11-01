@@ -27,8 +27,7 @@ Not sure? Start with `internal`.
 ingress:
   enabled: true
   ingresses:
-    - name: "my-app"
-      type: "internal"
+    - type: "internal"
 ```
 
 **Public website:**
@@ -37,8 +36,7 @@ ingress:
 ingress:
   enabled: true
   ingresses:
-    - name: "my-app"
-      type: "public"
+    - type: "public"
       host: "my-app.example.com"
       certManagerIssuer: "letsencrypt-prod"   # your production issuer, see gotcha below
 ```
@@ -49,8 +47,7 @@ ingress:
 ingress:
   enabled: true
   ingresses:
-    - name: "my-app"
-      type: "public-protected"
+    - type: "public-protected"
       host: "admin.example.com"
       certManagerIssuer: "letsencrypt-prod"
 ```
@@ -104,7 +101,7 @@ automatically. Hide one with `homepage: { enabled: false }`. To change how it lo
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `name` | app name | The Service to send traffic to |
+| `serviceName` | the app's Service | Send traffic to a different Service (`name` still works as an alias) |
 | `type` | `internal` | `internal`, `public` or `public-protected` |
 | `host` | — | Hostname (required for public types) |
 | `servicePort` | `80` | Service port to send traffic to |

@@ -28,3 +28,21 @@ tests:
     set: { ingresses: [{ type: internal, homepage: { enabled: false } }] }
     asserts:
       - notExists: { path: 'metadata.annotations["gethomepage.dev/enabled"]' }
+
+  - it: sends traffic to the app's Service by default, or to serviceName
+    templates: [templates/ingress-public.yaml]
+    set: { ingresses: [{ type: public, host: a.example.com }] }
+    asserts:
+      - equal: { path: 'spec.rules[0].http.paths[0].backend.service.name', value: shop }
+
+  - it: honours serviceName and the older name alias
+    templates: [templates/ingress-public.yaml, templates/ingress-internal.yaml]
+    set:
+      ingresses:
+        - { type: public, host: a.example.com, serviceName: api }
+        - { type: internal, name: legacy }
+    asserts:
+      - equal: { path: 'spec.rules[0].http.paths[0].backend.service.name', value: api }
+        template: templates/ingress-public.yaml
+      - equal: { path: spec.defaultBackend.service.name, value: legacy }
+        template: templates/ingress-internal.yaml

@@ -22,8 +22,7 @@ ingress:
   enabled: true
   ingresses:
     # Public HTTPS route via Traefik + cert-manager.
-    - name: "ingress-app"
-      type: "public"
+    - type: "public"
       host: "app.example.com"
       servicePort: 80
       homepage:
@@ -32,7 +31,6 @@ ingress:
         group: "Applications"
         icon: "kubernetes"
     # Internal route via Tailscale (no hostname required).
-    - name: "ingress-app"
-      type: "internal"
+    - type: "internal"
       host: ""
       servicePort: 80

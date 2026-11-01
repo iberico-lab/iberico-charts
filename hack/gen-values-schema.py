@@ -93,7 +93,8 @@ def app():
             }}
 
 def ingress():
-    ing = obj({"name": S("Backend Service name (default: app name)"),
+    ing = obj({"serviceName": S("Backend Service name (default: the app's Service)"),
+               "name": S("Deprecated alias for serviceName"),
                "type": {"enum": ["internal", "public", "public-protected"]},
                "host": S(), "servicePort": PORT, "servicePortName": S(),
                "certManagerIssuer": S(), "tailscaleExpose": B(), "annotations": STRMAP,

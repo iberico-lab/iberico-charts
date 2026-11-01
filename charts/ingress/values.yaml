@@ -8,7 +8,7 @@ tailnetDomain: ""
 # Ingress definitions
 # Default internal ingress - name will be generated from helm-helpers
 ingresses:
-  - name: ""
+  - serviceName: ""   # backend Service; "" = the app's own Service
     type: "internal"
     host: ""  # Leave empty for defaultBackend approach
     servicePort: 80
