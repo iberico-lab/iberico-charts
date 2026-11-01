@@ -11,8 +11,8 @@ root = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else ".")
 schema = json.loads((root / "charts/app/values.schema.json").read_text())
 docs = "\n".join(p.read_text() for p in (root / "docs").glob("*.md"))
 
-# deprecated or covered on another page by a parent key
-SKIP = {"workload.service", "helm-helpers", "global.nameOverride"}
+# removed (kept in the schema only for a helpful error) or covered elsewhere
+SKIP = {"workload.service", "workload.serviceName", "helm-helpers", "global.nameOverride"}
 
 def walk(node, path):
     if path in SKIP or any(path.startswith(s + ".") for s in SKIP):

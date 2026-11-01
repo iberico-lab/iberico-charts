@@ -107,3 +107,17 @@ tests:
       - equal:
           path: 'spec.volumeClaimTemplates[0].metadata.annotations'
           value: { csi-rclone/storage-path: shop, csi-rclone/umask: "022", foo: bar }
+
+  - it: says where the removed workload.service went
+    set:
+      workload.type: StatefulSet
+      workload.service: { port: 99 }
+    asserts:
+      - failedTemplate: { errorPattern: 'workload.service was removed in 0.3.0: move its keys to service.headless' }
+
+  - it: says where the removed workload.serviceName went
+    set:
+      workload.type: StatefulSet
+      workload.serviceName: db-cluster
+    asserts:
+      - failedTemplate: { errorPattern: 'use service.headless.name' }

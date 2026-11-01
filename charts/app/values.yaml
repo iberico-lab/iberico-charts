@@ -146,7 +146,6 @@ workload:
       maxSurge: 1
 
   # StatefulSet-specific configuration
-  serviceName: ""  # Optional: custom name for headless service (defaults to app-name-cluster)
   # StatefulSet only: "OrderedReady" (Kubernetes default, one pod at a time)
   # or "Parallel" (start/stop all pods at once). Empty = Kubernetes default.
   podManagementPolicy: ""
@@ -165,8 +164,8 @@ service:
   portName: http
   annotations: {}
   # StatefulSet only: the headless Service that gives each pod its own address.
-  # (Replaces workload.service, which still works as a deprecated alias.)
   headless:
+    name: ""          # "" => <app>-cluster
     annotations: {}
     port: null        # null => use workload.applicationPort
     targetPort: null  # null => use workload.applicationPort

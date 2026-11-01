@@ -13,8 +13,6 @@ workload:
     tag: "15"
   replicas: 3
   applicationPort: 5432
-  # Custom name for the headless Service (defaults to <app>-cluster).
-  serviceName: "postgresql-cluster"
   terminationGracePeriodSeconds: 30
   environment:
     POSTGRES_DB: "mydb"
@@ -44,3 +42,5 @@ service:
   port: 5432
   targetPort: 5432
   portName: postgres  # names the port in the pod and both Services
+  headless:
+    name: "postgresql-cluster"  # headless Service name (default: <app>-cluster)

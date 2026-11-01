@@ -13,14 +13,23 @@ Create the name of the service account to use
 
 
 {{/*
-Settings for the StatefulSet headless Service as a dict: service.headless,
-falling back to the deprecated workload.service for any key left empty.
-Usage: $h := include "app.headless" . | fromYaml
+Name of the StatefulSet headless Service: service.headless.name or <app>-cluster.
 */}}
-{{- define "app.headless" -}}
-{{- $new := deepCopy (.Values.service.headless | default dict) -}}
-{{- $old := deepCopy (.Values.workload.service | default dict) -}}
-{{- toYaml (merge $new $old) -}}
+{{- define "app.headlessName" -}}
+{{- (.Values.service.headless | default dict).name | default (printf "%s-cluster" (include "helm-helpers.fullname" .)) -}}
+{{- end }}
+
+{{/*
+Settings removed in 0.3.0. They're still allowed by the schema only so this
+can say where they went, instead of a bare "additional property" error.
+*/}}
+{{- define "app.removedSettings" -}}
+{{- if hasKey .Values.workload "service" -}}
+{{- fail "workload.service was removed in 0.3.0: move its keys to service.headless (same names). See docs/upgrading.md" -}}
+{{- end -}}
+{{- if hasKey .Values.workload "serviceName" -}}
+{{- fail "workload.serviceName was removed in 0.3.0: use service.headless.name. See docs/upgrading.md" -}}
+{{- end -}}
 {{- end }}
 
 {{/*

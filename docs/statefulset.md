@@ -49,7 +49,7 @@ service:
 | Thing | Name |
 |-------|------|
 | StatefulSet (your pods) | `<app>` → pods `<app>-0`, `<app>-1`, … |
-| Headless Service (gives each pod a fixed address) | `<app>-cluster`, or `workload.serviceName` |
+| Headless Service (gives each pod a fixed address) | `<app>-cluster`, or `service.headless.name` |
 | Normal Service | `<app>` (if `service.enabled`) |
 | One disk **per pod** | `<disk name>-<app>-0`, `<disk name>-<app>-1`, … |
 
@@ -149,9 +149,9 @@ service: { port: 5672, targetPort: 5672 }
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `workload.serviceName` | `""` | Name of the headless Service (`""` = `<app>-cluster`) |
 | `workload.updateStrategy` | `{type: RollingUpdate}` | How pods are updated |
 | `workload.podManagementPolicy` | `""` | `OrderedReady` (one pod at a time) or `Parallel` (all at once) |
+| `service.headless.name` | `""` | Name of the headless Service (`""` = `<app>-cluster`) |
 | `service.headless.port` | `null` | Headless Service port (`null` = `applicationPort`) |
 | `service.headless.targetPort` | `null` | Headless Service target port (`null` = `applicationPort`) |
 | `service.headless.ports` | `[]` | Several ports for the headless Service |

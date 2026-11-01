@@ -1,3 +1,4 @@
+{{- include "app.removedSettings" . -}}
 {{- if .Values.workload.enabled | default false -}}
 {{- if eq (include "app.workloadType" .) "StatefulSet" -}}
 {{- include "app.statefulset" . -}}

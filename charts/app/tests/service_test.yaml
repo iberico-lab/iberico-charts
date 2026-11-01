@@ -30,13 +30,14 @@ tests:
       - equal: { path: 'spec.ports[0].targetPort', value: 8080 }
       - equal: { path: 'spec.ports[0].port', value: 80 }
 
-  - it: reads headless settings from service.headless, with workload.service as a fallback
+  - it: reads every headless setting from service.headless
     set:
       workload.type: StatefulSet
-      workload.service: { port: 99, annotations: { old: "yes" } }
-      service.headless: { port: 77 }
+      service.headless: { name: db-cluster, port: 77, annotations: { a: "b" } }
     asserts:
+      - equal: { path: metadata.name, value: db-cluster }
+        documentIndex: 0
       - equal: { path: 'spec.ports[0].port', value: 77 }
         documentIndex: 0
-      - equal: { path: metadata.annotations.old, value: "yes" }
+      - equal: { path: metadata.annotations.a, value: "b" }
         documentIndex: 0

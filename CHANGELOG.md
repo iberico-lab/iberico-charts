@@ -12,7 +12,9 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 - Resource names default to the **release name** when `global.name` is empty (was always `app`).
 - No Kubernetes API token is mounted by default (`serviceAccount.automount: false`).
 - `persistence` defaults to `ReadWriteOnce` (was `ReadWriteMany`).
-- StatefulSet headless Service settings moved to `service.headless` (`workload.service` still works, deprecated).
+- StatefulSet headless Service settings moved to `service.headless`: `workload.service.*` →
+  `service.headless.*`, `workload.serviceName` → `service.headless.name`. The old keys fail with a
+  message saying where they went.
 - `service.targetPort` defaults to `workload.applicationPort` (was `80`).
 - Unknown or mistyped values are rejected by `values.schema.json`.
 

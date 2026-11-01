@@ -76,9 +76,9 @@ For explanations and examples, follow the  link in each section.
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `workload.serviceName` | `""` | Headless Service name (`""` = `<app>-cluster`) |
 | `workload.updateStrategy` | `{type: RollingUpdate}` | How pods are updated |
 | `workload.podManagementPolicy` | `""` | `OrderedReady` (one pod at a time) or `Parallel` (all at once) |
+| `service.headless.name` | `""` | Headless Service name (`""` = `<app>-cluster`) |
 | `service.headless.port` | `null` | Headless Service port (`null` = `applicationPort`) |
 | `service.headless.targetPort` | `null` | Headless Service target port (`null` = `applicationPort`) |
 | `service.headless.ports` | `[]` | Several ports |

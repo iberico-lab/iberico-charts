@@ -52,9 +52,22 @@ value while `applicationPort` was something else, set `service.targetPort: 80`.
 
 ### Headless Service settings moved
 
-StatefulSet headless Service settings moved from `workload.service` to
-`service.headless`, next to the normal Service. `workload.service` still works
-for now, but please move it.
+Everything about the StatefulSet headless Service now lives in
+`service.headless`, next to the normal Service. The old keys were removed; if
+your values still use them, the chart stops and tells you where they went.
+
+| Before | Now |
+|--------|-----|
+| `workload.service.port` / `targetPort` / `ports` / `annotations` | `service.headless.port` / `targetPort` / `ports` / `annotations` |
+| `workload.serviceName` | `service.headless.name` |
+
+```yaml
+# before                        # now
+workload:                       service:
+  serviceName: db-cluster         headless:
+  service:                          name: db-cluster
+    port: 5432                      port: 5432
+```
 
 ### StatefulSets with disks: one-time step
 

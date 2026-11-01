@@ -56,15 +56,16 @@ def app():
         "extraInitContainers": LIST(obj({"name": S()}, req=("name",), extra=True)),
         "resources": ANYMAP,
         "livenessProbe": probe, "readinessProbe": probe, "startupProbe": probe,
-        "strategy": ANYMAP, "serviceName": S(), "podManagementPolicy": {"enum": ["", "OrderedReady", "Parallel"]},
+        "strategy": ANYMAP, "podManagementPolicy": {"enum": ["", "OrderedReady", "Parallel"]},
         "updateStrategy": ANYMAP, "terminationGracePeriodSeconds": I(mn=0),
-        "service": obj({"annotations": STRMAP, "port": NULLPORT, "targetPort": {"type": ["integer", "string", "null"]},
-                        "ports": LIST(svcport)}, desc="Deprecated: use service.headless"),
+        # removed in 0.3.0; accepted only so the chart can say where they moved
+        "service": {"description": "Removed: use service.headless"},
+        "serviceName": {"description": "Removed: use service.headless.name"},
     })
     service = obj({"enabled": B(), "type": {"enum": ["ClusterIP", "NodePort", "LoadBalancer"]},
                    "port": PORT, "targetPort": {"type": ["integer", "string", "null"]},
                    "portName": {"type": "string", "maxLength": 15}, "annotations": STRMAP, "ports": LIST(svcport),
-                   "headless": obj({"annotations": STRMAP, "port": NULLPORT,
+                   "headless": obj({"name": S('"" = <app>-cluster'), "annotations": STRMAP, "port": NULLPORT,
                                     "targetPort": {"type": ["integer", "string", "null"]}, "ports": LIST(svcport)},
                                    desc="StatefulSet headless Service")})
     persistence = LIST(obj({"name": S(), "size": S(), "mountPath": S(), "accessModes": LIST({"type": "string"}),

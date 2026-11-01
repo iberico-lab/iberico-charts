@@ -485,9 +485,6 @@
         "strategy": {
           "type": "object"
         },
-        "serviceName": {
-          "type": "string"
-        },
         "podManagementPolicy": {
           "enum": [
             "",
@@ -503,70 +500,10 @@
           "minimum": 0
         },
         "service": {
-          "type": "object",
-          "properties": {
-            "annotations": {
-              "type": "object",
-              "additionalProperties": {
-                "type": [
-                  "string",
-                  "number",
-                  "boolean"
-                ]
-              }
-            },
-            "port": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "minimum": 1,
-              "maximum": 65535
-            },
-            "targetPort": {
-              "type": [
-                "integer",
-                "string",
-                "null"
-              ]
-            },
-            "ports": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "port": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                  },
-                  "targetPort": {
-                    "type": [
-                      "integer",
-                      "string"
-                    ]
-                  },
-                  "protocol": {
-                    "enum": [
-                      "TCP",
-                      "UDP",
-                      "SCTP"
-                    ]
-                  }
-                },
-                "additionalProperties": false,
-                "required": [
-                  "name",
-                  "port"
-                ]
-              }
-            }
-          },
-          "additionalProperties": false,
-          "description": "Deprecated: use service.headless"
+          "description": "Removed: use service.headless"
+        },
+        "serviceName": {
+          "description": "Removed: use service.headless.name"
         }
       },
       "additionalProperties": false
@@ -647,6 +584,10 @@
         "headless": {
           "type": "object",
           "properties": {
+            "name": {
+              "type": "string",
+              "description": "\"\" = <app>-cluster"
+            },
             "annotations": {
               "type": "object",
               "additionalProperties": {

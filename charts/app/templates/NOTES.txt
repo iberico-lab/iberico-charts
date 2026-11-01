@@ -27,8 +27,8 @@ INSIDE THE CLUSTER (other apps, ingress controllers)
   (from the same namespace, just {{ $name }}:{{ $svcPort }})
 {{- end }}
 {{- if and .Values.workload.enabled (eq $type "StatefulSet") }}
-{{- $headless := .Values.workload.serviceName | default (printf "%s-cluster" $name) }}
-{{- $podPort := (include "app.headless" . | fromYaml).port | default .Values.workload.applicationPort }}
+{{- $headless := include "app.headlessName" . }}
+{{- $podPort := (.Values.service.headless | default dict).port | default .Values.workload.applicationPort }}
 
   Each pod has its own address (headless Service "{{ $headless }}"):
 {{- range $i, $_ := until (min (int .Values.workload.replicas) 3 | int) }}
