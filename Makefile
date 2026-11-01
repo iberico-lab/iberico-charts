@@ -14,7 +14,7 @@ KUBECONFORM := kubeconform -strict -summary -schema-location default \
 # configured Helm repos (a single broken repo would otherwise fail the build).
 HELM_DEP   := HELM_REPOSITORY_CONFIG=/dev/null helm dependency update --skip-refresh
 
-.PHONY: help deps lint test validate e2e template examples schema schema-check docs-check clean
+.PHONY: help deps lint test validate e2e template examples schema schema-check docs-check version-check bump clean
 
 help: ## Show available targets
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-10s %s\n", $$1, $$2}'
@@ -48,6 +48,13 @@ schema-check: ## Fail if values.schema.json files are out of date
 
 docs-check: ## Fail if a setting is undocumented, or the docs mention one that doesn't exist
 	python3 hack/check-docs.py .
+
+version-check: ## Fail if the four charts don't share one version
+	hack/bump-version.sh --check
+
+bump: ## Set one version on every chart: make bump VERSION=0.4.0 (see docs/versioning.md)
+	@test -n "$(VERSION)" || { echo "usage: make bump VERSION=x.y.z"; exit 1; }
+	hack/bump-version.sh $(VERSION)
 
 clean: ## Remove vendored sub-chart artifacts and lock files
 	rm -rf $(CHARTS_DIR)/*/charts $(CHARTS_DIR)/*/Chart.lock

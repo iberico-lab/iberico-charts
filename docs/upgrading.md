@@ -3,6 +3,9 @@
 > **In one line:** read this before you upgrade to a new chart version. It lists
 > anything you have to do by hand.
 
+Just shipping a new version of **your app**? You don't need this page: change
+`workload.image.tag` and upgrade. See [Versions](versioning.md).
+
 ---
 
 ## 0.2.x to 0.3.0

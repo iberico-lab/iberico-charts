@@ -40,4 +40,11 @@ New here? Go through them **in order**. Each one adds one idea.
 | [18](18-metrics/README.md) | Metrics (Prometheus) | Let **Prometheus** collect your app's metrics from a second port. |
 | [19](19-strict-security/README.md) | Strict security | Lock the container down: **not root**, **read-only** filesystem, no extra Linux powers. |
 
+## Ship a new version of your app
+
+In any example, the app's version is `workload.image.tag`. To deploy a new
+release, change that tag and run `helm upgrade`. Leave the chart versions
+alone: they're for people changing these charts. Use real version tags, not
+`latest`. More: [Versions](../docs/versioning.md).
+
 For full explanations, see the [docs](../docs/index.md).

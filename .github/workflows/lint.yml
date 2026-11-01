@@ -42,6 +42,9 @@ jobs:
       - name: Check every setting is documented
         run: make docs-check
 
+      - name: Check all charts share one version
+        run: make version-check
+
       - name: Run chart-testing (lint)
         run: ct lint --config .github/configs/ct.yaml --all
 

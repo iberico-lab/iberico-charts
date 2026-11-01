@@ -62,6 +62,25 @@ test from your machine. Run `helm get notes my-app` to see it again later.
 
 ---
 
+## Step 5 — Ship a new version later
+
+When your app has a new release, change only the tag and upgrade:
+
+```yaml
+workload:
+  image:
+    tag: "1.26"             # was "1.25"
+```
+
+```bash
+helm upgrade my-app ./charts/app -f values-myapp.yaml
+```
+
+You never change a chart version for this. Use real version tags, not
+`latest`. See [Versions](versioning.md).
+
+---
+
 ## What you get
 
 | Thing | When |
@@ -85,3 +104,4 @@ forwards to it automatically, and other apps reach it on `service.port` (80).
 - Change more about your app → [Workload](workload.md)
 - Give it a URL → [Ingress](ingress.md)
 - Copy a ready-made example → [examples/](../examples/README.md)
+- What to change for a new release → [Versions](versioning.md)

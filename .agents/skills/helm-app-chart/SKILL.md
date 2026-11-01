@@ -168,6 +168,15 @@ workload:
 `workload.service` → `service.headless`, `workload.serviceName` →
 `service.headless.name`, `ingress.ingresses[].name` → `serviceName`.
 
+## Versions
+
+- New release of the app = change `workload.image.tag` (real versions, never
+  `latest`) and `helm upgrade`. Never bump a chart version for this.
+- The charts have no `appVersion`. The version label comes from the image tag.
+- Changing the charts: `make bump VERSION=x.y.z` sets all four chart versions
+  and the dependency pins together (before 1.0: breaking → minor, otherwise
+  patch). Details: `docs/versioning.md`.
+
 ## Migrating an existing app
 
 1. Map each piece of the old manifests to a setting using the pick-a-starting-point
@@ -185,6 +194,7 @@ Read `references/conventions.md` (design rules) and
 `references/subchart-pattern.md` (how the charts fit together). Then, for every change:
 
 ```bash
+make bump VERSION=x.y.z   # when releasing (docs/versioning.md)
 make schema        # after changing values.yaml (edit hack/gen-values-schema.py for new keys)
 make docs-check    # every setting must appear in docs/
 make test          # helm-unittest suites in charts/*/tests

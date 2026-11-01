@@ -39,7 +39,9 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
   `appVersion`, which is removed).
 - Safe security defaults: seccomp `RuntimeDefault`, `allowPrivilegeEscalation: false`.
 - One switch for secrets: `external-secrets.enabled` (1Password is on by default inside it).
-- Docs: security, availability & scaling, metrics, extra manifests, troubleshooting, per-chart READMEs.
+- Docs: security, availability & scaling, metrics, extra manifests, troubleshooting, versions
+  (what to change for a new app release vs a chart release), per-chart READMEs.
+- `make bump VERSION=x.y.z` sets one version on all four charts; CI checks they agree.
 - CI: unit tests (helm-unittest), schema freshness check, kubeconform validation, and an
   end-to-end install, `helm test` and upgrade of real scenarios on a kind cluster (`make e2e`),
   including 1Password secrets through the real External Secrets Operator (fake store), config

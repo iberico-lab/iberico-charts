@@ -25,7 +25,7 @@ workload:
 
   extraContainers:              # run next to the app
     - name: metrics-exporter
-      image: prom/statsd-exporter:latest
+      image: prom/statsd-exporter:v0.28.0
       ports:
         - name: metrics
           containerPort: 9102

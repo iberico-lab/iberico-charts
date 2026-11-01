@@ -17,7 +17,7 @@ helm dependency update ./charts/app       # or: make deps
 helm install my-app ./charts/app \
   --set global.name=my-app \
   --set workload.image.repository=nginx \
-  --set workload.image.tag=alpine
+  --set workload.image.tag=1.27-alpine
 ```
 
 You get:
@@ -29,6 +29,9 @@ After installing, Helm prints how to reach the app: in-cluster address, URLs and
 a port-forward command.
 
 Next: [Getting Started](docs/getting-started.md), a 5-minute guide that uses a values file.
+
+**New release of your app?** Change `workload.image.tag` and run `helm upgrade`.
+Chart versions are only for people changing these charts. See [Versions](docs/versioning.md).
 
 ---
 
@@ -63,7 +66,7 @@ charts/
   ingress/           # Tailscale + Traefik URLs (used by app)
   helm-helpers/      # Shared naming/label code (used by all)
 docs/                # Guides, one per feature. Start at docs/index.md
-examples/            # Working values files, numbered 01-14
+examples/            # Working values files, numbered 01-19
 .github/
   configs/           # ct.yaml, cr.yaml, lintconf.yaml
   workflows/         # Lint + release pipelines
@@ -87,6 +90,7 @@ together in `charts/`.
 | `make e2e` | Install every `hack/e2e` scenario on a throwaway cluster, run `helm test`, check secrets and config reach the pod, upgrade (`KUBE_CONTEXT=...`) |
 | `make validate` | Check the rendered YAML against Kubernetes schemas (needs [kubeconform](https://github.com/yannh/kubeconform)) |
 | `make schema` | Regenerate `values.schema.json` after changing values |
+| `make bump VERSION=x.y.z` | Set one version on all four charts ([how to pick it](docs/versioning.md#for-chart-maintainers)) |
 | `make clean` | Delete downloaded chart files |
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
