@@ -15,6 +15,9 @@ workload:
   enabled: true
   type: "Deployment"  # or "StatefulSet"
   annotations: {}
+  # Restart pods when their 1Password secrets change (needs Stakater Reloader
+  # installed in the cluster: https://github.com/stakater/Reloader).
+  reloadOnSecretChange: false
   image:
     repository: nginx
     tag: "1.25"

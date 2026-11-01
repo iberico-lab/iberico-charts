@@ -6,9 +6,9 @@ metadata:
   namespace: {{ include "helm-helpers.namespace" . }}
   labels:
     {{- include "helm-helpers.labels" . | nindent 4 }}
-  {{- with .Values.workload.annotations }}
+  {{- with include "app.workloadAnnotations" . }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- . | nindent 4 }}
   {{- end }}
 spec:
   serviceName: {{ .Values.workload.serviceName | default (printf "%s-cluster" (include "helm-helpers.fullname" .)) }}

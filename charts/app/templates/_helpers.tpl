@@ -157,6 +157,31 @@ Usage: include "app.pvcAnnotations" (dict "root" $ "pvc" .)
 {{- end }}
 
 {{/*
+Annotations for the Deployment/StatefulSet object: workload.annotations plus,
+when workload.reloadOnSecretChange is on, the Stakater Reloader annotation
+listing the onepassword secrets so pods restart when they change.
+Returns YAML or "".
+*/}}
+{{- define "app.workloadAnnotations" -}}
+{{- $out := deepCopy (.Values.workload.annotations | default dict) -}}
+{{- if .Values.workload.reloadOnSecretChange -}}
+{{- $names := list -}}
+{{- if include "app.onepassword.has" (dict "root" . "field" "envVars") -}}
+{{- $names = append $names (printf "%s-onepassword-env" (include "helm-helpers.fullname" .)) -}}
+{{- end -}}
+{{- if include "app.onepassword.has" (dict "root" . "field" "files") -}}
+{{- $names = append $names (printf "%s-onepassword-files" (include "helm-helpers.fullname" .)) -}}
+{{- end -}}
+{{- if $names -}}
+{{- $_ := set $out "secret.reloader.stakater.com/reload" (join "," $names) -}}
+{{- end -}}
+{{- end -}}
+{{- if $out -}}
+{{- toYaml $out -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Render volumeMount configuration
 Usage: {{ include "app.volumeMount" . }}
 */}}

@@ -42,6 +42,16 @@ The right side is the field name **in 1Password**.
 
 The chart syncs from 1Password every `10m` by default.
 
+**Restart the app when a secret changes:** env vars are only read when the app
+starts, so a changed password doesn't take effect until the pod restarts. If
+[Stakater Reloader](https://github.com/stakater/Reloader) runs in your cluster,
+turn this on and it restarts the pods for you:
+
+```yaml
+workload:
+  reloadOnSecretChange: true
+```
+
 ---
 
 ## Gotchas
