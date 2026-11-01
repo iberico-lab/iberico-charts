@@ -25,6 +25,9 @@ You get:
 - A Deployment running 2 copies of your app
 - A Service on port 80, reachable inside the cluster
 
+After installing, Helm prints how to reach the app: in-cluster address, URLs and
+a port-forward command.
+
 Next: [Getting Started](docs/getting-started.md), a 5-minute guide that uses a values file.
 
 ---
@@ -44,6 +47,8 @@ Every feature is a few lines in your values file. Most are **off** until you tur
 | StatefulSet | One disk and a fixed name per copy, for databases | [StatefulSet](docs/statefulset.md) |
 | External Secrets | Passwords from 1Password as env vars or files | [External Secrets](docs/external-secrets.md) |
 | Ingress | Private (Tailscale), public, or public with login | [Ingress](docs/ingress.md) |
+| Security | Safe defaults on, stricter settings one block away | [Security](docs/security.md) |
+| Extra manifests | Ship any extra object (ConfigMap, CronJob…) with the app | [Extra manifests](docs/extra-manifests.md) |
 
 ---
 
