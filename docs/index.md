@@ -23,6 +23,7 @@
 | Put my app on a URL (private or public) | [Ingress](ingress.md) |
 | Look up one exact setting | [Values Reference](values-reference.md) |
 | Understand how the charts fit together | [Architecture](architecture.md) |
+| Upgrade to a new chart version | [Upgrading](upgrading.md) |
 
 Want working files to copy? See **[examples/](../examples/README.md)**.
 

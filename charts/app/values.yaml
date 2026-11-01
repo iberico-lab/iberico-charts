@@ -37,7 +37,7 @@ workload:
 
   pod:
     annotations: {}
-  
+
   # Environment variables
   environment: {}
   volumes: []
@@ -131,10 +131,10 @@ workload:
   updateStrategy:  # Optional: StatefulSet update strategy
     type: RollingUpdate
   terminationGracePeriodSeconds: 30  # Optional: grace period for pod termination
-  service:
+  service:  # StatefulSet headless service
     annotations: {}
-    port: 80
-    targetPort: 80
+    port: null        # null => use workload.applicationPort
+    targetPort: null  # null => use workload.applicationPort
     ports: []
 
 # Service configuration (for external access)

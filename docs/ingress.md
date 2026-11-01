@@ -79,14 +79,16 @@ automatically. To change how it looks:
 - **Public HTTPS uses `letsencrypt-staging` by default.** Browsers will show a
   warning. For real use, set `certManagerIssuer` to your production issuer
   (often `letsencrypt-prod`).
-- `public` and `public-protected` **need a `host`**.
+- `public` and `public-protected` **need a `host`**. Without one, the chart stops with an error.
 - If you set `ingress.enabled: true` but don't list any `ingresses`, you get
   **one `internal` ingress** by default.
 - `servicePort` must match your [Service](service.md) port (default `80`).
 - Traefik middlewares must exist in the cluster: `network-no-auth` for `public`,
   `network-sso` for `public-protected`.
-- Only **one ingress of each type** per release. Two `public` entries get the
-  same name and clash.
+- Only **one ingress of each type** per release. Two `public` entries would get
+  the same name, so the chart stops with an error.
+- `type` must be exactly `internal`, `public` or `public-protected`. Anything
+  else stops the render with an error.
 
 ---
 

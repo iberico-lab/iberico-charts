@@ -13,6 +13,18 @@ Create the name of the service account to use
 
 
 {{/*
+Validated workload type: "Deployment" (default) or "StatefulSet".
+Fails on anything else (e.g. a lowercase typo) instead of rendering nothing.
+*/}}
+{{- define "app.workloadType" -}}
+{{- $type := .Values.workload.type | default "Deployment" -}}
+{{- if not (has $type (list "Deployment" "StatefulSet")) -}}
+{{- fail (printf "workload.type must be \"Deployment\" or \"StatefulSet\" (got %q)" $type) -}}
+{{- end -}}
+{{- $type -}}
+{{- end }}
+
+{{/*
 Render a complete probe block (handler + timings) based on type.
 When probe.custom is true the probe.spec is emitted verbatim (nothing when spec empty).
 Usage: {{ include "app.probe" (dict "probe" .Values.workload.livenessProbe "applicationPort" .Values.workload.applicationPort) }}
@@ -84,6 +96,50 @@ Usage: {{ if include "app.probeHasContent" (dict "probe" .Values.workload.livene
 {{- end }}
 
 {{/*
+Returns "true" when external-secrets AND onepassword are both enabled (i.e.
+the subchart actually renders the ExternalSecrets) and any onepassword.secrets
+entry defines the given field
+("envVars" or "files"), otherwise "". All entries of a kind are merged into a
+single ExternalSecret by the external-secrets chart, so the app mounts or
+references each kind at most once.
+Usage: include "app.onepassword.has" (dict "root" $ "field" "files")
+*/}}
+{{- define "app.onepassword.has" -}}
+{{- $es := index .root.Values "external-secrets" | default dict -}}
+{{- $op := $es.onepassword | default dict -}}
+{{- $found := false -}}
+{{- if and $es.enabled $op.enabled -}}
+{{- range $op.secrets -}}
+{{- if index . $.field -}}{{- $found = true -}}{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if $found -}}true{{- end -}}
+{{- end }}
+
+{{/*
+Merged annotations for one persistence entry, as YAML (or "" when none).
+Used by both the Deployment PVCs and the StatefulSet volumeClaimTemplates so
+they can't drift apart. For storageClassName "opendrive" the rclone defaults
+come first, then rclone.annotations, then the entry's own annotations (which
+win on conflicts).
+Usage: include "app.pvcAnnotations" (dict "root" $ "pvc" .)
+*/}}
+{{- define "app.pvcAnnotations" -}}
+{{- $pvc := .pvc -}}
+{{- $out := dict -}}
+{{- if eq ($pvc.storageClassName | default "") "opendrive" -}}
+{{- $rclone := $pvc.rclone | default dict -}}
+{{- $_ := set $out "csi-rclone/storage-path" ($rclone.storagePath | default (include "helm-helpers.fullname" .root)) -}}
+{{- $_ := set $out "csi-rclone/umask" ($rclone.umask | default "022" | toString) -}}
+{{- $out = merge (deepCopy ($rclone.annotations | default dict)) $out -}}
+{{- end -}}
+{{- $out = merge (deepCopy ($pvc.annotations | default dict)) $out -}}
+{{- if $out -}}
+{{- toYaml $out -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Render volumeMount configuration
 Usage: {{ include "app.volumeMount" . }}
 */}}
@@ -102,14 +158,10 @@ Usage: {{ include "app.volumeMount" . }}
   readOnly: true
   {{- end }}
 {{- end }}
-{{- if and (index .Values "external-secrets") (index .Values "external-secrets" "onepassword") (index .Values "external-secrets" "onepassword" "enabled") (index .Values "external-secrets" "onepassword" "secrets") }}
-{{- range (index .Values "external-secrets" "onepassword" "secrets") }}
-{{- if .files }}
-- name: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" $) }}
+{{- if include "app.onepassword.has" (dict "root" . "field" "files") }}
+- name: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" .) }}
   mountPath: /etc/secrets/onepassword
   readOnly: true
-{{- end }}
-{{- end }}
 {{- end }}
 {{- end }}
 
@@ -141,19 +193,18 @@ Usage: {{ include "app.volume" . }}
     claimName: {{ .persistentVolumeClaim.claimName }}
   {{- end }}
 {{- end }}
+{{- /* StatefulSets get these volumes from volumeClaimTemplates instead */ -}}
+{{- if eq (include "app.workloadType" .) "Deployment" }}
 {{- range .Values.persistence }}
 - name: {{ .name }}
   persistentVolumeClaim:
     claimName: {{ printf "%s-%s" (include "helm-helpers.fullname" $) .name }}
 {{- end }}
-{{- if and (index .Values "external-secrets") (index .Values "external-secrets" "onepassword") (index .Values "external-secrets" "onepassword" "enabled") (index .Values "external-secrets" "onepassword" "secrets") }}
-{{- range (index .Values "external-secrets" "onepassword" "secrets") }}
-{{- if .files }}
-- name: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" $) }}
+{{- end }}
+{{- if include "app.onepassword.has" (dict "root" . "field" "files") }}
+- name: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" .) }}
   secret:
-    secretName: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" $) }}
-{{- end }}
-{{- end }}
+    secretName: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" .) }}
 {{- end }}
 {{- end }}
 
@@ -200,28 +251,12 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
       value: {{ $value | quote }}
     {{- end }}
   {{- end }}
-  {{- if and (index .Values "external-secrets") (index .Values "external-secrets" "onepassword") (index .Values "external-secrets" "onepassword" "enabled") (index .Values "external-secrets" "onepassword" "secrets") }}
-  {{- $hasEnvVars := false }}
-  {{- range (index .Values "external-secrets" "onepassword" "secrets") }}
-  {{- if .envVars }}
-  {{- $hasEnvVars = true }}
-  {{- end }}
-  {{- end }}
-  {{- if $hasEnvVars }}
+  {{- if include "app.onepassword.has" (dict "root" . "field" "envVars") }}
   envFrom:
     - secretRef:
         name: {{ printf "%s-onepassword-env" (include "helm-helpers.fullname" .) }}
   {{- end }}
-  {{- end }}
-  {{- $hasFiles := false }}
-  {{- if and (index .Values "external-secrets") (index .Values "external-secrets" "onepassword") (index .Values "external-secrets" "onepassword" "enabled") (index .Values "external-secrets" "onepassword" "secrets") }}
-  {{- range (index .Values "external-secrets" "onepassword" "secrets") }}
-  {{- if .files }}
-  {{- $hasFiles = true }}
-  {{- end }}
-  {{- end }}
-  {{- end }}
-  {{- if or .Values.workload.volumes .Values.persistence $hasFiles }}
+  {{- if or .Values.workload.volumes .Values.persistence (include "app.onepassword.has" (dict "root" . "field" "files")) }}
   volumeMounts:
     {{- include "app.volumeMount" . | nindent 4 }}
   {{- end }}

@@ -46,15 +46,7 @@ spec:
       initContainers:
         {{- include "app.initContainers" . | nindent 8 }}
       {{- end }}
-      {{- $hasFilesVolumes := false }}
-{{- if and (index .Values "external-secrets") (index .Values "external-secrets" "onepassword") (index .Values "external-secrets" "onepassword" "enabled") (index .Values "external-secrets" "onepassword" "secrets") }}
-{{- range (index .Values "external-secrets" "onepassword" "secrets") }}
-      {{- if .files }}
-      {{- $hasFilesVolumes = true }}
-      {{- end }}
-      {{- end }}
-      {{- end }}
-      {{- if or .Values.workload.volumes .Values.persistence $hasFilesVolumes }}
+      {{- if or .Values.workload.volumes .Values.persistence (include "app.onepassword.has" (dict "root" . "field" "files")) }}
       volumes:
         {{- include "app.volume" . | nindent 8 }}
       {{- end }}

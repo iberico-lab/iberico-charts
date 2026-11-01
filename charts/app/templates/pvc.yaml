@@ -1,4 +1,4 @@
-{{- if and (.Values.workload.enabled | default false) (eq (.Values.workload.type | default "Deployment") "Deployment") -}}
+{{- if and (.Values.workload.enabled | default false) (eq (include "app.workloadType" .) "Deployment") -}}
 {{- range .Values.persistence }}
 ---
 apiVersion: v1
@@ -9,19 +9,10 @@ metadata:
   labels:
     {{- include "helm-helpers.labels" $ | nindent 4 }}
     app.kubernetes.io/component: pvc
+  {{- with include "app.pvcAnnotations" (dict "root" $ "pvc" .) }}
   annotations:
-    {{- if .annotations }}
-    {{- toYaml .annotations | nindent 4 }}
-    {{- end }}
-    {{- if eq (.storageClassName | default "") "opendrive" }}
-    csi-rclone/storage-path: {{ if .rclone }}{{ .rclone.storagePath | default (include "helm-helpers.fullname" $) }}{{ else }}{{ include "helm-helpers.fullname" $ }}{{ end }}
-    csi-rclone/umask: {{ if .rclone }}{{ .rclone.umask | default "022" | quote }}{{ else }}"022"{{ end }}
-    {{- if .rclone }}
-    {{- if .rclone.annotations }}
-    {{- toYaml .rclone.annotations | nindent 4 }}
-    {{- end }}
-    {{- end }}
-    {{- end }}
+    {{- . | nindent 4 }}
+  {{- end }}
 spec:
   accessModes:
     {{- toYaml (.accessModes | default (list "ReadWriteMany")) | nindent 4 }}

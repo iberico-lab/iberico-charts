@@ -1,26 +1,16 @@
 1. External Secrets chart has been deployed successfully!
+{{- if .Values.onepassword.enabled }}
+{{- $env := include "external-secrets.onepassword.data" (dict "config" .Values.onepassword "field" "envVars" "label" "env var") }}
+{{- $files := include "external-secrets.onepassword.data" (dict "config" .Values.onepassword "field" "files" "label" "file") }}
 
-2. The following resources have been created:
-   {{- if .Values.onepassword.enabled }}
-   {{- if .Values.onepassword.secretStore.enabled }}
-   - SecretStore (onepassword): {{ .Values.onepassword.secretStore.name | default (printf "%s-onepassword-store" (include "helm-helpers.fullname" .)) }}
+2. ExternalSecrets created (synced from ClusterSecretStore "{{ .Values.onepassword.clusterSecretStoreRef }}"):
+   {{- if $env }}
+   - {{ include "helm-helpers.fullname" . }}-onepassword-env   (env vars)
    {{- end }}
-   {{- range .Values.onepassword.secrets }}
-   - ExternalSecret (onepassword): {{ .name | default (printf "%s-onepassword" (include "helm-helpers.fullname" $)) }}
+   {{- if $files }}
+   - {{ include "helm-helpers.fullname" . }}-onepassword-files (files)
    {{- end }}
-   {{- end }}
+{{- end }}
 
-3. Your secrets will be synced from the configured providers:
-   {{- if .Values.onepassword.enabled }}
-   - OnePassword: {{ .Values.onepassword.clusterSecretStoreRef }}
-   {{- end }}
-
-4. To check the status of your ExternalSecrets:
+3. Check sync status:
    kubectl get externalsecrets -n {{ include "helm-helpers.namespace" . }}
-
-5. To check the status of your SecretStores:
-   kubectl get secretstore -n {{ include "helm-helpers.namespace" . }}
-
-6. To view the generated secrets:
-   kubectl get secrets -n {{ include "helm-helpers.namespace" . }}
-

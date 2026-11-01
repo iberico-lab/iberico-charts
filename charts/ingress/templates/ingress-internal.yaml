@@ -11,11 +11,11 @@ kind: Ingress
 metadata:
   name: {{ .host | default (include "helm-helpers.fullname" $) }}-{{ .type }}
   namespace: {{ include "helm-helpers.namespace" $ }}
-  tailscale.com/hostname: {{ include "helm-helpers.fullname" $ }}
   labels:
     {{- include "helm-helpers.labels" $ | nindent 4 }}
     app.kubernetes.io/component: ingress
   annotations:
+    tailscale.com/hostname: {{ include "helm-helpers.fullname" $ }}
     {{- if .tailscaleExpose | default false }}
     tailscale.com/serve: "true"
     {{- end }}
@@ -27,12 +27,12 @@ spec:
   ingressClassName: tailscale
   defaultBackend:
     service:
-      name: {{ .name | default $.Values.defaultServiceName | default (include "helm-helpers.fullname" $) }}
+      name: {{ .name | default (include "helm-helpers.fullname" $) }}
       port:
         {{- if .servicePortName }}
         name: {{ .servicePortName }}
         {{- else }}
-        number: {{ .servicePort | default $.Values.defaultServicePort | default 80 }}
+        number: {{ .servicePort | default 80 }}
         {{- end }}
   tls:
     - hosts:
