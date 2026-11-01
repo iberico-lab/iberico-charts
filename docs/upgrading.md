@@ -28,6 +28,22 @@ named `app`, so two releases in one namespace overwrote each other.
   deletes the old ones. That means a short outage, and **Deployment disks
   (PVCs) get new, empty volumes**, so pin `global.name` if you have data.
 
+### Disks default to ReadWriteOnce
+
+`persistence` entries without `accessModes` used to get `ReadWriteMany`, which
+many storage types don't support (the disk stayed Pending). The default is now
+`ReadWriteOnce`.
+
+**If you have existing disks that relied on the old default**, pin it, because
+Kubernetes won't let a disk's access mode change and the upgrade would fail:
+
+```yaml
+persistence:
+  - name: data
+    accessModes: ["ReadWriteMany"]   # keep what the disk was created with
+    # ...
+```
+
 ### Safer security defaults
 
 Pods now get `seccompProfile: RuntimeDefault`, the main container gets

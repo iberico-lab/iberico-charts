@@ -16,3 +16,10 @@ tests:
       persistence: [{ name: data, size: 1Gi, mountPath: /data, accessModes: [ReadWriteOnce] }]
     asserts:
       - isKind: { of: PersistentVolumeClaim }
+
+  - it: defaults accessModes to ReadWriteOnce
+    set:
+      workload.replicas: 1
+      persistence: [{ name: data, size: 1Gi, mountPath: /data }]
+    asserts:
+      - equal: { path: spec.accessModes, value: [ReadWriteOnce] }

@@ -137,8 +137,7 @@ service: { port: 5672, targetPort: 5672 }
 
 - Databases don't answer HTTP on `/`, so the default probes will fail. Switch
   them to `type: "tcp"` like the recipes above. See [Health checks](probes.md).
-- Use `accessModes: ["ReadWriteOnce"]`. The default (`ReadWriteMany`) often
-  doesn't work for databases.
+- Each pod gets its own disk, so the default `ReadWriteOnce` is what you want.
 - Adding replicas does **not** turn a single-node database into a cluster.
   The app itself has to support clustering.
 - Deleting the release does **not** delete the per-pod disks. That's on
