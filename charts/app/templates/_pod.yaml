@@ -4,6 +4,7 @@ types always get the same pod. Render under `template:` with nindent 4.
 Usage: {{- include "app.podTemplate" . | nindent 4 }}
 */}}
 {{- define "app.podTemplate" -}}
+{{- include "app.validateContainerNames" . -}}
 metadata:
   {{- with .Values.workload.pod.annotations }}
   annotations:

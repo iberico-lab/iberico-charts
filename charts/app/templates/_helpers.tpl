@@ -296,6 +296,23 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
 {{- end }}
 
 {{/*
+Fail if two containers in the pod share a name. Kubernetes requires names to
+be unique across the main container, sidecars and init containers, but only
+rejects duplicates at install time.
+*/}}
+{{- define "app.validateContainerNames" -}}
+{{- $seen := dict (include "helm-helpers.appName" .) "the main container" -}}
+{{- range $kind, $list := dict "workload.extraContainers" .Values.workload.extraContainers "workload.extraInitContainers" .Values.workload.extraInitContainers -}}
+{{- range $list -}}
+{{- if and .name (hasKey $seen .name) -}}
+{{- fail (printf "%s: container name %q is already used by %s; container names must be unique in the pod" $kind .name (get $seen .name)) -}}
+{{- end -}}
+{{- if .name -}}{{- $_ := set $seen .name $kind -}}{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Render extra (sidecar) containers verbatim as YAML list items.
 Usage: {{- include "app.extraContainers" . | nindent 8 }}
 */}}
