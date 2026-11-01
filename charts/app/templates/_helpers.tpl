@@ -84,6 +84,25 @@ Usage: {{ if include "app.probeHasContent" (dict "probe" .Values.workload.livene
 {{- end }}
 
 {{/*
+Returns "true" when any onepassword.secrets entry defines the given field
+("envVars" or "files"), otherwise "". All entries of a kind are merged into a
+single ExternalSecret by the external-secrets chart, so the app mounts or
+references each kind at most once.
+Usage: include "app.onepassword.has" (dict "root" $ "field" "files")
+*/}}
+{{- define "app.onepassword.has" -}}
+{{- $es := index .root.Values "external-secrets" | default dict -}}
+{{- $op := $es.onepassword | default dict -}}
+{{- $found := false -}}
+{{- if $op.enabled -}}
+{{- range $op.secrets -}}
+{{- if index . $.field -}}{{- $found = true -}}{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if $found -}}true{{- end -}}
+{{- end }}
+
+{{/*
 Render volumeMount configuration
 Usage: {{ include "app.volumeMount" . }}
 */}}
@@ -102,14 +121,10 @@ Usage: {{ include "app.volumeMount" . }}
   readOnly: true
   {{- end }}
 {{- end }}
-{{- if and (index .Values "external-secrets") (index .Values "external-secrets" "onepassword") (index .Values "external-secrets" "onepassword" "enabled") (index .Values "external-secrets" "onepassword" "secrets") }}
-{{- range (index .Values "external-secrets" "onepassword" "secrets") }}
-{{- if .files }}
-- name: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" $) }}
+{{- if include "app.onepassword.has" (dict "root" . "field" "files") }}
+- name: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" .) }}
   mountPath: /etc/secrets/onepassword
   readOnly: true
-{{- end }}
-{{- end }}
 {{- end }}
 {{- end }}
 
@@ -146,14 +161,10 @@ Usage: {{ include "app.volume" . }}
   persistentVolumeClaim:
     claimName: {{ printf "%s-%s" (include "helm-helpers.fullname" $) .name }}
 {{- end }}
-{{- if and (index .Values "external-secrets") (index .Values "external-secrets" "onepassword") (index .Values "external-secrets" "onepassword" "enabled") (index .Values "external-secrets" "onepassword" "secrets") }}
-{{- range (index .Values "external-secrets" "onepassword" "secrets") }}
-{{- if .files }}
-- name: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" $) }}
+{{- if include "app.onepassword.has" (dict "root" . "field" "files") }}
+- name: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" .) }}
   secret:
-    secretName: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" $) }}
-{{- end }}
-{{- end }}
+    secretName: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" .) }}
 {{- end }}
 {{- end }}
 
@@ -200,28 +211,12 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
       value: {{ $value | quote }}
     {{- end }}
   {{- end }}
-  {{- if and (index .Values "external-secrets") (index .Values "external-secrets" "onepassword") (index .Values "external-secrets" "onepassword" "enabled") (index .Values "external-secrets" "onepassword" "secrets") }}
-  {{- $hasEnvVars := false }}
-  {{- range (index .Values "external-secrets" "onepassword" "secrets") }}
-  {{- if .envVars }}
-  {{- $hasEnvVars = true }}
-  {{- end }}
-  {{- end }}
-  {{- if $hasEnvVars }}
+  {{- if include "app.onepassword.has" (dict "root" . "field" "envVars") }}
   envFrom:
     - secretRef:
         name: {{ printf "%s-onepassword-env" (include "helm-helpers.fullname" .) }}
   {{- end }}
-  {{- end }}
-  {{- $hasFiles := false }}
-  {{- if and (index .Values "external-secrets") (index .Values "external-secrets" "onepassword") (index .Values "external-secrets" "onepassword" "enabled") (index .Values "external-secrets" "onepassword" "secrets") }}
-  {{- range (index .Values "external-secrets" "onepassword" "secrets") }}
-  {{- if .files }}
-  {{- $hasFiles = true }}
-  {{- end }}
-  {{- end }}
-  {{- end }}
-  {{- if or .Values.workload.volumes .Values.persistence $hasFiles }}
+  {{- if or .Values.workload.volumes .Values.persistence (include "app.onepassword.has" (dict "root" . "field" "files")) }}
   volumeMounts:
     {{- include "app.volumeMount" . | nindent 4 }}
   {{- end }}
