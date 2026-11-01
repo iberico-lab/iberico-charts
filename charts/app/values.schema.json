@@ -979,6 +979,18 @@
         ]
       }
     },
+    "helmTest": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "image": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
     "external-secrets": {
       "type": "object",
       "description": "See the external-secrets chart"

@@ -90,6 +90,7 @@ def app():
                 "topologySpreadConstraints": LIST(), "priorityClassName": S(),
                 "nodeSelector": STRMAP, "affinity": ANYMAP, "tolerations": LIST(), "imagePullSecrets": LIST(),
                 "extraManifests": LIST({"type": ["object", "string"]}),
+                "helmTest": obj({"enabled": B(), "image": S()}),
                 "external-secrets": {"type": "object", "description": "See the external-secrets chart"},
                 "ingress": {"type": "object", "description": "See the ingress chart"},
                 "helm-helpers": {"type": "object"},

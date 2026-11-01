@@ -94,6 +94,9 @@ SECRETS (1Password)
 {{- if .Values.workload.enabled }}
 
 CHECK ON IT
+{{- if and .Values.service.enabled .Values.helmTest.enabled }}
+  helm test {{ .Release.Name }} -n {{ $ns }}      # checks the Service accepts connections
+{{- end }}
   kubectl get pods -n {{ $ns }} -l app.kubernetes.io/instance={{ .Release.Name }}
   kubectl logs -n {{ $ns }} -l app.kubernetes.io/instance={{ .Release.Name }} -f
 {{- end }}

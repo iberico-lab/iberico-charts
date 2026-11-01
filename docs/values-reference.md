@@ -35,6 +35,8 @@ For explanations and examples, follow the  link in each section.
 | `external-secrets` | `{enabled: false}` | Secrets from 1Password ([docs](external-secrets.md)) |
 | `ingress` | `{enabled: false}` | URLs ([docs](ingress.md)) |
 | `extraManifests` | `[]` | Extra objects to install ([docs](extra-manifests.md)) |
+| `helmTest.enabled` | `true` | Add the `helm test` connection check |
+| `helmTest.image` | `busybox:1.36` | Image for that check |
 
 ---
 

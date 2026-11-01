@@ -237,6 +237,12 @@ tolerations: []
 # Image Pull Secrets
 imagePullSecrets: []
 
+# `helm test <release>` support: a pod that checks every Service port accepts
+# connections (plain TCP, so it works for HTTP apps and databases alike).
+helmTest:
+  enabled: true
+  image: busybox:1.36
+
 # Extra Kubernetes objects to ship with the release (maps or strings).
 # Each is passed through `tpl`, so template expressions work, e.g.
 #   - apiVersion: v1

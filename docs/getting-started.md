@@ -50,7 +50,13 @@ helm install my-app ./charts/app -f values-myapp.yaml
 
 Done. Your app is running.
 
-Helm then prints **how to reach your app**: its address inside the cluster,
+Check it works:
+
+```bash
+helm test my-app      # a small pod checks that your app's port accepts connections
+```
+
+Helm also prints **how to reach your app**: its address inside the cluster,
 any URLs (Tailscale, public), and a `kubectl port-forward` command for a quick
 test from your machine. Run `helm get notes my-app` to see it again later.
 
