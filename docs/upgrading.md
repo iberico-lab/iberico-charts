@@ -117,6 +117,19 @@ workload:
     limits:   { cpu: 1000m, memory: 800Mi }
 ```
 
+### Updates, shutdown and Service env vars
+
+Three new defaults. Most apps need nothing.
+
+- **Rolling updates start the new pod first** (`maxUnavailable: 0`, was `1`), so a
+  1-replica app no longer goes down on every update. A Deployment with a
+  ReadWriteOnce disk from `persistence` now uses `Recreate`.
+- **Stopping pods wait 5 seconds** before the stop signal (`shutdownDelaySeconds`),
+  so in-flight requests aren't dropped. Your own `preStop` replaces it.
+  Needs Kubernetes 1.30+.
+- **No more `<SERVICE>_PORT` env vars** (`enableServiceLinks: false`). If your app
+  reads them, set `workload.enableServiceLinks: true`.
+
 ### Pods spread across nodes
 
 Pods now **prefer** to run on different nodes (`topologySpread`, on by default),

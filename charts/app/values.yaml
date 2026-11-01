@@ -146,12 +146,14 @@ workload:
     failureThreshold: 30
     successThreshold: 1
 
-  # Deployment-specific rolling update strategy
+  # How a Deployment replaces its pods on an update (docs/workload.md).
   strategy:  # Only used for Deployment type
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
+    # "" = automatic: Recreate when the pods use a ReadWriteOnce disk from
+    # `persistence` (only one pod can hold it), otherwise RollingUpdate.
+    type: ""
+    rollingUpdate:      # RollingUpdate only
+      maxUnavailable: 0   # never stop an old pod before its replacement is ready
+      maxSurge: 1         # start 1 extra pod at a time
 
   # StatefulSet-specific configuration
   # StatefulSet only: "OrderedReady" (Kubernetes default, one pod at a time)
@@ -160,6 +162,13 @@ workload:
   updateStrategy:  # Optional: StatefulSet update strategy
     type: RollingUpdate
   terminationGracePeriodSeconds: 30  # Seconds pods get to shut down (Deployment and StatefulSet)
+  # Seconds a stopping pod keeps serving before it gets the stop signal, so
+  # Services and ingresses stop sending it traffic first. 0 = off. Skipped when
+  # workload.lifecycle sets its own preStop. Needs Kubernetes 1.30+.
+  shutdownDelaySeconds: 5
+  # Kubernetes adds env vars for every Service in the namespace (MY_DB_PORT=...)
+  # unless this is false. They can clash with your own settings.
+  enableServiceLinks: false
 
 # Stable address inside the cluster (docs/service.md).
 service:

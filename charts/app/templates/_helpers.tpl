@@ -302,6 +302,37 @@ Usage: {{ include "app.volume" . }}
 {{- end }}
 
 {{/*
+"true" when a Deployment's pods mount a disk from `persistence` that only one
+node can use (ReadWriteOnce / ReadWriteOncePod, the default). A rolling update
+would start the new pod while the old one still holds the disk.
+*/}}
+{{- define "app.hasSingleWriterDisk" -}}
+{{- $found := false -}}
+{{- range .Values.persistence -}}
+{{- $modes := .accessModes | default (list "ReadWriteOnce") -}}
+{{- if or (has "ReadWriteOnce" $modes) (has "ReadWriteOncePod" $modes) }}{{ $found = true }}{{ end -}}
+{{- end -}}
+{{- $found -}}
+{{- end }}
+
+{{/*
+The main container's lifecycle: workload.lifecycle, plus a preStop sleep of
+workload.shutdownDelaySeconds when it doesn't set its own preStop.
+*/}}
+{{- define "app.lifecycle" -}}
+{{- $lc := deepCopy (.Values.workload.lifecycle | default dict) -}}
+{{- $delay := int (.Values.workload.shutdownDelaySeconds | default 0) -}}
+{{- $grace := .Values.workload.terminationGracePeriodSeconds -}}
+{{- if and $delay (not (hasKey $lc "preStop")) -}}
+{{- if and (not (kindIs "invalid" $grace)) (ge $delay (int $grace)) -}}
+{{- fail (printf "workload.shutdownDelaySeconds (%d) must be lower than workload.terminationGracePeriodSeconds (%d), or the pod is killed before the app gets the stop signal" $delay (int $grace)) -}}
+{{- end -}}
+{{- $_ := set $lc "preStop" (dict "sleep" (dict "seconds" $delay)) -}}
+{{- end -}}
+{{- with $lc }}{{ toYaml . }}{{ end -}}
+{{- end }}
+
+{{/*
 Render the main application container as a single YAML list item.
 Usage: {{- include "app.container" . | nindent 8 }} inside containers:
 */}}
@@ -362,9 +393,9 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
   volumeMounts:
     {{- include "app.volumeMount" . | nindent 4 }}
   {{- end }}
-  {{- with .Values.workload.lifecycle }}
+  {{- with include "app.lifecycle" . }}
   lifecycle:
-    {{- toYaml . | nindent 4 }}
+    {{- . | nindent 4 }}
   {{- end }}
   {{- if .Values.workload.resources }}
   resources:

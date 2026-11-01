@@ -70,8 +70,10 @@ For explanations and examples, follow the  link in each section.
 | `workload.reloadOnSecretChange` | `false` | Restart pods when 1Password secrets change (needs Reloader) |
 | `workload.pod.annotations` | `{}` | Annotations on each pod |
 | `workload.pod.labels` | `{}` | Extra labels on each pod |
-| `workload.strategy` | `RollingUpdate`, `maxUnavailable: 1`, `maxSurge: 1` | Deployment update style |
+| `workload.strategy` | `type: ""` (automatic), `maxUnavailable: 0`, `maxSurge: 1` | Deployment update style ([docs](workload.md)) |
 | `workload.terminationGracePeriodSeconds` | `30` | Seconds the app gets to shut down cleanly |
+| `workload.shutdownDelaySeconds` | `5` | Keep serving this long before the stop signal (`0` = off) |
+| `workload.enableServiceLinks` | `false` | Service env vars (`MY_DB_PORT=...`) for every Service in the namespace |
 
 ### StatefulSet only ([docs](statefulset.md))
 

@@ -20,6 +20,9 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 - Smaller default resources: requests `100m`/`128Mi`, memory limit `512Mi`, no CPU limit
   (was `300m`/`512Mi` and `1000m`/`800Mi`).
 - Unknown or mistyped values are rejected by `values.schema.json`.
+- Rolling updates start new pods before stopping old ones (`maxUnavailable: 0`); Deployments with a
+  ReadWriteOnce disk use `Recreate` (`workload.strategy.type: ""` = automatic).
+- `enableServiceLinks: false`: no `<SERVICE>_PORT`-style env vars (`workload.enableServiceLinks`).
 
 ### Added
 
@@ -33,6 +36,8 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 - `workload.extraEnv`, `workload.extraEnvFrom`, `workload.pod.labels`, `workload.lifecycle`,
   `workload.podManagementPolicy`, `workload.reloadOnSecretChange` (Stakater Reloader).
 - `extraManifests` for shipping extra objects with the release.
+- `workload.shutdownDelaySeconds` (default 5): stopping pods keep serving briefly, so updates don't
+  drop requests.
 - `workload.image.digest` to pin the exact image (`repo:tag@sha256:...`).
 - `workload.configFiles`: write config files in your values (`/path: contents`); pods restart
   when a file changes.

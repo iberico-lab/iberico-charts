@@ -58,15 +58,39 @@ workload:
     - configMapRef: { name: my-app-settings }
 ```
 
-**Run something just before the app stops** (for example, wait for in-flight
-requests to finish):
+**Stopping without dropped requests (on by default).** When a pod stops,
+Kubernetes takes it out of the Service *and* sends it the stop signal at the
+same time. For a moment, traffic still arrives at a pod that is shutting down,
+which shows up as 502 errors during every update. So the chart makes a stopping
+pod wait `shutdownDelaySeconds` (5) before the signal. Slow ingress? Raise it:
+
+```yaml
+workload:
+  shutdownDelaySeconds: 10            # must stay below terminationGracePeriodSeconds (30)
+```
+
+**Run something just before the app stops.** Your own `preStop` replaces the
+built-in wait, so add the wait to it if you still want it:
 
 ```yaml
 workload:
   lifecycle:
     preStop:
       exec:
-        command: ["sh", "-c", "sleep 10"]
+        command: ["sh", "-c", "sleep 5 && /app/drain"]
+```
+
+**How updates roll out.** By default a new pod starts and becomes ready
+**before** an old one stops (`maxUnavailable: 0`, `maxSurge: 1`), so there's no
+downtime, even with 1 replica. One exception, chosen for you: when the pods use
+a ReadWriteOnce disk from `persistence`, only one pod can hold the disk, so old
+pods stop first (`Recreate`), with a short downtime. To choose yourself:
+
+```yaml
+workload:
+  strategy:
+    type: RollingUpdate               # or Recreate; "" = automatic (the default)
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 2 }   # faster: 2 new pods at a time
 ```
 
 **Give it more (or less) CPU and memory:**
@@ -94,6 +118,11 @@ workload:
   the render with an error.
 - **Pod killed with `OOMKilled`?** It used more than the memory limit (`512Mi` by
   default). Raise `resources.limits.memory`.
+- **App reads `<SERVICE>_PORT` / `<SERVICE>_SERVICE_HOST` env vars** for other
+  Services? The chart turns those off (`enableServiceLinks: false`), because they
+  can clash with your own settings. Use the DNS name instead
+  (`my-db.<namespace>.svc`), or set `enableServiceLinks: true`.
+  `KUBERNETES_SERVICE_HOST` is always there.
 - **Always quote the image tag:** `tag: "1.10"`. Unquoted, YAML reads `1.10` as the
   number `1.1`, so the chart stops with an error asking you to quote it.
 - **Want the exact same image every time?** A tag like `1.25` can be re-pushed
@@ -126,8 +155,12 @@ workload:
 | `workload.annotations` | `{}` | Annotations on the Deployment/StatefulSet |
 | `workload.pod.annotations` | `{}` | Annotations on each pod |
 | `workload.pod.labels` | `{}` | Extra labels on each pod (the chart's own labels can't be overridden) |
-| `workload.strategy` | rolling update, 1 at a time | How a Deployment rolls out updates |
+| `workload.strategy.type` | `""` | `RollingUpdate`, `Recreate`, or `""`: Recreate with a ReadWriteOnce disk, else RollingUpdate |
+| `workload.strategy.rollingUpdate.maxUnavailable` | `0` | Old pods that may be down during a rolling update (number or `"25%"`) |
+| `workload.strategy.rollingUpdate.maxSurge` | `1` | Extra new pods started at a time (number or `"25%"`) |
 | `workload.terminationGracePeriodSeconds` | `30` | Seconds the app gets to shut down cleanly |
+| `workload.shutdownDelaySeconds` | `5` | Seconds a stopping pod keeps serving before the stop signal (`0` = off; skipped if you set a `preStop`) |
+| `workload.enableServiceLinks` | `false` | Add `<SERVICE>_PORT`-style env vars for every Service in the namespace |
 
 ---
 
