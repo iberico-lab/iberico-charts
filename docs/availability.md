@@ -57,6 +57,35 @@ autoscaling:
 
 ---
 
+## Don't put all pods on one node (topology spread)
+
+```yaml
+topologySpread:
+  enabled: true
+  topologyKey: kubernetes.io/hostname    # spread across nodes
+  # topologyKey: topology.kubernetes.io/zone   # or across zones
+  whenUnsatisfiable: ScheduleAnyway      # best effort; DoNotSchedule = strict
+```
+
+The chart fills in which pods to spread (yours), so that's all you need. For
+anything fancier, add raw entries to `topologySpreadConstraints: []`.
+
+**Watch out:** with `DoNotSchedule`, pods stay **Pending** if there aren't
+enough nodes or zones. Start with `ScheduleAnyway`.
+
+---
+
+## Important apps first (priority)
+
+```yaml
+priorityClassName: "high-priority"   # must already exist in the cluster
+```
+
+When the cluster is full, pods with a higher priority are scheduled first and
+can push lower-priority pods out.
+
+---
+
 ## Next
 
 - [Workload](workload.md) · [Values Reference](values-reference.md)

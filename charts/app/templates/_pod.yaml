@@ -54,4 +54,20 @@ spec:
   tolerations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- with .Values.priorityClassName }}
+  priorityClassName: {{ . }}
+  {{- end }}
+  {{- $spread := list }}
+  {{- if .Values.topologySpread.enabled }}
+  {{- $spread = append $spread (dict
+        "maxSkew" (.Values.topologySpread.maxSkew | default 1)
+        "topologyKey" (.Values.topologySpread.topologyKey | default "kubernetes.io/hostname")
+        "whenUnsatisfiable" (.Values.topologySpread.whenUnsatisfiable | default "ScheduleAnyway")
+        "labelSelector" (dict "matchLabels" (include "helm-helpers.selectorLabels" . | fromYaml))) }}
+  {{- end }}
+  {{- $spread = concat $spread (.Values.topologySpreadConstraints | default list) }}
+  {{- with $spread }}
+  topologySpreadConstraints:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end -}}

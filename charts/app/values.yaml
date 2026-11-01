@@ -200,6 +200,20 @@ podSecurityContext:
 securityContext:
   allowPrivilegeEscalation: false
 
+# Spread pods across nodes (or zones) so one failure doesn't take them all.
+# The selector is filled in for you.
+topologySpread:
+  enabled: false
+  topologyKey: kubernetes.io/hostname   # or topology.kubernetes.io/zone
+  maxSkew: 1
+  whenUnsatisfiable: ScheduleAnyway      # or DoNotSchedule (strict)
+
+# Raw topologySpreadConstraints, copied as-is (added after the preset above)
+topologySpreadConstraints: []
+
+# PriorityClass for the pods (must already exist in the cluster)
+priorityClassName: ""
+
 # Node Selector
 nodeSelector: {}
 
