@@ -69,12 +69,14 @@ Common labels
 
 
 {{/*
-Selector labels
+Selector labels.
+Only stable identity labels belong here: Deployment/StatefulSet selectors are
+immutable, so anything that changes between releases (e.g. version) must go in
+metaLabels instead.
 */}}
 {{- define "helm-helpers.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "helm-helpers.appName" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/version: {{ .Chart.AppVersion }}
 {{- end }}
 
 
@@ -82,6 +84,7 @@ app.kubernetes.io/version: {{ .Chart.AppVersion }}
 Create unified labels
 */}}
 {{- define "helm-helpers.metaLabels" -}}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 helm.sh/chart: {{ include "helm-helpers.chart" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
