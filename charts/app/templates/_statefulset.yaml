@@ -13,6 +13,9 @@ metadata:
 spec:
   serviceName: {{ .Values.workload.serviceName | default (printf "%s-cluster" (include "helm-helpers.fullname" .)) }}
   replicas: {{ .Values.workload.replicas }}
+  {{- with .Values.workload.podManagementPolicy }}
+  podManagementPolicy: {{ . }}
+  {{- end }}
   {{- with .Values.workload.updateStrategy }}
   updateStrategy:
     {{- toYaml . | nindent 4 }}
