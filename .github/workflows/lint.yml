@@ -1,48 +1,48 @@
-# name: Lint Charts
+name: Lint Charts
 
-# on:
-#   pull_request:
-#     branches:
-#       - main
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
 
-# permissions:
-#   contents: read
+permissions:
+  contents: read
 
-# env:
-#   HELM_VERSION: v3.16.4
+env:
+  HELM_VERSION: v3.16.4
 
-# jobs:
-#   lint:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v4
-#         with:
-#           # `ct` detects changed charts against the target branch.
-#           fetch-depth: 0
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # `ct` detects changed charts against the target branch.
+          fetch-depth: 0
 
-#       - name: Set up Helm
-#         uses: azure/setup-helm@v4
-#         with:
-#           version: ${{ env.HELM_VERSION }}
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
 
-#       # Resolve `file://` sub-chart dependencies before ct/helm lint run.
-#       - name: Update chart dependencies
-#         run: |
-#           helm dependency update charts/external-secrets
-#           helm dependency update charts/ingress
-#           helm dependency update charts/app
+      # Resolve `file://` sub-chart dependencies before linting.
+      - name: Update chart dependencies
+        run: make deps
 
-#       - name: Set up chart-testing
-#         uses: helm/chart-testing-action@v2.8.0
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.8.0
 
-#       - name: Run chart-testing (lint)
-#         run: ct lint --config .github/configs/ct.yaml
+      - name: Run chart-testing (lint)
+        run: ct lint --config .github/configs/ct.yaml --all
 
-#       # Belt-and-braces: lint every chart explicitly, independent of change detection.
-#       - name: Run helm lint on all charts
-#         run: |
-#           helm lint charts/helm-helpers
-#           helm lint charts/external-secrets
-#           helm lint charts/ingress
-#           helm lint charts/app
+      # Lint every chart explicitly, independent of change detection.
+      - name: Run helm lint on all charts
+        run: make lint
+
+      # Every example must keep rendering against the app chart.
+      - name: Render all examples
+        run: make examples
