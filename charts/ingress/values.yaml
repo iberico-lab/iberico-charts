@@ -1,10 +1,14 @@
 global:
   name: ""
 
+# Your Tailscale tailnet domain (e.g. "tail1234.ts.net"). Only used to print
+# the full Tailscale URL in the install notes.
+tailnetDomain: ""
+
 # Ingress definitions
 # Default internal ingress - name will be generated from helm-helpers
 ingresses:
-  - name: ""
+  - serviceName: ""   # backend Service; "" = the app's own Service
     type: "internal"
     host: ""  # Leave empty for defaultBackend approach
     servicePort: 80

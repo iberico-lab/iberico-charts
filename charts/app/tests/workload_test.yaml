@@ -1,0 +1,138 @@
+suite: workload
+templates:
+  - templates/workload.yaml
+release:
+  name: shop
+tests:
+  - it: names resources after the release when global.name is empty
+    asserts:
+      - equal: { path: metadata.name, value: shop }
+
+  - it: uses global.name when set
+    set: { global.name: web }
+    asserts:
+      - equal: { path: metadata.name, value: web }
+
+  - it: keeps the version out of the immutable selector
+    asserts:
+      - notExists: { path: 'spec.selector.matchLabels["app.kubernetes.io/version"]' }
+      - equal:
+          path: spec.selector.matchLabels
+          value: { app.kubernetes.io/name: shop, app.kubernetes.io/instance: shop }
+
+  - it: sets the version label from the image tag
+    set: { workload.image.tag: "1.27-alpine" }
+    asserts:
+      - equal: { path: 'metadata.labels["app.kubernetes.io/version"]', value: 1.27-alpine }
+
+  - it: renders a StatefulSet when asked
+    set: { workload.type: StatefulSet }
+    asserts:
+      - isKind: { of: StatefulSet }
+      - equal: { path: spec.serviceName, value: shop-cluster }
+
+  - it: fails on names Kubernetes would reject
+    set: { global.name: My_App }
+    asserts:
+      - failedTemplate: { errorPattern: 'invalid name "my_app"' }
+
+  - it: fails on an unquoted tag that YAML turned into a number
+    set: { workload.image.tag: 1.10 }
+    asserts:
+      - failedTemplate: { errorPattern: "read as the number 1.1" }
+
+  - it: accepts whole-number tags
+    set: { workload.image.tag: 15 }
+    asserts:
+      - equal: { path: 'spec.template.spec.containers[0].image', value: "nginx:15" }
+
+  - it: applies safe security defaults
+    asserts:
+      - equal: { path: spec.template.spec.automountServiceAccountToken, value: false }
+      - equal: { path: spec.template.spec.securityContext.seccompProfile.type, value: RuntimeDefault }
+      - equal: { path: 'spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation', value: false }
+
+  - it: fails on duplicate container names
+    set:
+      workload.extraContainers: [{ name: shop, image: busybox }]
+    asserts:
+      - failedTemplate: { errorPattern: 'container name "shop" is already used by the main container' }
+
+  - it: lets pod labels add but never override chart labels
+    set:
+      workload.pod.labels: { team: web, app.kubernetes.io/name: evil }
+    asserts:
+      - equal: { path: 'spec.template.metadata.labels.team', value: web }
+      - equal: { path: 'spec.template.metadata.labels["app.kubernetes.io/name"]', value: shop }
+
+  - it: adds extraEnv and extraEnvFrom to the main container
+    set:
+      workload.extraEnv: [{ name: POD, valueFrom: { fieldRef: { fieldPath: metadata.name } } }]
+      workload.extraEnvFrom: [{ configMapRef: { name: cm } }]
+    asserts:
+      - contains:
+          path: 'spec.template.spec.containers[0].env'
+          content: { name: POD, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
+      - contains:
+          path: 'spec.template.spec.containers[0].envFrom'
+          content: { configMapRef: { name: cm } }
+
+  - it: does not add persistence pod volumes to StatefulSets
+    set:
+      workload.type: StatefulSet
+      persistence: [{ name: data, size: 1Gi, mountPath: /data }]
+    asserts:
+      - notExists: { path: spec.template.spec.volumes }
+      - equal: { path: 'spec.volumeClaimTemplates[0].metadata.name', value: data }
+
+  - it: keeps StatefulSet PVC labels stable so upgrades don't hit the immutable field
+    set:
+      workload.type: StatefulSet
+      workload.image.tag: "9.9.9"
+      persistence: [{ name: data, size: 1Gi, mountPath: /data }]
+    asserts:
+      - equal:
+          path: 'spec.volumeClaimTemplates[0].metadata.labels'
+          value:
+            app.kubernetes.io/name: shop
+            app.kubernetes.io/instance: shop
+            app.kubernetes.io/component: pvc
+
+  - it: merges StatefulSet PVC annotations into one block
+    set:
+      workload.type: StatefulSet
+      persistence:
+        - { name: data, size: 1Gi, mountPath: /data, storageClassName: opendrive, annotations: { foo: bar } }
+    asserts:
+      - equal:
+          path: 'spec.volumeClaimTemplates[0].metadata.annotations'
+          value: { csi-rclone/storage-path: shop, csi-rclone/umask: "022", foo: bar }
+
+  - it: says where the removed workload.service went
+    set:
+      workload.type: StatefulSet
+      workload.service: { port: 99 }
+    asserts:
+      - failedTemplate: { errorPattern: 'workload.service was removed in 0.3.0: move its keys to service.headless' }
+
+  - it: says where the removed workload.serviceName went
+    set:
+      workload.type: StatefulSet
+      workload.serviceName: db-cluster
+    asserts:
+      - failedTemplate: { errorPattern: 'use service.headless.name' }
+
+  - it: pins the image by digest and keeps the tag readable
+    set: { workload.image: { repository: nginx, tag: "1.25", digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" } }
+    asserts:
+      - equal: { path: 'spec.template.spec.containers[0].image', value: "nginx:1.25@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+
+  - it: allows a digest without a tag
+    set: { workload.image: { repository: nginx, tag: "", digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" } }
+    asserts:
+      - equal: { path: 'spec.template.spec.containers[0].image', value: "nginx@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+
+  - it: leaves the version label off when the image is pinned by digest only
+    set: { workload.image: { repository: nginx, tag: "", digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" } }
+    asserts:
+      - notExists: { path: 'metadata.labels["app.kubernetes.io/version"]' }

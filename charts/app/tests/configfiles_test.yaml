@@ -1,0 +1,49 @@
+suite: config files
+templates:
+  - templates/configfiles.yaml
+  - templates/workload.yaml
+release:
+  name: shop
+set:
+  workload.configFiles:
+    /etc/app/config.yaml: "log_level: info\n"
+tests:
+  - it: puts every file in one ConfigMap
+    template: templates/configfiles.yaml
+    asserts:
+      - isKind: { of: ConfigMap }
+      - equal: { path: metadata.name, value: shop-files }
+      - equal: { path: data, value: { etc_app_config.yaml: "log_level: info\n" } }
+
+  - it: mounts each file at its own path, read-only
+    template: templates/workload.yaml
+    asserts:
+      - contains:
+          path: 'spec.template.spec.containers[0].volumeMounts'
+          content: { name: config-files, mountPath: /etc/app/config.yaml, subPath: etc_app_config.yaml, readOnly: true }
+      - contains:
+          path: spec.template.spec.volumes
+          content: { name: config-files, configMap: { name: shop-files } }
+
+  - it: restarts pods when a file changes (checksum annotation)
+    template: templates/workload.yaml
+    asserts:
+      - exists: { path: 'spec.template.metadata.annotations["checksum/config-files"]' }
+
+  - it: keeps pod annotations next to the checksum
+    template: templates/workload.yaml
+    set: { workload.pod.annotations: { a: "b" } }
+    asserts:
+      - equal: { path: spec.template.metadata.annotations.a, value: "b" }
+
+  - it: renders nothing when there are no files
+    template: templates/configfiles.yaml
+    set: { workload.configFiles: null }
+    asserts:
+      - hasDocuments: { count: 0 }
+
+  - it: refuses a volume that reuses the reserved name
+    template: templates/configfiles.yaml
+    set: { workload.volumes: [{ name: config-files, mountPath: /x, emptyDir: {} }] }
+    asserts:
+      - failedTemplate: { errorPattern: 'is used by workload.configFiles' }

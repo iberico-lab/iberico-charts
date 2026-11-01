@@ -2,8 +2,7 @@ apiVersion: v2
 name: app
 description: A Helm chart for application deployment with secret and volume management
 type: application
-version: 0.2.0
-appVersion: "1.0.0"
+version: 0.3.0
 keywords:
   - app
   - deployment
@@ -17,13 +16,13 @@ maintainers:
 
 dependencies:
   - name: helm-helpers
-    version: "0.2.0"
+    version: "0.3.0"
     repository: "file://../helm-helpers"
   - name: external-secrets
-    version: "0.2.0"
+    version: "0.3.0"
     repository: "file://../external-secrets"
     condition: external-secrets.enabled
   - name: ingress
-    version: "0.2.0"
+    version: "0.3.0"
     repository: "file://../ingress"
     condition: ingress.enabled

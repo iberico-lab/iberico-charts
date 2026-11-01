@@ -39,11 +39,19 @@ global:
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `global.name` | `""` | The base name. If empty, the chart name is used. |
+| `global.name` | `""` | The base name. If empty, the **release name** is used. |
 | `global.fullnameOverride` | `""` | Wins over `global.name` if set |
 | `global.nameOverride` | `""` | Changes the `app.kubernetes.io/name` label only |
 
 Names are made lowercase and cut to 63 characters, which is a Kubernetes limit.
+Allowed characters are lowercase letters, digits and `-` (no `_` or `.`). Anything
+else stops the render with an error.
+
+**Version label:** the objects that run your app (pods, Deployment or
+StatefulSet, Services…) get `app.kubernetes.io/version` set to your **image
+tag**. Ingresses and ExternalSecrets don't run a version, so they don't get it,
+and neither does anything when you pin an image by digest only. Pin real tags
+(`2.4.1`, not `latest`) and the label tells you what's running.
 
 **Namespace:** everything is created in the namespace you install into, so use
 `helm install -n <namespace>`.
@@ -55,7 +63,10 @@ Names are made lowercase and cut to 63 characters, which is a Kubernetes limit.
 1. Create `charts/<new-chart>/` next to the others.
 2. Add it to `dependencies:` in `charts/app/Chart.yaml` with `repository: "file://../<new-chart>"` and a `condition:`.
 3. Add an empty `<new-chart>:` block to `charts/app/values.yaml` so people can find it.
-4. Run `make lint` to check everything.
+4. Describe its values in `hack/gen-values-schema.py`, run `make schema`, and
+   document them (`make docs-check` tells you what's missing).
+5. Add tests in `charts/<new-chart>/tests/` and run `make test`.
+6. Run `make lint` to check everything.
 
 ---
 

@@ -1,14 +1,15 @@
 {{- define "app.serviceHeadless" }}
+{{- $h := .Values.service.headless | default dict }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.workload.serviceName | default (printf "%s-cluster" (include "helm-helpers.fullname" .)) }}
+  name: {{ include "app.headlessName" . }}
   namespace: {{ include "helm-helpers.namespace" . }}
   labels:
     {{- include "helm-helpers.labels" . | nindent 4 }}
     app.kubernetes.io/component: service-cluster
-  {{- with .Values.workload.service.annotations }}
+  {{- with $h.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -18,18 +19,17 @@ spec:
   selector:
     {{- include "helm-helpers.selectorLabels" . | nindent 4 }}
   ports:
-    {{- if .Values.workload.service.ports }}
-    {{- range .Values.workload.service.ports }}
+    {{- if $h.ports }}
+    {{- range $h.ports }}
     - port: {{ .port }}
-      targetPort: {{ .targetPort }}
+      targetPort: {{ .targetPort | default .port }}
       protocol: {{ .protocol | default "TCP" }}
       name: {{ .name | quote }}
     {{- end }}
     {{- else }}
-    - port: {{ .Values.workload.service.port | default .Values.workload.applicationPort }}
-      targetPort: {{ .Values.workload.service.targetPort | default .Values.workload.applicationPort }}
+    - port: {{ $h.port | default .Values.workload.applicationPort }}
+      targetPort: {{ $h.targetPort | default .Values.workload.applicationPort }}
       protocol: TCP
-      name: "http"
+      name: {{ .Values.service.portName | default "http" | quote }}
     {{- end }}
-
 {{- end -}}

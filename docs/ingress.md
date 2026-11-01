@@ -27,8 +27,7 @@ Not sure? Start with `internal`.
 ingress:
   enabled: true
   ingresses:
-    - name: "my-app"
-      type: "internal"
+    - type: "internal"
 ```
 
 **Public website:**
@@ -37,8 +36,7 @@ ingress:
 ingress:
   enabled: true
   ingresses:
-    - name: "my-app"
-      type: "public"
+    - type: "public"
       host: "my-app.example.com"
       certManagerIssuer: "letsencrypt-prod"   # your production issuer, see gotcha below
 ```
@@ -49,10 +47,28 @@ ingress:
 ingress:
   enabled: true
   ingresses:
-    - name: "my-app"
-      type: "public-protected"
+    - type: "public-protected"
       host: "admin.example.com"
       certManagerIssuer: "letsencrypt-prod"
+```
+
+**Private, with your own machine name.** The URL becomes
+`https://store.<your-tailnet>.ts.net`:
+
+```yaml
+ingress:
+  enabled: true
+  ingresses:
+    - type: "internal"
+      host: "store"          # the machine name only, not a full domain
+```
+
+**Want the full Tailscale URL in the install message?** Tell the chart your
+tailnet domain (find it in the Tailscale admin console under DNS):
+
+```yaml
+ingress:
+  tailnetDomain: "tail1234.ts.net"
 ```
 
 You can list **several** ingresses to get, say, a private and a public URL at the same time.
@@ -62,7 +78,7 @@ You can list **several** ingresses to get, say, a private and a public URL at th
 ## Homepage dashboard
 
 Every ingress is added to your [Homepage](https://gethomepage.dev) dashboard
-automatically. To change how it looks:
+automatically. Hide one with `homepage: { enabled: false }`. To change how it looks:
 
 ```yaml
       homepage:
@@ -82,6 +98,10 @@ automatically. To change how it looks:
 - `public` and `public-protected` **need a `host`**. Without one, the chart stops with an error.
 - If you set `ingress.enabled: true` but don't list any `ingresses`, you get
   **one `internal` ingress** by default.
+- **For `internal`, `host` is the Tailscale machine name**, not a domain: `store`,
+  not `store.tail1234.ts.net`. It must be up to 63 lowercase letters, numbers and
+  `-`, otherwise the chart stops with an error. Empty = the app's name. If that
+  name is already taken in your tailnet, Tailscale adds a suffix (e.g. `store-1`).
 - `servicePort` must match your [Service](service.md) port (default `80`).
 - Traefik middlewares must exist in the cluster: `network-no-auth` for `public`,
   `network-sso` for `public-protected`.
@@ -96,15 +116,16 @@ automatically. To change how it looks:
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `name` | app name | The Service to send traffic to |
+| `serviceName` | the app's Service | Send traffic to a different Service |
 | `type` | `internal` | `internal`, `public` or `public-protected` |
-| `host` | — | Hostname (required for public types) |
+| `host` | — | Public types: the domain (required). `internal`: the Tailscale machine name (default: the app's name) |
 | `servicePort` | `80` | Service port to send traffic to |
 | `servicePortName` | — | Use a named port instead of a number (`internal` only) |
 | `certManagerIssuer` | `letsencrypt-staging` | TLS certificate issuer (public types) |
 | `tailscaleExpose` | `false` | Turn on Tailscale "serve" (`internal` only) |
 | `annotations` | `{}` | Extra annotations (`internal` only) |
-| `homepage` | — | `name`, `description`, `group`, `icon` |
+| `tailnetDomain` (top level, not per ingress) | `""` | Your tailnet, e.g. `tail1234.ts.net`. Only used to print URLs |
+| `homepage` | — | `enabled` (default `true`), `name`, `description`, `group`, `icon` |
 
 ---
 

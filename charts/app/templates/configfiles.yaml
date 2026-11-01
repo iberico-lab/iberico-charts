@@ -1,0 +1,22 @@
+{{- /* workload.configFiles: one ConfigMap, each file mounted at its own path */ -}}
+{{- if and (.Values.workload.enabled | default false) .Values.workload.configFiles -}}
+{{- range concat (.Values.workload.volumes | default list) (.Values.persistence | default list) -}}
+{{- if eq .name "config-files" -}}
+{{- fail "the volume name \"config-files\" is used by workload.configFiles; rename your volume or persistence entry" -}}
+{{- end -}}
+{{- end -}}
+{{- $data := dict -}}
+{{- range $path, $content := .Values.workload.configFiles -}}
+{{- $_ := set $data (include "app.configFileKey" $path) ($content | toString) -}}
+{{- end -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "helm-helpers.fullname" . }}-files
+  namespace: {{ include "helm-helpers.namespace" . }}
+  labels:
+    {{- include "helm-helpers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: config
+data:
+  {{- toYaml $data | nindent 2 }}
+{{- end }}

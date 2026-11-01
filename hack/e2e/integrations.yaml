@@ -1,0 +1,30 @@
+# Secrets, config files, ingress and metrics together. hack/e2e.sh installs
+# the External Secrets Operator (with a fake store) and the Prometheus CRDs
+# first; integrations.check.sh then checks the values reached the pod.
+workload:
+  image:
+    repository: nginx
+    tag: "1.27"
+  replicas: 1
+  resources:
+    requests: {cpu: 50m, memory: 32Mi}
+    limits: {memory: 128Mi}
+  configFiles:
+    /usr/share/nginx/html/index.html: "e2e-config-file"
+  reloadOnSecretChange: true
+external-secrets:
+  enabled: true
+  onepassword:
+    clusterSecretStoreRef: e2e-fake
+    refreshInterval: 10s
+    secrets:
+      - envVars: [{secretKey: e2e-database, mappings: {DB_PASSWORD: password}}]
+        files: [{secretKey: e2e-tls, mappings: {tls.crt: certificate}}]
+ingress:
+  enabled: true
+  tailnetDomain: tail1234.ts.net
+  ingresses:
+    - {type: internal}
+    - {type: public, host: e2e.example.com}
+metrics:
+  serviceMonitor: {enabled: true}

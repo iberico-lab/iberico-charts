@@ -25,7 +25,7 @@ workload:
 
   extraContainers:              # run next to the app
     - name: metrics-exporter
-      image: prom/statsd-exporter:latest
+      image: prom/statsd-exporter:v0.28.0
       ports:
         - name: metrics
           containerPort: 9102
@@ -38,7 +38,9 @@ You write normal Kubernetes container YAML. The chart copies it into the pod
 
 ## Gotchas
 
-- **Every entry needs a `name`.** Without one, the chart stops with an error.
+- **Every entry needs a `name`**, and names must be **unique** across your app,
+  sidecars and init containers (your app's container is named after `global.name`).
+  Otherwise the chart stops with an error.
 - If an init container never finishes, your app never starts.
 - Sidecars share the pod's network, so they can reach your app on `localhost`.
 

@@ -1,0 +1,39 @@
+{{- $sm := .Values.metrics.serviceMonitor -}}
+{{- if and (.Values.workload.enabled | default false) $sm.enabled -}}
+{{- if not .Values.service.enabled -}}
+{{- fail "metrics.serviceMonitor needs service.enabled: true (Prometheus scrapes through the Service)" -}}
+{{- end -}}
+{{- $ports := list (.Values.service.portName | default "http") -}}
+{{- if .Values.service.ports -}}
+{{- $ports = list -}}
+{{- range .Values.service.ports }}{{ $ports = append $ports .name }}{{ end -}}
+{{- end -}}
+{{- $port := $sm.port | default (first $ports) -}}
+{{- if not (has $port $ports) -}}
+{{- fail (printf "metrics.serviceMonitor.port %q is not a Service port name (have: %s)" $port (join ", " $ports)) -}}
+{{- end -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "helm-helpers.fullname" . }}
+  namespace: {{ include "helm-helpers.namespace" . }}
+  labels:
+    {{- include "helm-helpers.labels" . | nindent 4 }}
+    {{- with $sm.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "helm-helpers.selectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ include "helm-helpers.namespace" . }}
+  endpoints:
+    - port: {{ $port }}
+      path: {{ $sm.path | default "/metrics" }}
+      interval: {{ $sm.interval | default "30s" }}
+      {{- with $sm.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+{{- end -}}

@@ -1,0 +1,37 @@
+# 16 - Secrets and URLs: what most real web apps look like.
+global:
+  name: "shop"
+
+workload:
+  image:
+    repository: ghcr.io/example/shop
+    tag: "2.4.1"
+  replicas: 2
+  applicationPort: 8080
+  environment:
+    DB_HOST: "postgres.databases.svc.cluster.local"   # not secret: plain env var
+  reloadOnSecretChange: true    # restart when 1Password changes (Stakater Reloader)
+  livenessProbe:  { path: /healthz }
+  readinessProbe: { path: /ready }
+  startupProbe:   { path: /healthz }
+
+# Passwords come from 1Password, never from this file.
+external-secrets:
+  enabled: true
+  onepassword:
+    secrets:
+      - envVars:
+          - secretKey: "shop-database"     # 1Password item
+            mappings:
+              DB_USER: username            # env var: 1Password field
+              DB_PASSWORD: password
+
+ingress:
+  enabled: true
+  tailnetDomain: "tail1234.ts.net"         # your tailnet, for the install message
+  ingresses:
+    - type: "internal"                     # https://shop.tail1234.ts.net
+      host: "shop"                         # Tailscale machine name
+    - type: "public"                       # https://shop.example.com
+      host: "shop.example.com"
+      certManagerIssuer: "letsencrypt-prod"

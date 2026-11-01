@@ -7,11 +7,39 @@ Want the chart to **create** a disk for you? Use [Persistence](persistence.md) i
 
 ---
 
+## The easy way for config files: `configFiles`
+
+Write the file right in your values. Path on the left, contents on the right:
+
+```yaml
+workload:
+  configFiles:
+    /etc/app/config.yaml: |
+      log_level: info
+      port: 8080
+    /etc/nginx/conf.d/default.conf: |
+      server { listen 80; location / { root /usr/share/nginx/html; } }
+```
+
+The chart creates one ConfigMap (`<app>-files`) and mounts each file at its path.
+
+- **Change a file and the pods restart by themselves** to pick it up.
+- Only that one file is added. The rest of the folder (e.g. other files in
+  `/etc/nginx/conf.d/`) stays as the image has it.
+- Files are read-only. Paths must start with `/`.
+- **Not for passwords.** ConfigMaps aren't secret; use [External Secrets](external-secrets.md).
+- The volume name `config-files` is taken by this feature.
+
+Need a ConfigMap that something else also manages? Mount it with `volumes` below.
+
+---
+
 ## Which source?
 
 | You want to mount… | Use |
 |--------------------|-----|
-| Config files from a ConfigMap | `configMap` |
+| Config files you write in your values | `configFiles` (above) |
+| Config files from a ConfigMap that already exists | `configMap` |
 | Passwords or certificates from a Secret | `secret` |
 | A temporary folder that is wiped when the pod stops | `emptyDir` |
 | A disk you already created yourself | `persistentVolumeClaim` |

@@ -1,0 +1,79 @@
+suite: ingress
+release:
+  name: shop
+tests:
+  - it: names the Tailscale machine after the app by default (first tls host)
+    templates: [templates/ingress-internal.yaml]
+    asserts:
+      - equal: { path: 'spec.tls[0].hosts', value: [shop] }
+      - equal: { path: metadata.name, value: shop-internal }
+      - notExists: { path: 'metadata.annotations["tailscale.com/hostname"]' }
+
+  - it: uses host as the Tailscale machine name
+    templates: [templates/ingress-internal.yaml]
+    set: { ingresses: [{ type: internal, host: store }] }
+    asserts:
+      - equal: { path: 'spec.tls[0].hosts', value: [store] }
+      - equal: { path: metadata.name, value: store-internal }
+
+  - it: rejects a full domain as an internal host
+    templates: [templates/validate.yaml]
+    set: { ingresses: [{ type: internal, host: store.tail1234.ts.net }] }
+    asserts:
+      - failedTemplate: { errorPattern: 'Tailscale machine name only' }
+
+  - it: rejects an invalid machine name
+    templates: [templates/validate.yaml]
+    set: { ingresses: [{ type: internal, host: My_Store }] }
+    asserts:
+      - failedTemplate: { errorPattern: 'not a valid Tailscale machine name' }
+
+  - it: requires a host for public ingresses
+    templates: [templates/ingress-public.yaml]
+    set: { ingresses: [{ type: public }] }
+    asserts:
+      - failedTemplate: { errorPattern: 'type "public" requires a host' }
+
+  - it: fails when two ingresses would get the same name
+    templates: [templates/validate.yaml]
+    set:
+      ingresses:
+        - { type: public, host: a.example.com }
+        - { type: public, host: b.example.com }
+    asserts:
+      - failedTemplate: { errorPattern: "already creates" }
+
+  - it: can hide an ingress from Homepage
+    templates: [templates/ingress-internal.yaml]
+    set: { ingresses: [{ type: internal, homepage: { enabled: false } }] }
+    asserts:
+      - notExists: { path: 'metadata.annotations["gethomepage.dev/enabled"]' }
+
+  - it: sends traffic to the app's Service by default, or to serviceName
+    templates: [templates/ingress-public.yaml]
+    set: { ingresses: [{ type: public, host: a.example.com }] }
+    asserts:
+      - equal: { path: 'spec.rules[0].http.paths[0].backend.service.name', value: shop }
+
+  - it: sends traffic to serviceName
+    templates: [templates/ingress-public.yaml, templates/ingress-internal.yaml]
+    set:
+      ingresses:
+        - { type: public, host: a.example.com, serviceName: api }
+        - { type: internal, serviceName: web }
+    asserts:
+      - equal: { path: 'spec.rules[0].http.paths[0].backend.service.name', value: api }
+        template: templates/ingress-public.yaml
+      - equal: { path: spec.defaultBackend.service.name, value: web }
+        template: templates/ingress-internal.yaml
+
+  - it: says the old name key was renamed
+    templates: [templates/validate.yaml]
+    set: { ingresses: [{ type: internal, name: web }] }
+    asserts:
+      - failedTemplate: { errorPattern: 'name was renamed to serviceName' }
+
+  - it: has no version label (it can't see the app's image tag, and doesn't run one)
+    templates: [templates/ingress-internal.yaml]
+    asserts:
+      - notExists: { path: 'metadata.labels["app.kubernetes.io/version"]' }

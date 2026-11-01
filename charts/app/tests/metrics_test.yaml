@@ -1,0 +1,23 @@
+suite: metrics
+templates: [templates/servicemonitor.yaml]
+release:
+  name: shop
+tests:
+  - it: renders nothing by default
+    asserts:
+      - hasDocuments: { count: 0 }
+
+  - it: scrapes the single port by name
+    set: { metrics.serviceMonitor: { enabled: true, labels: { release: kps } } }
+    asserts:
+      - isKind: { of: ServiceMonitor }
+      - equal: { path: 'spec.endpoints[0].port', value: http }
+      - equal: { path: 'spec.endpoints[0].path', value: /metrics }
+      - equal: { path: metadata.labels.release, value: kps }
+
+  - it: fails on a port name the Service doesn't have
+    set:
+      service.ports: [{ name: http, port: 80, targetPort: 8080 }]
+      metrics.serviceMonitor: { enabled: true, port: metrics }
+    asserts:
+      - failedTemplate: { errorPattern: 'port "metrics" is not a Service port name \(have: http\)' }

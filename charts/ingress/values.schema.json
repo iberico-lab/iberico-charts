@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ingress chart values",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Shared with all charts",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Base name for all resources (empty = release name)"
+        },
+        "nameOverride": {
+          "type": "string"
+        },
+        "fullnameOverride": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "tailnetDomain": {
+      "type": "string"
+    },
+    "ingresses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "serviceName": {
+            "type": "string",
+            "description": "Backend Service name (default: the app's Service)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Removed: use serviceName"
+          },
+          "type": {
+            "enum": [
+              "internal",
+              "public",
+              "public-protected"
+            ]
+          },
+          "host": {
+            "type": "string"
+          },
+          "servicePort": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "servicePortName": {
+            "type": "string"
+          },
+          "certManagerIssuer": {
+            "type": "string"
+          },
+          "tailscaleExpose": {
+            "type": "boolean"
+          },
+          "annotations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          },
+          "homepage": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "icon": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "type"
+        ]
+      }
+    },
+    "helm-helpers": {
+      "type": "object"
+    }
+  }
+}

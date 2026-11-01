@@ -1,0 +1,51 @@
+{{- $as := .Values.autoscaling -}}
+{{- if and (.Values.workload.enabled | default false) $as.enabled -}}
+{{- if gt (int $as.minReplicas) (int $as.maxReplicas) -}}
+{{- fail (printf "autoscaling.minReplicas (%v) must not be greater than maxReplicas (%v)" $as.minReplicas $as.maxReplicas) -}}
+{{- end -}}
+{{- if not (or $as.targetCPUUtilizationPercentage $as.targetMemoryUtilizationPercentage) -}}
+{{- fail "autoscaling: set targetCPUUtilizationPercentage and/or targetMemoryUtilizationPercentage" -}}
+{{- end -}}
+{{- $requests := (.Values.workload.resources | default dict).requests | default dict -}}
+{{- if and $as.targetCPUUtilizationPercentage (not $requests.cpu) -}}
+{{- fail "autoscaling.targetCPUUtilizationPercentage needs workload.resources.requests.cpu (the percentage is measured against it)" -}}
+{{- end -}}
+{{- if and $as.targetMemoryUtilizationPercentage (not $requests.memory) -}}
+{{- fail "autoscaling.targetMemoryUtilizationPercentage needs workload.resources.requests.memory (the percentage is measured against it)" -}}
+{{- end -}}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "helm-helpers.fullname" . }}
+  namespace: {{ include "helm-helpers.namespace" . }}
+  labels:
+    {{- include "helm-helpers.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: {{ include "app.workloadType" . }}
+    name: {{ include "helm-helpers.fullname" . }}
+  minReplicas: {{ $as.minReplicas }}
+  maxReplicas: {{ $as.maxReplicas }}
+  metrics:
+    {{- with $as.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ . }}
+    {{- end }}
+    {{- with $as.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ . }}
+    {{- end }}
+  {{- with $as.behavior }}
+  behavior:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end -}}

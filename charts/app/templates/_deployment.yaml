@@ -6,60 +6,22 @@ metadata:
   namespace: {{ include "helm-helpers.namespace" . }}
   labels:
     {{- include "helm-helpers.labels" . | nindent 4 }}
-  {{- with .Values.workload.annotations }}
+  {{- with include "app.workloadAnnotations" . }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- . | nindent 4 }}
   {{- end }}
 spec:
+  {{- /* the autoscaler owns the replica count; setting it here would reset it on every upgrade */}}
+  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.workload.replicas }}
-  {{- if .Values.workload.strategy }}
+  {{- end }}
+  {{- with .Values.workload.strategy }}
   strategy:
-    {{- toYaml .Values.workload.strategy | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
     matchLabels:
       {{- include "helm-helpers.selectorLabels" . | nindent 6 }}
   template:
-    metadata:
-      {{- with .Values.workload.pod.annotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      labels:
-        {{- include "helm-helpers.labels" . | nindent 8 }}
-    spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      serviceAccountName: {{ include "app.serviceAccountName" . }}
-      {{- with .Values.podSecurityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      containers:
-        {{- include "app.container" . | nindent 8 }}
-        {{- if .Values.workload.extraContainers }}
-        {{- include "app.extraContainers" . | nindent 8 }}
-        {{- end }}
-      {{- if .Values.workload.extraInitContainers }}
-      initContainers:
-        {{- include "app.initContainers" . | nindent 8 }}
-      {{- end }}
-      {{- if or .Values.workload.volumes .Values.persistence (include "app.onepassword.has" (dict "root" . "field" "files")) }}
-      volumes:
-        {{- include "app.volume" . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+    {{- include "app.podTemplate" . | nindent 4 }}
 {{- end -}}

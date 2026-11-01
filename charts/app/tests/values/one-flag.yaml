@@ -1,0 +1,5 @@
+external-secrets:
+  enabled: true
+  onepassword:
+    secrets:
+      - envVars: [{ secretKey: db, mappings: { DB_PASS: password } }]

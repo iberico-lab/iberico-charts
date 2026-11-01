@@ -1,23 +1,34 @@
-global:
-  name: ""
+# Default values for the `app` chart.
+#
+# Everything here has a working default: set only what you want to change.
+# Every setting is explained in docs/values-reference.md, and unknown keys are
+# rejected by values.schema.json, so typos fail loudly.
 
-# External Secrets sub-chart configuration
+# Shared with every chart in this repo.
+global:
+  name: ""  # base name for all resources; "" = the Helm release name
+
+# Secrets from 1Password, as env vars or files (docs/external-secrets.md).
 external-secrets:
   enabled: false
   onepassword: {}
 
-# Ingress sub-chart configuration
+# URLs via Tailscale (private) or Traefik (public) (docs/ingress.md).
 ingress:
   enabled: false
 
-# Unified workload configuration (Deployment or StatefulSet)
+# What to run (docs/workload.md).
 workload:
   enabled: true
   type: "Deployment"  # or "StatefulSet"
   annotations: {}
+  # Restart pods when their 1Password secrets change (needs Stakater Reloader
+  # installed in the cluster: https://github.com/stakater/Reloader).
+  reloadOnSecretChange: false
   image:
     repository: nginx
     tag: "1.25"
+    digest: ""  # e.g. "sha256:..." pins the exact image (the tag is then just a label)
     pullPolicy: IfNotPresent
   replicas: 2
   applicationPort: 80
@@ -37,37 +48,53 @@ workload:
 
   pod:
     annotations: {}
+    labels: {}  # extra pod labels; can't override the chart's own labels
 
-  # Environment variables
+  # Plain (non-secret) environment variables as KEY: value
   environment: {}
+  # Raw env entries, copied as-is (use for valueFrom: fieldRef, secretKeyRef...)
+  extraEnv: []
+  # Raw envFrom entries, copied as-is (load a whole ConfigMap or Secret)
+  extraEnvFrom: []
+  # Config files written right here, as  /path/in/container: contents
+  # Pods restart automatically when a file changes (docs/volumes.md).
+  configFiles: {}
+  # configFiles:
+  #   /etc/app/config.yaml: |
+  #     log_level: info
+  # Mount existing ConfigMaps, Secrets, emptyDirs or PVCs (docs/volumes.md)
   volumes: []
 
-  # Sidecar containers rendered verbatim; each entry MUST define `name`
+  # Container lifecycle hooks, copied as-is (postStart / preStop)
+  lifecycle: {}
+
+  # Sidecar containers rendered verbatim; each entry MUST define a unique `name`
   extraContainers: []
   # extraContainers:
   #   - name: metrics-exporter
-  #     image: prom/statsd-exporter:latest
+  #     image: prom/statsd-exporter:v0.28.0
   #     ports:
   #       - name: metrics
   #         containerPort: 9102
 
-  # Extra init containers rendered verbatim; each entry MUST define `name`
+  # Init containers rendered verbatim; each entry MUST define a unique `name`
   extraInitContainers: []
   # extraInitContainers:
   #   - name: wait-for-db
   #     image: busybox:1.36
   #     command: ["sh", "-c", "until nc -z db 5432; do sleep 2; done"]
 
-  # Resources
+  # CPU and memory. Small defaults; raise them for heavy apps (docs/workload.md).
+  # No CPU limit on purpose: it slows the app down even when the node is idle.
+  # The memory limit stops a leaking app from taking down the whole node.
   resources:
     requests:
-      cpu: "300m"
-      memory: "512Mi"
+      cpu: "100m"
+      memory: "128Mi"
     limits:
-      cpu: "1000m"
-      memory: "800Mi"
+      memory: "512Mi"
 
-  # Health checks
+  # Health checks (docs/probes.md). Set only the fields you want to change.
   livenessProbe:
     enabled: true
     type: "http"
@@ -127,46 +154,116 @@ workload:
       maxSurge: 1
 
   # StatefulSet-specific configuration
-  serviceName: ""  # Optional: custom name for headless service (defaults to app-name-cluster)
+  # StatefulSet only: "OrderedReady" (Kubernetes default, one pod at a time)
+  # or "Parallel" (start/stop all pods at once). Empty = Kubernetes default.
+  podManagementPolicy: ""
   updateStrategy:  # Optional: StatefulSet update strategy
     type: RollingUpdate
-  terminationGracePeriodSeconds: 30  # Optional: grace period for pod termination
-  service:  # StatefulSet headless service
+  terminationGracePeriodSeconds: 30  # Seconds pods get to shut down (Deployment and StatefulSet)
+
+# Stable address inside the cluster (docs/service.md).
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: null  # null => use workload.applicationPort
+  # Name of the single port (container, Service and headless Service), e.g.
+  # "postgres". Max 15 chars. Ignored when service.ports / workload.ports are set.
+  portName: http
+  annotations: {}
+  # StatefulSet only: the headless Service that gives each pod its own address.
+  headless:
+    name: ""          # "" => <app>-cluster
     annotations: {}
     port: null        # null => use workload.applicationPort
     targetPort: null  # null => use workload.applicationPort
     ports: []
 
-# Service configuration (for external access)
-service:
-  enabled: true
-  type: ClusterIP
-  port: 80
-  targetPort: 80
-  annotations: {}
-
-# Service Account configuration
+# Kubernetes identity for the pods (docs/security.md).
 serviceAccount:
   create: false
-  automount: true
+  # Mount a Kubernetes API token into the pods. Most apps don't talk to the
+  # API, so it's off by default; set true if yours does.
+  automount: false
+  name: ""
+  annotations: {}
 
-# Persistence configuration (used for both Deployment PVCs and StatefulSet volumeClaimTemplates)
+# Prometheus scraping via a ServiceMonitor (needs the Prometheus Operator CRDs).
+metrics:
+  serviceMonitor:
+    enabled: false
+    port: ""          # Service port NAME to scrape; "" = the first/only port
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: ""
+    labels: {}        # e.g. { release: kube-prometheus-stack } so Prometheus finds it
+
+# Scale the number of pods with CPU/memory use (HorizontalPodAutoscaler).
+# When enabled, workload.replicas is ignored. Needs metrics-server in the cluster.
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80     # % of workload.resources.requests.cpu
+  targetMemoryUtilizationPercentage: null
+  behavior: {}                            # optional scale up/down tuning, copied as-is
+
+# Keep some pods running during voluntary disruptions (node drains, upgrades).
+# minAvailable wins when set; otherwise maxUnavailable is used. Numbers or "50%".
+podDisruptionBudget:
+  enabled: false
+  minAvailable: null
+  maxUnavailable: 1
+
+# Disks the chart creates: PVCs for a Deployment, one per pod for a StatefulSet
+# (docs/persistence.md). Each entry: name, size, mountPath (+ accessModes,
+# storageClassName, readOnly, annotations). accessModes default: ReadWriteOnce.
 persistence: []
 
-# Pod Security Context
-podSecurityContext: {}
+# Pod Security Context. Safe defaults that work with any image; see
+# docs/security.md for the stricter opt-in settings. Set a key to null to drop it.
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
 
-# Container Security Context
-securityContext: {}
+# Container Security Context (main container)
+securityContext:
+  allowPrivilegeEscalation: false
 
-# Node Selector
+# Spread pods across nodes (or zones) so one failure doesn't take them all.
+# The selector is filled in for you.
+topologySpread:
+  enabled: false
+  topologyKey: kubernetes.io/hostname   # or topology.kubernetes.io/zone
+  maxSkew: 1
+  whenUnsatisfiable: ScheduleAnyway      # or DoNotSchedule (strict)
+
+# Raw topologySpreadConstraints, copied as-is (added after the preset above)
+topologySpreadConstraints: []
+
+# PriorityClass for the pods (must already exist in the cluster)
+priorityClassName: ""
+
+# Where pods may run, copied as-is
 nodeSelector: {}
-
-# Affinity
 affinity: {}
-
-# Tolerations
 tolerations: []
 
-# Image Pull Secrets
+# Login details for private registries, e.g. [{name: my-registry}]
 imagePullSecrets: []
+
+# `helm test <release>` support: a pod that checks every Service port accepts
+# connections (plain TCP, so it works for HTTP apps and databases alike).
+helmTest:
+  enabled: true
+  image: busybox:1.36
+
+# Extra Kubernetes objects to ship with the release (maps or strings).
+# Each is passed through `tpl`, so template expressions work, e.g.
+#   - apiVersion: v1
+#     kind: ConfigMap
+#     metadata:
+#       name: '{{ include "helm-helpers.fullname" . }}-settings'
+#     data:
+#       mode: production
+extraManifests: []

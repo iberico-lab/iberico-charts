@@ -1,0 +1,15 @@
+# StatefulSet with per-pod disks; used by `ct lint` and `make validate`.
+global: {name: pg}
+workload:
+  type: StatefulSet
+  image: {repository: postgres, tag: "16"}
+  replicas: 3
+  applicationPort: 5432
+  podManagementPolicy: Parallel
+  livenessProbe: {type: tcp}
+  readinessProbe: {type: tcp}
+  startupProbe: {type: tcp}
+service: {port: 5432, portName: postgres}
+persistence:
+  - {name: data, size: 10Gi, mountPath: /var/lib/postgresql/data, storageClassName: opendrive}
+podDisruptionBudget: {enabled: true, minAvailable: 2}

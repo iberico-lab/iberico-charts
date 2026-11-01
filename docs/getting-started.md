@@ -12,7 +12,7 @@ Make a file called `values-myapp.yaml`:
 
 ```yaml
 global:
-  name: "my-app"            # used to name everything the chart creates
+  name: "my-app"            # names everything the chart creates (default: the release name)
 
 workload:
   image:
@@ -50,6 +50,35 @@ helm install my-app ./charts/app -f values-myapp.yaml
 
 Done. Your app is running.
 
+Check it works:
+
+```bash
+helm test my-app      # a small pod checks that your app's port accepts connections
+```
+
+Helm also prints **how to reach your app**: its address inside the cluster,
+any URLs (Tailscale, public), and a `kubectl port-forward` command for a quick
+test from your machine. Run `helm get notes my-app` to see it again later.
+
+---
+
+## Step 5 — Ship a new version later
+
+When your app has a new release, change only the tag and upgrade:
+
+```yaml
+workload:
+  image:
+    tag: "1.26"             # was "1.25"
+```
+
+```bash
+helm upgrade my-app ./charts/app -f values-myapp.yaml
+```
+
+You never change a chart version for this. Use real version tags, not
+`latest`. See [Versions](versioning.md).
+
 ---
 
 ## What you get
@@ -63,19 +92,10 @@ Done. Your app is running.
 
 ---
 
-## The #1 gotcha: the port
+## Ports in one sentence
 
-Is your app listening on a port **other than 80**? Then set **both** of these:
-
-```yaml
-workload:
-  applicationPort: 8080     # where the app listens
-
-service:
-  targetPort: 8080          # where the Service sends traffic (default is 80!)
-```
-
-`service.targetPort` does **not** follow `applicationPort` on its own.
+Set `workload.applicationPort` to the port your app listens on. The Service
+forwards to it automatically, and other apps reach it on `service.port` (80).
 
 ---
 
@@ -84,3 +104,4 @@ service:
 - Change more about your app → [Workload](workload.md)
 - Give it a URL → [Ingress](ingress.md)
 - Copy a ready-made example → [examples/](../examples/README.md)
+- What to change for a new release → [Versions](versioning.md)

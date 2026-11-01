@@ -13,6 +13,26 @@ Create the name of the service account to use
 
 
 {{/*
+Name of the StatefulSet headless Service: service.headless.name or <app>-cluster.
+*/}}
+{{- define "app.headlessName" -}}
+{{- (.Values.service.headless | default dict).name | default (printf "%s-cluster" (include "helm-helpers.fullname" .)) -}}
+{{- end }}
+
+{{/*
+Settings removed in 0.3.0. They're still allowed by the schema only so this
+can say where they went, instead of a bare "additional property" error.
+*/}}
+{{- define "app.removedSettings" -}}
+{{- if hasKey .Values.workload "service" -}}
+{{- fail "workload.service was removed in 0.3.0: move its keys to service.headless (same names). See docs/upgrading.md" -}}
+{{- end -}}
+{{- if hasKey .Values.workload "serviceName" -}}
+{{- fail "workload.serviceName was removed in 0.3.0: use service.headless.name. See docs/upgrading.md" -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Validated workload type: "Deployment" (default) or "StatefulSet".
 Fails on anything else (e.g. a lowercase typo) instead of rendering nothing.
 */}}
@@ -22,6 +42,30 @@ Fails on anything else (e.g. a lowercase typo) instead of rendering nothing.
 {{- fail (printf "workload.type must be \"Deployment\" or \"StatefulSet\" (got %q)" $type) -}}
 {{- end -}}
 {{- $type -}}
+{{- end }}
+
+{{/*
+Main container image reference "<repository>:<tag>".
+YAML turns an unquoted tag like 1.10 into the number 1.1, which silently
+pulls the wrong image, so a non-string tag containing "." fails with a hint.
+Whole-number tags (e.g. 15) are safe and are converted to text.
+*/}}
+{{- define "app.image" -}}
+{{- $tag := .Values.workload.image.tag -}}
+{{- if not (kindIs "string" $tag) -}}
+{{- if contains "." (toString $tag) -}}
+{{- fail (printf "workload.image.tag was read as the number %v (YAML drops trailing zeros, so 1.10 becomes 1.1). Quote the tag exactly as published, e.g. tag: \"1.10\"" $tag) -}}
+{{- end -}}
+{{- $tag = toString $tag -}}
+{{- end -}}
+{{- $repo := required "workload.image.repository is required" .Values.workload.image.repository -}}
+{{- $digest := .Values.workload.image.digest | default "" -}}
+{{- if $digest -}}
+{{- /* repo:tag@digest — the digest decides what's pulled, the tag stays readable */ -}}
+{{- $repo -}}{{- with $tag -}}:{{ . }}{{- end -}}@{{ $digest }}
+{{- else -}}
+{{- $repo -}}:{{- required "workload.image.tag is required (or set workload.image.digest)" $tag -}}
+{{- end -}}
 {{- end }}
 
 {{/*
@@ -140,6 +184,43 @@ Usage: include "app.pvcAnnotations" (dict "root" $ "pvc" .)
 {{- end }}
 
 {{/*
+Annotations for the Deployment/StatefulSet object: workload.annotations plus,
+when workload.reloadOnSecretChange is on, the Stakater Reloader annotation
+listing the onepassword secrets so pods restart when they change.
+Returns YAML or "".
+*/}}
+{{- define "app.workloadAnnotations" -}}
+{{- $out := deepCopy (.Values.workload.annotations | default dict) -}}
+{{- if .Values.workload.reloadOnSecretChange -}}
+{{- $names := list -}}
+{{- if include "app.onepassword.has" (dict "root" . "field" "envVars") -}}
+{{- $names = append $names (printf "%s-onepassword-env" (include "helm-helpers.fullname" .)) -}}
+{{- end -}}
+{{- if include "app.onepassword.has" (dict "root" . "field" "files") -}}
+{{- $names = append $names (printf "%s-onepassword-files" (include "helm-helpers.fullname" .)) -}}
+{{- end -}}
+{{- if $names -}}
+{{- $_ := set $out "secret.reloader.stakater.com/reload" (join "," $names) -}}
+{{- end -}}
+{{- end -}}
+{{- if $out -}}
+{{- toYaml $out -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+ConfigMap key for a workload.configFiles path: "/etc/app/config.yaml" =>
+"etc_app_config.yaml" (keys can't contain "/"; the full path keeps them unique).
+Usage: include "app.configFileKey" "/etc/app/config.yaml"
+*/}}
+{{- define "app.configFileKey" -}}
+{{- if not (regexMatch "^/[A-Za-z0-9._/-]*[A-Za-z0-9._-]$" .) -}}
+{{- fail (printf "workload.configFiles: %q must be a full file path like /etc/app/config.yaml (letters, numbers, . _ - and /)" .) -}}
+{{- end -}}
+{{- trimPrefix "/" . | replace "/" "_" -}}
+{{- end }}
+
+{{/*
 Render volumeMount configuration
 Usage: {{ include "app.volumeMount" . }}
 */}}
@@ -161,6 +242,13 @@ Usage: {{ include "app.volumeMount" . }}
 {{- if include "app.onepassword.has" (dict "root" . "field" "files") }}
 - name: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" .) }}
   mountPath: /etc/secrets/onepassword
+  readOnly: true
+{{- end }}
+{{- /* subPath mounts one file, so the rest of the folder stays as it is */}}
+{{- range $path, $_ := .Values.workload.configFiles }}
+- name: config-files
+  mountPath: {{ $path }}
+  subPath: {{ include "app.configFileKey" $path }}
   readOnly: true
 {{- end }}
 {{- end }}
@@ -206,6 +294,11 @@ Usage: {{ include "app.volume" . }}
   secret:
     secretName: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" .) }}
 {{- end }}
+{{- if .Values.workload.configFiles }}
+- name: config-files
+  configMap:
+    name: {{ include "helm-helpers.fullname" . }}-files
+{{- end }}
 {{- end }}
 
 {{/*
@@ -218,7 +311,7 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
   securityContext:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  image: "{{ .Values.workload.image.repository }}:{{ .Values.workload.image.tag }}"
+  image: {{ include "app.image" . | quote }}
   imagePullPolicy: {{ .Values.workload.image.pullPolicy }}
   {{- if .Values.workload.command }}
   command:
@@ -240,25 +333,38 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
       protocol: {{ .protocol | default "TCP" }}
     {{- end }}
     {{- else }}
-    - name: http
+    - name: {{ .Values.service.portName | default "http" }}
       containerPort: {{ .Values.workload.applicationPort }}
       protocol: TCP
     {{- end }}
-  {{- if .Values.workload.environment }}
+  {{- if or .Values.workload.environment .Values.workload.extraEnv }}
   env:
     {{- range $key, $value := .Values.workload.environment }}
     - name: {{ $key }}
       value: {{ $value | quote }}
     {{- end }}
+    {{- with .Values.workload.extraEnv }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- end }}
-  {{- if include "app.onepassword.has" (dict "root" . "field" "envVars") }}
+  {{- $onepasswordEnv := include "app.onepassword.has" (dict "root" . "field" "envVars") }}
+  {{- if or $onepasswordEnv .Values.workload.extraEnvFrom }}
   envFrom:
+    {{- if $onepasswordEnv }}
     - secretRef:
         name: {{ printf "%s-onepassword-env" (include "helm-helpers.fullname" .) }}
+    {{- end }}
+    {{- with .Values.workload.extraEnvFrom }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- end }}
-  {{- if or .Values.workload.volumes .Values.persistence (include "app.onepassword.has" (dict "root" . "field" "files")) }}
+  {{- if or .Values.workload.volumes .Values.persistence .Values.workload.configFiles (include "app.onepassword.has" (dict "root" . "field" "files")) }}
   volumeMounts:
     {{- include "app.volumeMount" . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.workload.lifecycle }}
+  lifecycle:
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- if .Values.workload.resources }}
   resources:
@@ -276,6 +382,23 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
   startupProbe:
     {{- include "app.probe" (dict "probe" .Values.workload.startupProbe "applicationPort" .Values.workload.applicationPort) | nindent 4 }}
   {{- end }}
+{{- end }}
+
+{{/*
+Fail if two containers in the pod share a name. Kubernetes requires names to
+be unique across the main container, sidecars and init containers, but only
+rejects duplicates at install time.
+*/}}
+{{- define "app.validateContainerNames" -}}
+{{- $seen := dict (include "helm-helpers.appName" .) "the main container" -}}
+{{- range $kind, $list := dict "workload.extraContainers" .Values.workload.extraContainers "workload.extraInitContainers" .Values.workload.extraInitContainers -}}
+{{- range $list -}}
+{{- if and .name (hasKey $seen .name) -}}
+{{- fail (printf "%s: container name %q is already used by %s; container names must be unique in the pod" $kind .name (get $seen .name)) -}}
+{{- end -}}
+{{- if .name -}}{{- $_ := set $seen .name $kind -}}{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- end }}
 
 {{/*

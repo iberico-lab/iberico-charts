@@ -49,7 +49,7 @@ service:
 | Thing | Name |
 |-------|------|
 | StatefulSet (your pods) | `<app>` → pods `<app>-0`, `<app>-1`, … |
-| Headless Service (gives each pod a fixed address) | `<app>-cluster`, or `workload.serviceName` |
+| Headless Service (gives each pod a fixed address) | `<app>-cluster`, or `service.headless.name` |
 | Normal Service | `<app>` (if `service.enabled`) |
 | One disk **per pod** | `<disk name>-<app>-0`, `<disk name>-<app>-1`, … |
 
@@ -137,8 +137,7 @@ service: { port: 5672, targetPort: 5672 }
 
 - Databases don't answer HTTP on `/`, so the default probes will fail. Switch
   them to `type: "tcp"` like the recipes above. See [Health checks](probes.md).
-- Use `accessModes: ["ReadWriteOnce"]`. The default (`ReadWriteMany`) often
-  doesn't work for databases.
+- Each pod gets its own disk, so the default `ReadWriteOnce` is what you want.
 - Adding replicas does **not** turn a single-node database into a cluster.
   The app itself has to support clustering.
 - Deleting the release does **not** delete the per-pod disks. That's on
@@ -150,13 +149,13 @@ service: { port: 5672, targetPort: 5672 }
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `workload.serviceName` | `""` | Name of the headless Service (`""` = `<app>-cluster`) |
 | `workload.updateStrategy` | `{type: RollingUpdate}` | How pods are updated |
-| `workload.terminationGracePeriodSeconds` | `30` | Seconds to shut down cleanly |
-| `workload.service.port` | `null` | Headless Service port (`null` = `applicationPort`) |
-| `workload.service.targetPort` | `null` | Headless Service target port (`null` = `applicationPort`) |
-| `workload.service.ports` | `[]` | Several ports for the headless Service |
-| `workload.service.annotations` | `{}` | Headless Service annotations |
+| `workload.podManagementPolicy` | `""` | `OrderedReady` (one pod at a time) or `Parallel` (all at once) |
+| `service.headless.name` | `""` | Name of the headless Service (`""` = `<app>-cluster`) |
+| `service.headless.port` | `null` | Headless Service port (`null` = `applicationPort`) |
+| `service.headless.targetPort` | `null` | Headless Service target port (`null` = `applicationPort`) |
+| `service.headless.ports` | `[]` | Several ports for the headless Service |
+| `service.headless.annotations` | `{}` | Headless Service annotations |
 
 Everything else (image, probes, sidecars, secrets…) works the same as for a
 Deployment. See [Workload](workload.md).

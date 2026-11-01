@@ -1,7 +1,10 @@
+{{- /* Services select the workload's pods, so there's nothing to serve without it */ -}}
+{{- if .Values.workload.enabled | default false -}}
 {{- $type := include "app.workloadType" . -}}
 {{- if eq $type "StatefulSet" -}}
 {{- include "app.serviceHeadless" . -}}
 {{- end -}}
 {{- if .Values.service.enabled | default false -}}
 {{- include "app.service" . -}}
+{{- end -}}
 {{- end -}}

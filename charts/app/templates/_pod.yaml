@@ -1,0 +1,78 @@
+{{/*
+Pod template shared by the Deployment and the StatefulSet, so both workload
+types always get the same pod. Render under `template:` with nindent 4.
+Usage: {{- include "app.podTemplate" . | nindent 4 }}
+*/}}
+{{- define "app.podTemplate" -}}
+{{- include "app.validateContainerNames" . -}}
+metadata:
+  {{- $annotations := deepCopy (.Values.workload.pod.annotations | default dict) }}
+  {{- with .Values.workload.configFiles }}
+  {{- /* a new checksum rolls the pods, so they pick up edited config files */}}
+  {{- $_ := set $annotations "checksum/config-files" (toYaml . | sha256sum) }}
+  {{- end }}
+  {{- with $annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- /* chart labels win, so extra labels can't break the selector */}}
+    {{- $labels := merge (include "helm-helpers.labels" . | fromYaml) (deepCopy (.Values.workload.pod.labels | default dict)) }}
+    {{- toYaml $labels | nindent 4 }}
+spec:
+  {{- with .Values.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  serviceAccountName: {{ include "app.serviceAccountName" . }}
+  automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+  {{- with .Values.workload.terminationGracePeriodSeconds }}
+  terminationGracePeriodSeconds: {{ . }}
+  {{- end }}
+  {{- with .Values.podSecurityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if .Values.workload.extraInitContainers }}
+  initContainers:
+    {{- include "app.initContainers" . | nindent 4 }}
+  {{- end }}
+  containers:
+    {{- include "app.container" . | nindent 4 }}
+    {{- if .Values.workload.extraContainers }}
+    {{- include "app.extraContainers" . | nindent 4 }}
+    {{- end }}
+  {{- $persistenceVolumes := and .Values.persistence (eq (include "app.workloadType" .) "Deployment") }}
+  {{- if or .Values.workload.volumes $persistenceVolumes .Values.workload.configFiles (include "app.onepassword.has" (dict "root" . "field" "files")) }}
+  volumes:
+    {{- include "app.volume" . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.nodeSelector }}
+  nodeSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.affinity }}
+  affinity:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.tolerations }}
+  tolerations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.priorityClassName }}
+  priorityClassName: {{ . }}
+  {{- end }}
+  {{- $spread := list }}
+  {{- if .Values.topologySpread.enabled }}
+  {{- $spread = append $spread (dict
+        "maxSkew" (.Values.topologySpread.maxSkew | default 1)
+        "topologyKey" (.Values.topologySpread.topologyKey | default "kubernetes.io/hostname")
+        "whenUnsatisfiable" (.Values.topologySpread.whenUnsatisfiable | default "ScheduleAnyway")
+        "labelSelector" (dict "matchLabels" (include "helm-helpers.selectorLabels" . | fromYaml))) }}
+  {{- end }}
+  {{- $spread = concat $spread (.Values.topologySpreadConstraints | default list) }}
+  {{- with $spread }}
+  topologySpreadConstraints:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end -}}

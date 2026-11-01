@@ -21,3 +21,8 @@
 .idea/
 *.tmproj
 .vscode/
+# Unit tests (helm-unittest) are not part of the package.
+# (Not "tests/": that would also drop templates/tests/, the `helm test` hooks.)
+*_test.yaml
+__snapshot__/
+values/

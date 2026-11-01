@@ -41,4 +41,3 @@ workload:
 
 service:
   enabled: true
-  targetPort: 8080

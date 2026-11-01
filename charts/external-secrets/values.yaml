@@ -3,7 +3,7 @@ global:
 
 # External Secrets configuration by provider
 onepassword:
-    enabled: false
+    enabled: true  # on whenever this chart is enabled; set false to turn 1Password off
     refreshInterval: "10m"
     # Name of an existing ClusterSecretStore; this chart does not create one.
     clusterSecretStoreRef: onepassword-cluster

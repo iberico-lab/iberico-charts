@@ -5,12 +5,16 @@
 CHARTS_DIR := charts
 CHARTS     := helm-helpers external-secrets ingress app
 EXAMPLES   := $(sort $(wildcard examples/*/values.yaml))
+CI_VALUES  := $(sort $(wildcard $(CHARTS_DIR)/app/ci/*-values.yaml))
+# Kubernetes schemas plus CRD schemas (ExternalSecret, ServiceMonitor, ...)
+KUBECONFORM := kubeconform -strict -summary -schema-location default \
+	-schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
 
 # Every dependency is a local file:// sibling chart, so ignore the user's
 # configured Helm repos (a single broken repo would otherwise fail the build).
 HELM_DEP   := HELM_REPOSITORY_CONFIG=/dev/null helm dependency update --skip-refresh
 
-.PHONY: help deps lint template examples clean
+.PHONY: help deps lint test validate e2e template examples schema schema-check docs-check version-check bump clean
 
 help: ## Show available targets
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-10s %s\n", $$1, $$2}'
@@ -21,11 +25,36 @@ deps: ## Resolve file:// sub-chart dependencies for every chart
 lint: deps ## helm lint every chart
 	@for c in $(CHARTS); do helm lint $(CHARTS_DIR)/$$c || exit 1; done
 
+test: deps ## Run unit tests (needs the helm-unittest plugin)
+	helm unittest $(CHARTS_DIR)/app $(CHARTS_DIR)/ingress $(CHARTS_DIR)/external-secrets
+
+validate: deps ## Check rendered manifests against Kubernetes schemas (needs kubeconform)
+	@for f in $(EXAMPLES) $(CI_VALUES); do echo "==> $$f"; helm template t $(CHARTS_DIR)/app -f $$f | $(KUBECONFORM) || exit 1; done
+
+e2e: deps ## Install every hack/e2e scenario on a throwaway cluster (KUBE_CONTEXT=...)
+	hack/e2e.sh
+
 template: deps ## Render the umbrella app chart with default values
 	helm template app $(CHARTS_DIR)/app
 
 examples: deps ## Render every example under examples/ against the app chart
 	@for f in $(EXAMPLES); do echo "==> $$f"; helm template t $(CHARTS_DIR)/app -f $$f > /dev/null || exit 1; done
+
+schema: ## Regenerate values.schema.json files (run after changing values)
+	python3 hack/gen-values-schema.py .
+
+schema-check: ## Fail if values.schema.json files are out of date
+	python3 hack/gen-values-schema.py . && git diff --exit-code -- 'charts/*/values.schema.json'
+
+docs-check: ## Fail if a setting is undocumented, or the docs mention one that doesn't exist
+	python3 hack/check-docs.py .
+
+version-check: ## Fail if the four charts don't share one version
+	hack/bump-version.sh --check
+
+bump: ## Set one version on every chart: make bump VERSION=0.4.0 (see docs/versioning.md)
+	@test -n "$(VERSION)" || { echo "usage: make bump VERSION=x.y.z"; exit 1; }
+	hack/bump-version.sh $(VERSION)
 
 clean: ## Remove vendored sub-chart artifacts and lock files
 	rm -rf $(CHARTS_DIR)/*/charts $(CHARTS_DIR)/*/Chart.lock

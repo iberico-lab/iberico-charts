@@ -1,0 +1,80 @@
+suite: availability and scaling
+release:
+  name: shop
+tests:
+  - it: renders no PodDisruptionBudget by default
+    templates: [templates/pdb.yaml]
+    asserts:
+      - hasDocuments: { count: 0 }
+
+  - it: uses maxUnavailable 1 when enabled
+    templates: [templates/pdb.yaml]
+    set: { podDisruptionBudget.enabled: true }
+    asserts:
+      - isKind: { of: PodDisruptionBudget }
+      - equal: { path: spec.maxUnavailable, value: 1 }
+      - equal:
+          path: spec.selector.matchLabels
+          value: { app.kubernetes.io/name: shop, app.kubernetes.io/instance: shop }
+
+  - it: lets minAvailable win
+    templates: [templates/pdb.yaml]
+    set: { podDisruptionBudget: { enabled: true, minAvailable: "50%" } }
+    asserts:
+      - equal: { path: spec.minAvailable, value: "50%" }
+      - notExists: { path: spec.maxUnavailable }
+
+  - it: renders an HPA and drops replicas from the workload
+    templates: [templates/hpa.yaml, templates/workload.yaml]
+    set: { autoscaling.enabled: true }
+    asserts:
+      - isKind: { of: HorizontalPodAutoscaler }
+        template: templates/hpa.yaml
+      - equal: { path: spec.scaleTargetRef.kind, value: Deployment }
+        template: templates/hpa.yaml
+      - equal: { path: 'spec.metrics[0].resource.target.averageUtilization', value: 80 }
+        template: templates/hpa.yaml
+      - notExists: { path: spec.replicas }
+        template: templates/workload.yaml
+
+  - it: targets the StatefulSet when that's the workload type
+    templates: [templates/hpa.yaml]
+    set: { autoscaling.enabled: true, workload.type: StatefulSet }
+    asserts:
+      - equal: { path: spec.scaleTargetRef.kind, value: StatefulSet }
+
+  - it: fails when minReplicas is above maxReplicas
+    templates: [templates/hpa.yaml]
+    set: { autoscaling: { enabled: true, minReplicas: 6, maxReplicas: 3 } }
+    asserts:
+      - failedTemplate: { errorPattern: "must not be greater than maxReplicas" }
+
+  - it: fails on a CPU target without a CPU request
+    templates: [templates/hpa.yaml]
+    set: { autoscaling.enabled: true, workload.resources: { requests: { cpu: null } } }
+    asserts:
+      - failedTemplate: { errorPattern: "needs workload.resources.requests.cpu" }
+
+  - it: fails when minAvailable would block every eviction
+    templates: [templates/pdb.yaml]
+    set: { podDisruptionBudget: { enabled: true, minAvailable: 2 } }
+    asserts:
+      - failedTemplate: { errorPattern: "must be lower than workload.replicas" }
+
+  - it: spreads pods with the preset and fills in the selector
+    templates: [templates/workload.yaml]
+    set: { topologySpread.enabled: true, priorityClassName: high }
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints
+          value:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector: { matchLabels: { app.kubernetes.io/name: shop, app.kubernetes.io/instance: shop } }
+      - equal: { path: spec.template.spec.priorityClassName, value: high }
+
+  - it: renders no spread constraints by default
+    templates: [templates/workload.yaml]
+    asserts:
+      - notExists: { path: spec.template.spec.topologySpreadConstraints }

@@ -1,0 +1,64 @@
+# Turns on (almost) every feature at once. Used by `ct lint` and
+# `make validate` to check the rendered manifests against Kubernetes schemas.
+global:
+  name: kitchen-sink
+  version: "1.2.3"
+workload:
+  image: {repository: ghcr.io/example/app, tag: "1.2.3"}
+  replicas: 3
+  applicationPort: 8080
+  reloadOnSecretChange: true
+  configFiles:
+    /etc/app/config.yaml: |
+      log_level: info
+  pod:
+    annotations: {example.com/note: hi}
+    labels: {team: platform}
+  environment: {LOG_LEVEL: info}
+  extraEnv:
+    - name: POD_NAME
+      valueFrom: {fieldRef: {fieldPath: metadata.name}}
+  extraEnvFrom:
+    - configMapRef: {name: kitchen-sink-settings}
+  volumes:
+    - {name: scratch, mountPath: /tmp/work, emptyDir: {}}
+  lifecycle:
+    preStop: {exec: {command: ["sh", "-c", "sleep 5"]}}
+  extraContainers:
+    - name: sidecar
+      image: busybox:1.36
+      command: ["sh", "-c", "sleep infinity"]
+  extraInitContainers:
+    - name: init
+      image: busybox:1.36
+      command: ["sh", "-c", "true"]
+  readinessProbe: {path: /ready}
+service:
+  ports:
+    - {name: http, port: 80, targetPort: 8080}
+    - {name: metrics, port: 9102, targetPort: 9102}
+serviceAccount: {create: true}
+podDisruptionBudget: {enabled: true}
+autoscaling: {enabled: true, minReplicas: 2, maxReplicas: 6}
+topologySpread: {enabled: true}
+metrics:
+  serviceMonitor: {enabled: true, port: metrics}
+external-secrets:
+  enabled: true
+  onepassword:
+    secrets:
+      - envVars: [{secretKey: db, mappings: {DB_PASS: password}}]
+        files: [{secretKey: tls, mappings: {tls.crt: cert}}]
+ingress:
+  enabled: true
+  tailnetDomain: tail1234.ts.net
+  ingresses:
+    - {type: internal}
+    - {type: public, host: app.example.com, certManagerIssuer: letsencrypt-prod}
+    - {type: public-protected, host: admin.example.com, certManagerIssuer: letsencrypt-prod}
+extraManifests:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: '{{ include "helm-helpers.fullname" . }}-settings'
+    data: {mode: production}

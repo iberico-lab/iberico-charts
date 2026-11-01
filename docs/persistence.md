@@ -19,11 +19,13 @@ Note: `persistence:` is a **top-level** key. It does **not** go inside `workload
 ## Copy-paste starter
 
 ```yaml
+workload:
+  replicas: 1                     # one pod per ReadWriteOnce disk (see below)
+
 persistence:
   - name: data                    # short name for this disk
     size: 20Gi                    # how big
     mountPath: /var/lib/data      # where the app sees it
-    accessModes: ["ReadWriteOnce"]
     storageClassName: "fast-ssd"  # which kind of storage (ask your cluster admin)
 ```
 
@@ -42,11 +44,13 @@ Need more than one disk? Add more items to the list.
 
 ## Gotchas
 
-- **The default access mode is `ReadWriteMany`.** Many storage types don't
-  support it, and then the disk gets stuck as "Pending". Most of the time you want
-  `accessModes: ["ReadWriteOnce"]`.
-- `ReadWriteOnce` + a Deployment with `replicas` > 1 = only one copy can use the
-  disk. Use 1 replica, or switch to a [StatefulSet](statefulset.md).
+- **The default access mode is `ReadWriteOnce`** (one node at a time), which every
+  storage type supports. Need several pods on different nodes to share one
+  disk? Use a storage class that supports `ReadWriteMany` and set it explicitly.
+- `ReadWriteOnce` + a Deployment with `replicas` > 1 (or autoscaling) means only
+  one copy can use the disk, and the others would hang in `ContainerCreating`.
+  The chart stops with an error instead. Use 1 replica, or switch to a
+  [StatefulSet](statefulset.md) (one disk per copy).
 - Using `storageClassName: "opendrive"`? The chart adds the rclone settings for you.
   The storage path defaults to the app name and the umask defaults to `022`. Change them with
   `rclone: { storagePath: ..., umask: ..., annotations: {...} }`.
@@ -60,7 +64,7 @@ Need more than one disk? Add more items to the list.
 | `name` | — **required** | Short name for the disk |
 | `size` | — **required** | Size, e.g. `10Gi` |
 | `mountPath` | — **required** | Folder inside the container |
-| `accessModes` | `["ReadWriteMany"]` | Who can use the disk at once |
+| `accessModes` | `["ReadWriteOnce"]` | Who can use the disk at once |
 | `storageClassName` | cluster default | Kind of storage |
 | `readOnly` | `false` | Mount as read-only |
 | `annotations` | `{}` | Extra annotations on the disk (PVC) |

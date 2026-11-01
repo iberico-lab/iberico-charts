@@ -36,6 +36,15 @@ jobs:
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.8.0
 
+      - name: Check values schemas are up to date
+        run: make schema-check
+
+      - name: Check every setting is documented
+        run: make docs-check
+
+      - name: Check all charts share one version
+        run: make version-check
+
       - name: Run chart-testing (lint)
         run: ct lint --config .github/configs/ct.yaml --all
 
@@ -43,6 +52,39 @@ jobs:
       - name: Run helm lint on all charts
         run: make lint
 
+      - name: Install helm-unittest
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest --version v0.6.3
+
+      - name: Run unit tests
+        run: make test
+
+      - name: Install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+
+      - name: Validate rendered manifests against Kubernetes schemas
+        run: make validate
+
       # Every example must keep rendering against the app chart.
       - name: Render all examples
         run: make examples
+
+  e2e:
+    # Install the charts on a real (throwaway) cluster and run `helm test`.
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+
+      - name: Install, test, upgrade and uninstall every scenario
+        run: make e2e

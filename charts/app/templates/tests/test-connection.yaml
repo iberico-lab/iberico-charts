@@ -1,0 +1,48 @@
+{{- /* `helm test <release>`: checks that every Service port accepts TCP connections */ -}}
+{{- if and (.Values.workload.enabled | default false) .Values.service.enabled .Values.helmTest.enabled -}}
+{{- $name := include "helm-helpers.fullname" . -}}
+{{- $ports := list .Values.service.port -}}
+{{- if .Values.service.ports -}}
+{{- $ports = list -}}
+{{- range .Values.service.ports }}{{ $ports = append $ports .port }}{{ end -}}
+{{- end -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ $name }}-test-connection
+  namespace: {{ include "helm-helpers.namespace" . }}
+  labels:
+    {{- /* no app.kubernetes.io/name: the Service, PDB and ServiceMonitor select on
+           it, and this pod must not receive traffic or count as an app pod */}}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "helm-helpers.metaLabels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: tcp-check
+      image: {{ .Values.helmTest.image | quote }}
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+      command:
+        - sh
+        - -c
+        - |
+          {{- range $ports }}
+          echo "checking {{ $name }}:{{ . }}"
+          nc -z -w 5 {{ $name }} {{ . }}
+          {{- end }}
+          echo "all ports reachable"
+{{- end -}}

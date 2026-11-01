@@ -17,7 +17,9 @@ metadata:
     app.kubernetes.io/component: ingress
   annotations:
     traefik.ingress.kubernetes.io/router.middlewares: network-sso@kubernetescrd
-    {{- include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Public Protected" "root" $) | nindent 4 }}
+    {{- with include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Public Protected" "root" $) }}
+    {{- . | nindent 4 }}
+    {{- end }}
 spec:
   ingressClassName: traefik
   rules:
@@ -28,7 +30,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ .name | default (include "helm-helpers.fullname" $) }}
+                name: {{ include "ingress.serviceName" (dict "ingress" . "root" $) }}
                 port:
                   number: {{ .servicePort | default 80 }}
   tls:

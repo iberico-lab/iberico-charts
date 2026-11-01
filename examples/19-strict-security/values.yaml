@@ -1,0 +1,31 @@
+# 19 - Strict security: non-root, read-only, no capabilities.
+# Tested on a real cluster by `make e2e`.
+global:
+  name: "secure-demo"
+
+workload:
+  image:
+    repository: nginxinc/nginx-unprivileged    # an image built to run as non-root
+    tag: "1.27-alpine"
+  applicationPort: 8080
+  volumes:
+    - name: tmp                                # the only writable folder
+      mountPath: /tmp
+      emptyDir: {}
+
+service:
+  port: 80                                     # other apps still use port 80
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  fsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]

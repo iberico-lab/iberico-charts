@@ -18,7 +18,9 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.middlewares: network-no-auth@kubernetescrd
     cert-manager.io/cluster-issuer: {{ .certManagerIssuer | default "letsencrypt-staging" }}
-    {{- include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Public" "root" $) | nindent 4 }}
+    {{- with include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Public" "root" $) }}
+    {{- . | nindent 4 }}
+    {{- end }}
 spec:
   ingressClassName: traefik
   rules:
@@ -29,7 +31,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ .name | default (include "helm-helpers.fullname" $) }}
+                name: {{ include "ingress.serviceName" (dict "ingress" . "root" $) }}
                 port:
                   number: {{ .servicePort | default 80 }}
   tls:

@@ -12,21 +12,30 @@ For explanations and examples, follow the  link in each section.
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `global.name` | `""` | Base name for everything ([docs](architecture.md)) |
+| `global.name` | `""` | Base name for everything (`""` = release name) ([docs](architecture.md)) |
 | `global.fullnameOverride` | `""` | Replaces the full name |
 | `global.nameOverride` | `""` | Changes the name label only |
 | `workload` | see below | Your app ([docs](workload.md)) |
 | `service` | see below | Address inside the cluster ([docs](service.md)) |
 | `persistence` | `[]` | Disks the chart creates ([docs](persistence.md)) |
 | `serviceAccount` | see below | Kubernetes identity for the pods |
-| `podSecurityContext` | `{}` | Security settings for the pod |
-| `securityContext` | `{}` | Security settings for the main container |
+| `metrics.serviceMonitor` | `{enabled: false, path: /metrics, interval: 30s}` | Prometheus scraping ([docs](metrics.md)) |
+| `autoscaling` | `{enabled: false, minReplicas: 2, maxReplicas: 5, targetCPUUtilizationPercentage: 80}` | Scale with CPU/memory ([docs](availability.md)) |
+| `podDisruptionBudget` | `{enabled: false, minAvailable: null, maxUnavailable: 1}` | Pods allowed down during maintenance ([docs](availability.md)) |
+| `podSecurityContext` | `seccompProfile: RuntimeDefault` | Security settings for the pod ([docs](security.md)) |
+| `securityContext` | `allowPrivilegeEscalation: false` | Security settings for the main container ([docs](security.md)) |
+| `topologySpread` | `{enabled: false, topologyKey: kubernetes.io/hostname, maxSkew: 1, whenUnsatisfiable: ScheduleAnyway}` | Spread pods across nodes/zones ([docs](availability.md)) |
+| `topologySpreadConstraints` | `[]` | Raw spread rules, copied as-is |
+| `priorityClassName` | `""` | PriorityClass for the pods |
 | `nodeSelector` | `{}` | Only run on nodes with these labels |
 | `affinity` | `{}` | Rules for where pods should (or shouldn't) run |
 | `tolerations` | `[]` | Allow running on "tainted" nodes |
 | `imagePullSecrets` | `[]` | Login details for private image registries |
 | `external-secrets` | `{enabled: false}` | Secrets from 1Password ([docs](external-secrets.md)) |
 | `ingress` | `{enabled: false}` | URLs ([docs](ingress.md)) |
+| `extraManifests` | `[]` | Extra objects to install ([docs](extra-manifests.md)) |
+| `helmTest.enabled` | `true` | Add the `helm test` connection check |
+| `helmTest.image` | `busybox:1.36` | Image for that check |
 
 ---
 
@@ -38,6 +47,7 @@ For explanations and examples, follow the  link in each section.
 | `workload.type` | `Deployment` | `Deployment` or `StatefulSet` |
 | `workload.image.repository` | `nginx` | Image to run |
 | `workload.image.tag` | `1.25` | Image version |
+| `workload.image.digest` | `""` | Pin the exact image (`sha256:...`); wins over the tag |
 | `workload.image.pullPolicy` | `IfNotPresent` | When to download the image again |
 | `workload.replicas` | `2` | Number of copies |
 | `workload.applicationPort` | `80` | Port the app listens on |
@@ -45,28 +55,35 @@ For explanations and examples, follow the  link in each section.
 | `workload.command` | `[]` | Start command (`[]` = image default) |
 | `workload.args` | `[]` | Start arguments (`[]` = image default) |
 | `workload.environment` | `{}` | Plain settings as `KEY: value` |
+| `workload.extraEnv` | `[]` | Raw env entries (supports `valueFrom`) |
+| `workload.extraEnvFrom` | `[]` | Raw `envFrom` entries |
+| `workload.configFiles` | `{}` | Config files as `/path: contents`; pods restart when they change ([docs](volumes.md)) |
 | `workload.volumes` | `[]` | Mount existing things ([docs](volumes.md)) |
+| `workload.lifecycle` | `{}` | `postStart` / `preStop` hooks |
 | `workload.extraContainers` | `[]` | Sidecars ([docs](sidecars.md)) |
 | `workload.extraInitContainers` | `[]` | Init containers ([docs](sidecars.md)) |
-| `workload.resources` | requests `300m`/`512Mi`, limits `1000m`/`800Mi` | CPU and memory |
+| `workload.resources` | requests `100m`/`128Mi`, limit `512Mi` memory (no CPU limit) | CPU and memory ([docs](workload.md)) |
 | `workload.livenessProbe` | HTTP `/` | Restart check ([docs](probes.md)) |
 | `workload.readinessProbe` | HTTP `/` | Traffic check ([docs](probes.md)) |
 | `workload.startupProbe` | HTTP `/` | Startup check ([docs](probes.md)) |
 | `workload.annotations` | `{}` | Annotations on the Deployment/StatefulSet |
+| `workload.reloadOnSecretChange` | `false` | Restart pods when 1Password secrets change (needs Reloader) |
 | `workload.pod.annotations` | `{}` | Annotations on each pod |
+| `workload.pod.labels` | `{}` | Extra labels on each pod |
 | `workload.strategy` | `RollingUpdate`, `maxUnavailable: 1`, `maxSurge: 1` | Deployment update style |
+| `workload.terminationGracePeriodSeconds` | `30` | Seconds the app gets to shut down cleanly |
 
 ### StatefulSet only ([docs](statefulset.md))
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `workload.serviceName` | `""` | Headless Service name (`""` = `<app>-cluster`) |
 | `workload.updateStrategy` | `{type: RollingUpdate}` | How pods are updated |
-| `workload.terminationGracePeriodSeconds` | `30` | Seconds to shut down cleanly |
-| `workload.service.port` | `null` | Headless Service port (`null` = `applicationPort`) |
-| `workload.service.targetPort` | `null` | Headless Service target port (`null` = `applicationPort`) |
-| `workload.service.ports` | `[]` | Several ports |
-| `workload.service.annotations` | `{}` | Headless Service annotations |
+| `workload.podManagementPolicy` | `""` | `OrderedReady` (one pod at a time) or `Parallel` (all at once) |
+| `service.headless.name` | `""` | Headless Service name (`""` = `<app>-cluster`) |
+| `service.headless.port` | `null` | Headless Service port (`null` = `applicationPort`) |
+| `service.headless.targetPort` | `null` | Headless Service target port (`null` = `applicationPort`) |
+| `service.headless.ports` | `[]` | Several ports |
+| `service.headless.annotations` | `{}` | Headless Service annotations |
 
 ---
 
@@ -97,7 +114,8 @@ Defaults are shown as **liveness / readiness / startup**.
 | `service.enabled` | `true` | Create the Service |
 | `service.type` | `ClusterIP` | `ClusterIP`, `NodePort` or `LoadBalancer` |
 | `service.port` | `80` | Port others connect to |
-| `service.targetPort` | `80` | Port on your container. Does **not** follow `applicationPort` |
+| `service.targetPort` | `null` | Port on your container (`null` = `workload.applicationPort`) |
+| `service.portName` | `http` | Name of the single port (max 15 characters) |
 | `service.annotations` | `{}` | Extra annotations |
 | `service.ports` | `[]` | Several ports (replaces `port`/`targetPort`) |
 
@@ -108,7 +126,7 @@ Defaults are shown as **liveness / readiness / startup**.
 | Setting | Default | What it does |
 |---------|---------|--------------|
 | `serviceAccount.create` | `false` | Create a ServiceAccount |
-| `serviceAccount.automount` | `true` | Give pods the account token automatically |
+| `serviceAccount.automount` | `false` | Mount a Kubernetes API token into the pods |
 | `serviceAccount.name` | `""` | Name (`""` = app name) |
 | `serviceAccount.annotations` | `{}` | Annotations |
 
