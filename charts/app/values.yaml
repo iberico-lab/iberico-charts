@@ -55,6 +55,12 @@ workload:
   extraEnv: []
   # Raw envFrom entries, copied as-is (load a whole ConfigMap or Secret)
   extraEnvFrom: []
+  # Config files written right here, as  /path/in/container: contents
+  # Pods restart automatically when a file changes (docs/volumes.md).
+  configFiles: {}
+  # configFiles:
+  #   /etc/app/config.yaml: |
+  #     log_level: info
   # Mount existing ConfigMaps, Secrets, emptyDirs or PVCs (docs/volumes.md)
   volumes: []
 

@@ -57,6 +57,7 @@ For explanations and examples, follow the  link in each section.
 | `workload.environment` | `{}` | Plain settings as `KEY: value` |
 | `workload.extraEnv` | `[]` | Raw env entries (supports `valueFrom`) |
 | `workload.extraEnvFrom` | `[]` | Raw `envFrom` entries |
+| `workload.configFiles` | `{}` | Config files as `/path: contents`; pods restart when they change ([docs](volumes.md)) |
 | `workload.volumes` | `[]` | Mount existing things ([docs](volumes.md)) |
 | `workload.lifecycle` | `{}` | `postStart` / `preStop` hooks |
 | `workload.extraContainers` | `[]` | Sidecars ([docs](sidecars.md)) |

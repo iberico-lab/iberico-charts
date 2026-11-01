@@ -28,6 +28,8 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 - `workload.extraEnv`, `workload.extraEnvFrom`, `workload.pod.labels`, `workload.lifecycle`,
   `workload.podManagementPolicy`, `workload.reloadOnSecretChange` (Stakater Reloader).
 - `extraManifests` for shipping extra objects with the release.
+- `workload.configFiles`: write config files in your values (`/path: contents`); pods restart
+  when a file changes.
 - `helm test` support: a pod that checks every Service port accepts connections (`helmTest`).
 - `service.portName`; `homepage.enabled` per ingress.
 - `global.version` and an `app.kubernetes.io/version` label taken from the image tag.

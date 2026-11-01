@@ -202,6 +202,18 @@ Returns YAML or "".
 {{- end }}
 
 {{/*
+ConfigMap key for a workload.configFiles path: "/etc/app/config.yaml" =>
+"etc_app_config.yaml" (keys can't contain "/"; the full path keeps them unique).
+Usage: include "app.configFileKey" "/etc/app/config.yaml"
+*/}}
+{{- define "app.configFileKey" -}}
+{{- if not (regexMatch "^/[A-Za-z0-9._/-]*[A-Za-z0-9._-]$" .) -}}
+{{- fail (printf "workload.configFiles: %q must be a full file path like /etc/app/config.yaml (letters, numbers, . _ - and /)" .) -}}
+{{- end -}}
+{{- trimPrefix "/" . | replace "/" "_" -}}
+{{- end }}
+
+{{/*
 Render volumeMount configuration
 Usage: {{ include "app.volumeMount" . }}
 */}}
@@ -223,6 +235,13 @@ Usage: {{ include "app.volumeMount" . }}
 {{- if include "app.onepassword.has" (dict "root" . "field" "files") }}
 - name: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" .) }}
   mountPath: /etc/secrets/onepassword
+  readOnly: true
+{{- end }}
+{{- /* subPath mounts one file, so the rest of the folder stays as it is */}}
+{{- range $path, $_ := .Values.workload.configFiles }}
+- name: config-files
+  mountPath: {{ $path }}
+  subPath: {{ include "app.configFileKey" $path }}
   readOnly: true
 {{- end }}
 {{- end }}
@@ -267,6 +286,11 @@ Usage: {{ include "app.volume" . }}
 - name: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" .) }}
   secret:
     secretName: {{ printf "%s-onepassword-files" (include "helm-helpers.fullname" .) }}
+{{- end }}
+{{- if .Values.workload.configFiles }}
+- name: config-files
+  configMap:
+    name: {{ include "helm-helpers.fullname" . }}-files
 {{- end }}
 {{- end }}
 
@@ -327,7 +351,7 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
     {{- toYaml . | nindent 4 }}
     {{- end }}
   {{- end }}
-  {{- if or .Values.workload.volumes .Values.persistence (include "app.onepassword.has" (dict "root" . "field" "files")) }}
+  {{- if or .Values.workload.volumes .Values.persistence .Values.workload.configFiles (include "app.onepassword.has" (dict "root" . "field" "files")) }}
   volumeMounts:
     {{- include "app.volumeMount" . | nindent 4 }}
   {{- end }}

@@ -6,7 +6,12 @@ Usage: {{- include "app.podTemplate" . | nindent 4 }}
 {{- define "app.podTemplate" -}}
 {{- include "app.validateContainerNames" . -}}
 metadata:
-  {{- with .Values.workload.pod.annotations }}
+  {{- $annotations := deepCopy (.Values.workload.pod.annotations | default dict) }}
+  {{- with .Values.workload.configFiles }}
+  {{- /* a new checksum rolls the pods, so they pick up edited config files */}}
+  {{- $_ := set $annotations "checksum/config-files" (toYaml . | sha256sum) }}
+  {{- end }}
+  {{- with $annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -38,7 +43,7 @@ spec:
     {{- include "app.extraContainers" . | nindent 4 }}
     {{- end }}
   {{- $persistenceVolumes := and .Values.persistence (eq (include "app.workloadType" .) "Deployment") }}
-  {{- if or .Values.workload.volumes $persistenceVolumes (include "app.onepassword.has" (dict "root" . "field" "files")) }}
+  {{- if or .Values.workload.volumes $persistenceVolumes .Values.workload.configFiles (include "app.onepassword.has" (dict "root" . "field" "files")) }}
   volumes:
     {{- include "app.volume" . | nindent 4 }}
   {{- end }}

@@ -178,6 +178,16 @@
             "type": "object"
           }
         },
+        "configFiles": {
+          "type": "object",
+          "description": "File path => file contents",
+          "propertyNames": {
+            "pattern": "^/[A-Za-z0-9._/-]*[A-Za-z0-9._-]$"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
         "volumes": {
           "type": "array",
           "items": {

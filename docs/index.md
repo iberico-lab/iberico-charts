@@ -16,7 +16,7 @@
 | Tell Kubernetes when my app is healthy | [Health checks (probes)](probes.md) |
 | Run a helper container next to my app | [Sidecars & init containers](sidecars.md) |
 | Keep data when the app restarts | [Persistence](persistence.md) |
-| Mount a config file, secret or temp folder | [Volumes](volumes.md) |
+| Add a config file, or mount a secret or temp folder | [Volumes](volumes.md) |
 | Let other apps in the cluster reach mine | [Service](service.md) |
 | Run a database or anything with "state" | [StatefulSet](statefulset.md) |
 | Use passwords from 1Password | [External Secrets](external-secrets.md) |

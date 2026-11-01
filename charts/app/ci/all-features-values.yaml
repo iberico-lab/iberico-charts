@@ -8,6 +8,9 @@ workload:
   replicas: 3
   applicationPort: 8080
   reloadOnSecretChange: true
+  configFiles:
+    /etc/app/config.yaml: |
+      log_level: info
   pod:
     annotations: {example.com/note: hi}
     labels: {team: platform}
