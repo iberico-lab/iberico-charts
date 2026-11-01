@@ -1,24 +1,28 @@
-# 04 - Sidecars (extraContainers)
+# 04 · Sidecars
 
-## What this shows
+> **In one line:** Run helper containers **next to** your app: a metrics exporter and a log tailer.
 
-Adding sidecar containers to the workload pod via `workload.extraContainers`.
-Each list entry is emitted verbatim as a container in the pod spec, so any
-valid Kubernetes container fields are supported. Every entry **must** define
-`name` — the chart fails loudly otherwise.
+**Use this when:**
+- You need a log shipper, metrics exporter or proxy in the same pod
 
-## When to use
+## Try it
 
-For helper processes that share the pod lifecycle with the app: metrics
-exporters, log shippers, service-mesh proxies, or local cache daemons.
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/app -f values.yaml
+helm template demo charts/app -f examples/04-sidecars/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-The pod's `containers:` list contains the main container plus
-`metrics-exporter` and `log-tailer`, exactly as written in `values.yaml`.
+## What you get
+
+- The pod runs 3 containers: your app, `metrics-exporter` and `log-tailer`
+
+## Watch out
+
+- Every sidecar **must** have a `name`, or the chart stops with an error
+
+---
+
+Learn more: [Sidecars & init containers](../../docs/sidecars.md) · Next: [05 · Init containers](../05-init-containers/README.md)

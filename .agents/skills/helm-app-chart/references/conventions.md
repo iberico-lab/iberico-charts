@@ -2,7 +2,7 @@
 
 ## Sensible defaults
 
-Every feature ships a working default in `app/values.yaml`, so a minimal values
+Every feature ships a working default in `charts/app/values.yaml`, so a minimal values
 file (name + image) already produces a running Deployment with service, probes,
 and resources. Start minimal and override only what you need.
 
@@ -19,7 +19,7 @@ workload:
     periodSeconds: 15    # ONLY this changes; type/path/port/port/timings stay default
 ```
 
-This is why probe blocks are declared as full maps in `app/values.yaml` — it
+This is why probe blocks are declared as full maps in `charts/app/values.yaml` — it
 makes per-field override safe.
 
 > Caveat: because coalescing is per-key, **lists are replaced, not merged**.
@@ -81,9 +81,9 @@ deploying something that silently misbehaves.
 Always run before deploying:
 
 ```bash
-helm dependency update ./app
-helm lint ./app -f values-myapp.yaml
-helm template my-app ./app -f values-myapp.yaml
+helm dependency update ./charts/app
+helm lint ./charts/app -f values-myapp.yaml
+helm template my-app ./charts/app -f values-myapp.yaml
 ```
 
 Confirm the rendered output contains the expected workload, service, and any

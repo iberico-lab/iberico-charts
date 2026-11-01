@@ -1,25 +1,29 @@
-# 14 - Multi-Port Service
+# 14 · Several ports
 
-## What this shows
+> **In one line:** Open **three** ports at once: `http`, `grpc` and `metrics`.
 
-Exposing more than one port. `workload.ports` declares named container ports
-(overriding the single default port), and `service.ports` maps them through
-the Service with matching `name` entries.
+**Use this when:**
+- Your app serves more than one thing on different ports
 
-## When to use
+## Try it
 
-When one workload serves multiple protocols on distinct ports — for example
-HTTP for users, gRPC for internal callers, and a metrics port for scraping —
-and each must be individually addressable through the Service.
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/app -f values.yaml
+helm template demo charts/app -f examples/14-multi-port-service/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-The main container declares ports `http` (8080), `grpc` (9090), and `metrics`
-(9102). The `Service` exposes the same three named ports, forwarding port 80 →
-8080 for `http` and pass-through for `grpc` and `metrics`.
+## What you get
+
+- The container opens ports 8080, 9090, 9102
+- The Service maps 80 → 8080 (`http`) and passes the other two through
+
+## Watch out
+
+- Port `name`s must **match** between `workload.ports` and `service.ports`
+
+---
+
+Learn more: [Service](../../docs/service.md)

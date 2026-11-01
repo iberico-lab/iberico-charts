@@ -1,28 +1,30 @@
-# 12 - Ingress
+# 12 · URLs (ingress)
 
-## What this shows
+> **In one line:** Give the app two URLs: a **public** one and a **private** Tailscale one.
 
-Enabling the bundled `ingress` sub-chart (`ingress.enabled: true`) and
-declaring routes in `ingress.ingresses`. This example defines both a `public`
-Traefik route (with cert-manager TLS and Homepage annotations) and an
-`internal` Tailscale route.
+**Use this when:**
+- People (or you) need to open the app in a browser
 
-## When to use
+## Try it
 
-When the app must be reachable by hostname. Use `type: public` for
-internet-facing HTTPS behind Traefik; `type: internal` for Tailscale-only
-access (no public hostname needed); `public-protected` for auth-gated public
-access. See `ingress/values.yaml` for the full schema.
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/app -f values.yaml
+helm template demo charts/app -f examples/12-ingress/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-Two `Ingress` objects: a `public` one for host `app.example.com` with the
-`traefik` ingress class, cert-manager issuer, and `gethomepage.dev/*`
-annotations; and an `internal` one with the `tailscale` ingress class and a
-`defaultBackend` to the Service.
+## What you get
+
+- Public: `app.example.com` via Traefik, with HTTPS and a Homepage tile
+- Private: reachable only over your Tailscale network
+
+## Watch out
+
+- Public HTTPS uses the **staging** issuer by default, so browsers will warn. Set `certManagerIssuer` for real use
+- Full settings: `charts/ingress/values.yaml`
+
+---
+
+Learn more: [Ingress](../../docs/ingress.md) · Next: [13 · Database (StatefulSet)](../13-statefulset/README.md)

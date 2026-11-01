@@ -1,16 +1,20 @@
+# OS / IDE
 .DS_Store
 .idea
 .debug
 
 # Chart dependencies
-**/charts/*.tgz
-**/charts/*/charts
+# Chart sources live under charts/<name>/; `helm dependency update` vendors
+# their sub-charts into charts/<name>/charts/, which must never be committed.
+charts/*/charts/
 Chart.lock
+*.tgz
 
 # Snapshot files should be added
 !__snapshot__/*_test.yaml.snap
 
 tests/e2e/charts
 
+# Local tooling / scratch
 .codegraph
 other

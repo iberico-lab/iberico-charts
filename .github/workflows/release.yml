@@ -47,16 +47,16 @@
 #       # vendored sub-charts MUST be materialised before chart-releaser packages.
 #       - name: Update chart dependencies
 #         run: |
-#           helm dependency update helm-helpers
-#           helm dependency update external-secrets
-#           helm dependency update ingress
-#           helm dependency update app
+#           helm dependency update charts/helm-helpers
+#           helm dependency update charts/external-secrets
+#           helm dependency update charts/ingress
+#           helm dependency update charts/app
 
 #       - name: Run chart-releaser
 #         uses: helm/chart-releaser-action@v1.7.0
 #         with:
-#           charts_dir: .
-#           config: cr.yaml
+#           charts_dir: charts
+#           config: .github/configs/cr.yaml
 #           version: ${{ env.CR_VERSION }}
 #         env:
 #           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

@@ -1,27 +1,31 @@
-# 09 - Persistence
+# 09 · Keep data (disks)
 
-## What this shows
+> **In one line:** Give a MySQL app two disks that survive restarts: `data` and `logs`.
 
-Durable storage via the top-level `persistence` list. With
-`workload.type: Deployment`, the chart renders one standalone
-`PersistentVolumeClaim` per entry (named `<app>-<entry-name>`) and mounts each
-into the main container at its `mountPath`.
+**Use this when:**
+- Your app saves data that must not disappear
 
-## When to use
+## Try it
 
-For a single-replica stateful app on a Deployment where you want durable data
-but do not need StatefulSet semantics (stable network identity, per-pod PVCs).
-For per-pod storage with stable identity, see example 13 (StatefulSet).
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/app -f values.yaml
+helm template demo charts/app -f examples/09-persistence/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-Two `PersistentVolumeClaim` objects (`persistence-app-data`,
-`persistence-app-logs`) plus a `Deployment` whose main container has
-`volumeMounts` for `/var/lib/mysql` and `/var/log/mysql` and matching `volumes`
-referencing the claims.
+## What you get
+
+- 2 disks (PVCs): `persistence-app-data` (20Gi) and `persistence-app-logs` (5Gi)
+- Mounted at `/var/lib/mysql` and `/var/log/mysql`
+
+## Watch out
+
+- Change `storageClassName` to one your cluster actually has
+- The password is in plain text **for the demo only**. Use [External Secrets](../../docs/external-secrets.md) for real
+- Need one disk *per copy*? See [13 StatefulSet](../13-statefulset/README.md)
+
+---
+
+Learn more: [Persistence](../../docs/persistence.md) · Next: [10 · Mount existing things](../10-volumes/README.md)

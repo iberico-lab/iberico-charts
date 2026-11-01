@@ -1,25 +1,28 @@
-# 06 - Basic Probes
+# 06 · Default health checks
 
-## What this shows
+> **In one line:** See the built-in health checks working with **zero probe config**. Only the port changes.
 
-The default probe behaviour. The chart always renders liveness, readiness, and
-startup probes as HTTP `GET /` against `workload.applicationPort`. Here the app
-listens on `8080`, so the probes target 8080 without any probe-specific config.
+**Use this when:**
+- Your app answers HTTP on `/` (most web apps do)
 
-## When to use
+## Try it
 
-As the default for any HTTP app that exposes a health endpoint on the same
-port as the app. Start here, then override individual fields only when needed
-(see example 07) or supply a fully custom probe (see example 08).
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/app -f values.yaml
+helm template demo charts/app -f examples/06-probes-basic/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-The main container includes `livenessProbe`, `readinessProbe`, and
-`startupProbe`, each an `httpGet` on path `/` and port `8080`, with the chart's
-default timing values.
+## What you get
+
+- Startup, readiness and liveness checks: HTTP `GET /` on port 8080
+
+## Watch out
+
+- Probes follow `applicationPort` on their own, but the Service doesn't. That's why `service.targetPort: 8080` is set
+
+---
+
+Learn more: [Health checks](../../docs/probes.md) · Next: [07 · Change one probe setting](../07-probes-partial-override/README.md)

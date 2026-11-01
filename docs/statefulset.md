@@ -1,70 +1,168 @@
 # StatefulSet
 
-## Overview
+> **In one line:** use a StatefulSet when each copy of your app needs **its own
+> fixed name and its own disk**. Databases are the classic case.
 
-Set `workload.type: "StatefulSet"` to run stateful apps with **stable pod
-identity** and **per-pod storage**.
+---
 
-## When to use
+## Do I need one?
 
-Choose a StatefulSet when your app needs:
+**Yes**, if your app:
 
-- A stable network identity (predictable pod names: `app-0`, `app-1`, …).
-- Its own storage volume per pod.
-- Ordered, graceful rollout/scale-down.
+- stores data that must survive restarts, **and**
+- needs each copy to have its own disk, or a fixed name (`app-0`, `app-1`, …).
 
-Typical fits: **databases, message queues, clustered systems**. For stateless
-apps, use the default Deployment — see [Workload](workload.md).
+Typical cases are **databases, message queues and clustered systems**.
 
-## StatefulSet-specific values
+**No**: a website, API or worker should use a normal [Deployment](workload.md).
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `workload.serviceName` | string | `""` | Headless service name (default `<fullname>-cluster`) |
-| `workload.updateStrategy` | map | `{type: RollingUpdate}` | Pod update strategy |
-| `workload.terminationGracePeriodSeconds` | int | `30` | Grace period on termination |
-| `workload.service.port` | int | `80` | Headless service port |
-| `workload.service.targetPort` | int | `80` | Headless service target port |
-| `workload.service.ports` | list | `[]` | Optional multi-port list |
-| `workload.service.annotations` | map | `{}` | Headless service annotations |
+---
 
-`persistence:` entries become `volumeClaimTemplates` (one PVC per pod). See
-[Persistence](persistence.md).
+## Copy-paste starter
 
-## Example
+Switch it on with **one line**, then add a disk:
 
 ```yaml
 workload:
-  enabled: true
-  type: "StatefulSet"
+  type: "StatefulSet"        # ← this is the switch
   image:
     repository: postgres
     tag: "16"
-  applicationPort: 5432
   replicas: 1
-  serviceName: ""              # defaults to <fullname>-cluster
-  updateStrategy:
-    type: RollingUpdate
-  terminationGracePeriodSeconds: 30
+  applicationPort: 5432
 
-persistence:
+persistence:                 # each copy gets its own disk like this
   - name: data
     size: 10Gi
     mountPath: /var/lib/postgresql/data
     accessModes: ["ReadWriteOnce"]
+
+service:
+  port: 5432
+  targetPort: 5432
 ```
 
-## Generated resources
+---
 
-| Resource | Name |
-|----------|------|
-| StatefulSet | `<fullname>` |
-| Headless Service | `workload.serviceName` or `<fullname>-cluster` |
-| Service (if `service.enabled`) | `<fullname>` |
-| PVCs (per pod) | `<volumeClaimTemplate name>-<fullname>-<ordinal>` |
+## What you get
 
-## Related
+| Thing | Name |
+|-------|------|
+| StatefulSet (your pods) | `<app>` → pods `<app>-0`, `<app>-1`, … |
+| Headless Service (gives each pod a fixed address) | `<app>-cluster`, or `workload.serviceName` |
+| Normal Service | `<app>` (if `service.enabled`) |
+| One disk **per pod** | `<disk name>-<app>-0`, `<disk name>-<app>-1`, … |
 
-- [Workload](workload.md)
-- [Persistence](persistence.md)
-- [Service](service.md)
+ Each pod can be reached at `<app>-0.<app>-cluster`, `<app>-1.<app>-cluster`, and so on.
+
+---
+
+## Recipes
+
+> These use plain passwords to keep them short. **In real use, load passwords
+> from [External Secrets](external-secrets.md).**
+
+<details>
+<summary><b>PostgreSQL</b></summary>
+
+```yaml
+workload:
+  type: "StatefulSet"
+  image: { repository: postgres, tag: "16" }
+  applicationPort: 5432
+  environment:
+    POSTGRES_DB: "mydb"
+    PGDATA: "/var/lib/postgresql/data/pgdata"
+  livenessProbe:  { type: "tcp" }
+  readinessProbe: { type: "tcp" }
+  startupProbe:   { type: "tcp" }
+
+persistence:
+  - name: data
+    size: 20Gi
+    accessModes: ["ReadWriteOnce"]
+    mountPath: /var/lib/postgresql/data
+
+service: { port: 5432, targetPort: 5432 }
+```
+</details>
+
+<details>
+<summary><b>Redis</b></summary>
+
+```yaml
+workload:
+  type: "StatefulSet"
+  image: { repository: redis, tag: "7-alpine" }
+  applicationPort: 6379
+  livenessProbe:  { type: "tcp" }
+  readinessProbe: { type: "tcp" }
+  startupProbe:   { type: "tcp" }
+
+persistence:
+  - name: data
+    size: 10Gi
+    accessModes: ["ReadWriteOnce"]
+    mountPath: /data
+
+service: { port: 6379, targetPort: 6379 }
+```
+</details>
+
+<details>
+<summary><b>RabbitMQ</b></summary>
+
+```yaml
+workload:
+  type: "StatefulSet"
+  image: { repository: rabbitmq, tag: "3-management" }
+  applicationPort: 5672
+  livenessProbe:  { type: "tcp" }
+  readinessProbe: { type: "tcp" }
+  startupProbe:   { type: "tcp" }
+
+persistence:
+  - name: data
+    size: 10Gi
+    accessModes: ["ReadWriteOnce"]
+    mountPath: /var/lib/rabbitmq
+
+service: { port: 5672, targetPort: 5672 }
+```
+</details>
+
+---
+
+## Gotchas
+
+- Databases don't answer HTTP on `/`, so the default probes will fail. Switch
+  them to `type: "tcp"` like the recipes above. See [Health checks](probes.md).
+- Use `accessModes: ["ReadWriteOnce"]`. The default (`ReadWriteMany`) often
+  doesn't work for databases.
+- Adding replicas does **not** turn a single-node database into a cluster.
+  The app itself has to support clustering.
+- Deleting the release does **not** delete the per-pod disks. That's on
+  purpose, so you don't lose data. Clean them up by hand if you really want them gone.
+
+---
+
+## StatefulSet-only settings
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| `workload.serviceName` | `""` | Name of the headless Service (`""` = `<app>-cluster`) |
+| `workload.updateStrategy` | `{type: RollingUpdate}` | How pods are updated |
+| `workload.terminationGracePeriodSeconds` | `30` | Seconds to shut down cleanly |
+| `workload.service.port` | `80` | Headless Service port |
+| `workload.service.targetPort` | `80` | Headless Service target port |
+| `workload.service.ports` | `[]` | Several ports for the headless Service |
+| `workload.service.annotations` | `{}` | Headless Service annotations |
+
+Everything else (image, probes, sidecars, secrets…) works the same as for a
+Deployment. See [Workload](workload.md).
+
+---
+
+## Next
+
+- Example: [13 statefulset](../examples/13-statefulset/README.md) · [Persistence](persistence.md)

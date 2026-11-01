@@ -1,31 +1,29 @@
-# 02 - Command and Args
+# 02 · Change the start command
 
-## What this shows
+> **In one line:** Run the container with your own command instead of the image's default.
 
-How to override the main container's `command` (entrypoint) and `args`
-(arguments) via `workload.command` and `workload.args`. Both render as YAML
-lists; when omitted or empty (`[]`) the container inherits the image defaults.
+**Use this when:**
+- You need a different subcommand, a shell script or extra flags
 
-## When to use
+## Try it
 
-When the image's default entrypoint is not what you want in this deployment,
-for example to run a specific subcommand, a custom shell script, or to change
-runtime flags.
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/app -f values.yaml
+helm template demo charts/app -f examples/02-command-args/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-The `Deployment`'s main container includes:
+## What you get
 
-```yaml
-command:
-  - "/bin/sh"
-args:
-  - "-c"
-  - "exec nginx -g 'daemon off;'"
-```
+- The main container starts with `command: ["/bin/sh"]`
+- …and `args: ["-c", "exec nginx -g 'daemon off;'"]`
+
+## Watch out
+
+- Leave `command` / `args` out (or `[]`) to keep the image's default
+
+---
+
+Learn more: [Workload](../../docs/workload.md) · Next: [03 · Environment variables](../03-environment/README.md)

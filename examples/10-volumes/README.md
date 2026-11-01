@@ -1,27 +1,31 @@
-# 10 - Volumes
+# 10 · Mount existing things
 
-## What this shows
+> **In one line:** Mount a ConfigMap, a Secret, a temporary folder and an existing disk.
 
-Mounting pod volumes with `workload.volumes`. Each entry supports exactly one
-source: `configMap`, `secret`, `emptyDir`, or `persistentVolumeClaim`
-(referencing an existing claim). Each also carries `mountPath` and optional
-`readOnly`.
+**Use this when:**
+- You want to mount something that **already exists** in the cluster
 
-## When to use
+## Try it
 
-When you need to inject configuration or TLS material, provide scratch space,
-or bind a pre-existing PVC — without having the chart create the volume for
-you. (Chart-managed PVCs live under top-level `persistence`, example 09.)
-
-## Render it
+From the repository root:
 
 ```bash
-helm template t <repo>/app -f values.yaml
+helm template demo charts/app -f examples/10-volumes/values.yaml
 ```
 
-## Expected output
+Open [`values.yaml`](values.yaml). The comments explain each line.
 
-The pod `volumes:` list has `config` (configMap), `tls` (secret), `cache`
-(emptyDir), and `existing-data` (persistentVolumeClaim `shared-data-pvc`),
-with matching `volumeMounts` on the main container. The `config` and `tls`
-mounts are `readOnly: true`.
+## What you get
+
+- `/etc/app/config` ← ConfigMap (read-only)
+- `/etc/app/tls` ← Secret (read-only)
+- `/var/cache/app` ← temporary folder
+- `/data` ← existing disk `shared-data-pvc`
+
+## Watch out
+
+- The ConfigMap, Secret and disk must exist **before** you install, or the pod won't start
+
+---
+
+Learn more: [Volumes](../../docs/volumes.md) · Next: [11 · Service type & ports](../11-service/README.md)

@@ -1,8 +1,7 @@
 # Chart Releaser (cr) configuration.
 #
-# Loaded automatically by the `cr` binary (config name "cr", searched in the
-# current directory, $HOME/.cr, /etc/cr) and passed explicitly by the release
-# workflow via `--config cr.yaml`.
+# Passed explicitly by the release workflow via
+# `config: .github/configs/cr.yaml`.
 #
 # Primary distribution: GitHub Releases + `gh-pages` branch chart repository.
 

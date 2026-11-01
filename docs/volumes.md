@@ -1,54 +1,75 @@
 # Volumes
 
-## Overview
+> **In one line:** `workload.volumes` mounts things that **already exist** into
+> your container: config files, secrets, temporary folders or existing disks.
 
-`workload.volumes` mounts **existing** Kubernetes objects into your container:
-ConfigMaps, Secrets, `emptyDir` scratch space, or a PVC you manage yourself.
+Want the chart to **create** a disk for you? Use [Persistence](persistence.md) instead.
 
-## When to use
+---
 
-| Source | When to use |
-|--------|-------------|
-| `configMap` | Mount config files or environment config from a ConfigMap. |
-| `secret` | Mount credentials/certs from a Secret. |
-| `emptyDir` | Temporary scratch space shared by containers, discarded on pod exit. |
-| `persistentVolumeClaim` | Attach a PVC that you create and manage outside the chart. |
+## Which source?
 
-For storage the **chart should create**, use [Persistence](persistence.md).
+| You want to mount… | Use |
+|--------------------|-----|
+| Config files from a ConfigMap | `configMap` |
+| Passwords or certificates from a Secret | `secret` |
+| A temporary folder that is wiped when the pod stops | `emptyDir` |
+| A disk you already created yourself | `persistentVolumeClaim` |
 
-## Values
+---
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `volumes[].name` | string | — | Volume name |
-| `volumes[].mountPath` | string | — | Mount path in the container |
-| `volumes[].readOnly` | bool | `false` | Mount read-only |
-| `volumes[].configMap.name` | string | — | ConfigMap to mount |
-| `volumes[].configMap.items` | list | — | Optional key→path items |
-| `volumes[].secret.secretName` | string | — | Secret to mount |
-| `volumes[].secret.items` | list | — | Optional key→path items |
-| `volumes[].emptyDir` | map | — | `{}` for a default emptyDir |
-| `volumes[].persistentVolumeClaim.claimName` | string | — | Existing PVC name |
-
-Exactly one source key is used per entry.
-
-## Example
+## Copy-paste starter
 
 ```yaml
 workload:
   volumes:
-    - name: config
+    - name: config                 # a ConfigMap, read-only
       mountPath: /etc/config
       readOnly: true
       configMap:
         name: my-app-config
-    - name: scratch
+
+    - name: tls                    # a Secret, read-only
+      mountPath: /etc/ssl
+      readOnly: true
+      secret:
+        secretName: my-app-tls
+
+    - name: scratch                # a temporary folder
       mountPath: /tmp/work
       emptyDir: {}
+
+    - name: shared                 # an existing disk
+      mountPath: /mnt/shared
+      persistentVolumeClaim:
+        claimName: shared-data-pvc
 ```
 
-## Related
+---
 
-- [Persistence](persistence.md)
-- [External Secrets](external-secrets.md)
-- [Values Reference](values-reference.md)
+## Gotchas
+
+- **Use one source per entry** (`configMap` *or* `secret` *or* …, not two).
+- The ConfigMap, Secret or disk must **already exist** in the namespace.
+  If it doesn't, the pod won't start.
+- Secrets from 1Password are mounted for you. See [External Secrets](external-secrets.md).
+
+---
+
+## All settings (per list item)
+
+| Setting | What it does |
+|---------|--------------|
+| `name` | Name of the volume |
+| `mountPath` | Folder inside the container |
+| `readOnly` | `true` to block writes (default `false`) |
+| `configMap.name` / `configMap.items` | ConfigMap to mount (optionally pick keys) |
+| `secret.secretName` / `secret.items` | Secret to mount (optionally pick keys) |
+| `emptyDir` | `{}` for a temporary folder |
+| `persistentVolumeClaim.claimName` | Name of an existing disk |
+
+---
+
+## Next
+
+- Example: [10 volumes](../examples/10-volumes/README.md) · [Persistence](persistence.md)

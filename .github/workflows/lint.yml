@@ -29,20 +29,20 @@
 #       # Resolve `file://` sub-chart dependencies before ct/helm lint run.
 #       - name: Update chart dependencies
 #         run: |
-#           helm dependency update external-secrets
-#           helm dependency update ingress
-#           helm dependency update app
+#           helm dependency update charts/external-secrets
+#           helm dependency update charts/ingress
+#           helm dependency update charts/app
 
 #       - name: Set up chart-testing
 #         uses: helm/chart-testing-action@v2.8.0
 
 #       - name: Run chart-testing (lint)
-#         run: ct lint --config ct.yaml
+#         run: ct lint --config .github/configs/ct.yaml
 
 #       # Belt-and-braces: lint every chart explicitly, independent of change detection.
 #       - name: Run helm lint on all charts
 #         run: |
-#           helm lint helm-helpers
-#           helm lint external-secrets
-#           helm lint ingress
-#           helm lint app
+#           helm lint charts/helm-helpers
+#           helm lint charts/external-secrets
+#           helm lint charts/ingress
+#           helm lint charts/app
