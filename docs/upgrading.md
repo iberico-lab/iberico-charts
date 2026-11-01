@@ -44,6 +44,12 @@ persistence:
     # ...
 ```
 
+### Service forwards to applicationPort
+
+`service.targetPort` now defaults to `workload.applicationPort` (it was `80`).
+If you set `targetPort` yourself, nothing changes. If you relied on the old
+value while `applicationPort` was something else, set `service.targetPort: 80`.
+
 ### Safer security defaults
 
 Pods now get `seccompProfile: RuntimeDefault`, the main container gets

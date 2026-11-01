@@ -23,3 +23,9 @@ tests:
         documentIndex: 0
       - equal: { path: 'spec.ports[0]', value: { port: 5432, targetPort: 5432, protocol: TCP, name: postgres } }
         documentIndex: 0
+
+  - it: forwards to applicationPort unless targetPort is set
+    set: { workload.applicationPort: 8080 }
+    asserts:
+      - equal: { path: 'spec.ports[0].targetPort', value: 8080 }
+      - equal: { path: 'spec.ports[0].port', value: 80 }

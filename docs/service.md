@@ -3,7 +3,7 @@
 > **In one line:** a Service gives your app a **stable address inside the
 > cluster**, so other apps (and Ingress) can reach it by name.
 
-**On by default:** port `80` → container port `80`, reachable only inside the cluster.
+**On by default:** port `80` → your `applicationPort`, reachable only inside the cluster.
 
 ---
 
@@ -12,8 +12,10 @@
 ```yaml
 service:
   port: 80            # port other apps connect to
-  targetPort: 8080    # port your app listens on
 ```
+
+Traffic is forwarded to `workload.applicationPort`. Set `service.targetPort` only
+if it should go somewhere else.
 
 ---
 
@@ -51,8 +53,6 @@ When `service.ports` is set, `service.port` and `service.targetPort` are ignored
 
 ## Gotchas
 
-- **`targetPort` does not follow `workload.applicationPort`.** If your app
-  listens on 8080, set `service.targetPort: 8080` yourself.
 - StatefulSets **also** get a second "headless" Service named `<app>-cluster`.
   See [StatefulSet](statefulset.md).
 - Don't want a Service? Set `service.enabled: false`.
@@ -67,7 +67,7 @@ When `service.ports` is set, `service.port` and `service.targetPort` are ignored
 | `service.enabled` | `true` | Create the Service |
 | `service.type` | `ClusterIP` | Who can reach it (see above) |
 | `service.port` | `80` | Port others connect to |
-| `service.targetPort` | `80` | Port on your container |
+| `service.targetPort` | `null` | Port on your container (`null` = `workload.applicationPort`) |
 | `service.portName` | `http` | Name of the single port, e.g. `postgres` (max 15 characters) |
 | `service.annotations` | `{}` | Extra annotations (e.g. cloud LB settings) |
 | `service.ports` | `[]` | Several ports: `name`, `port`, `targetPort`, `protocol` (default `TCP`) |

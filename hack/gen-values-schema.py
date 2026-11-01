@@ -62,7 +62,7 @@ def app():
                         "ports": LIST(svcport)}),
     })
     service = obj({"enabled": B(), "type": {"enum": ["ClusterIP", "NodePort", "LoadBalancer"]},
-                   "port": PORT, "targetPort": {"type": ["integer", "string"]},
+                   "port": PORT, "targetPort": {"type": ["integer", "string", "null"]},
                    "portName": {"type": "string", "maxLength": 15}, "annotations": STRMAP, "ports": LIST(svcport)})
     persistence = LIST(obj({"name": S(), "size": S(), "mountPath": S(), "accessModes": LIST({"type": "string"}),
                             "storageClassName": S(), "readOnly": B(), "annotations": STRMAP,

@@ -111,7 +111,7 @@ Defaults are shown as **liveness / readiness / startup**.
 | `service.enabled` | `true` | Create the Service |
 | `service.type` | `ClusterIP` | `ClusterIP`, `NodePort` or `LoadBalancer` |
 | `service.port` | `80` | Port others connect to |
-| `service.targetPort` | `80` | Port on your container. Does **not** follow `applicationPort` |
+| `service.targetPort` | `null` | Port on your container (`null` = `workload.applicationPort`) |
 | `service.portName` | `http` | Name of the single port (max 15 characters) |
 | `service.annotations` | `{}` | Extra annotations |
 | `service.ports` | `[]` | Several ports (replaces `port`/`targetPort`) |

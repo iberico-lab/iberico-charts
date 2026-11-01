@@ -155,7 +155,7 @@ service:
   enabled: true
   type: ClusterIP
   port: 80
-  targetPort: 80
+  targetPort: null  # null => use workload.applicationPort
   # Name of the single port (container, Service and headless Service), e.g.
   # "postgres". Max 15 chars. Ignored when service.ports / workload.ports are set.
   portName: http

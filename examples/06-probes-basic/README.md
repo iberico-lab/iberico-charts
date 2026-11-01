@@ -21,7 +21,7 @@ Open [`values.yaml`](values.yaml). The comments explain each line.
 
 ## Watch out
 
-- Probes follow `applicationPort` on their own, but the Service doesn't. That's why `service.targetPort: 8080` is set
+- Probes and the Service both follow `applicationPort`, so changing that one value is enough
 
 ---
 

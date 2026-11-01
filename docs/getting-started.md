@@ -67,19 +67,10 @@ test from your machine. Run `helm get notes my-app` to see it again later.
 
 ---
 
-## The #1 gotcha: the port
+## Ports in one sentence
 
-Is your app listening on a port **other than 80**? Then set **both** of these:
-
-```yaml
-workload:
-  applicationPort: 8080     # where the app listens
-
-service:
-  targetPort: 8080          # where the Service sends traffic (default is 80!)
-```
-
-`service.targetPort` does **not** follow `applicationPort` on its own.
+Set `workload.applicationPort` to the port your app listens on. The Service
+forwards to it automatically, and other apps reach it on `service.port` (80).
 
 ---
 

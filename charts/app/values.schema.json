@@ -591,7 +591,8 @@
         "targetPort": {
           "type": [
             "integer",
-            "string"
+            "string",
+            "null"
           ]
         },
         "portName": {
