@@ -1,0 +1,42 @@
+# 14 - Multi-Port Service
+# Expose several named container ports and map them through the Service.
+global:
+  name: "multiport-app"
+
+workload:
+  enabled: true
+  type: "Deployment"
+  image:
+    repository: nginx
+    tag: "1.25"
+  replicas: 1
+  applicationPort: 8080
+
+  # Named container ports (replaces the single default port).
+  ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+    - name: grpc
+      port: 9090
+      protocol: TCP
+    - name: metrics
+      port: 9102
+      protocol: TCP
+
+service:
+  enabled: true
+  # Multi-port Service; `name` must match a container port name.
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+    - name: grpc
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+    - name: metrics
+      port: 9102
+      targetPort: 9102
+      protocol: TCP

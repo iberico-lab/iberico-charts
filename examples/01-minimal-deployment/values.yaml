@@ -1,0 +1,16 @@
+# 01 - Minimal Deployment
+# The smallest runnable configuration: a single Deployment plus its Service.
+global:
+  name: "minimal-app"
+
+workload:
+  enabled: true
+  type: "Deployment"
+  image:
+    repository: nginx
+    tag: "1.25"
+  replicas: 1
+  applicationPort: 80
+
+service:
+  enabled: true

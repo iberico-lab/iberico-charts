@@ -12,4 +12,5 @@ Chart.lock
 
 tests/e2e/charts
 
+.codegraph
 other

@@ -1,0 +1,87 @@
+{{/*
+Expand the name of the chart.
+*/}}
+{{- define "helm-helpers.name" -}}
+{{- if and .Values.global .Values.global.nameOverride }}
+  {{- .Values.global.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+  {{- .Chart.Name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- end }}
+
+
+
+{{/*
+Returns the fully qualified application name.
+- Uses .Values.global.fullnameOverride if set.
+- Otherwise, uses .Values.global.name.
+- Always lowercases and truncates to 63 characters.
+Examples:
+  - example-service
+*/}}
+{{- define "helm-helpers.fullname" -}}
+{{- if .Values.global.fullnameOverride }}
+{{- .Values.global.fullnameOverride | trunc 63 | trimSuffix "-" | lower }}
+{{- else }}
+{{- include "helm-helpers.appName" . }}
+{{- end }}
+
+{{- end }}
+
+
+{{/*
+Returns the base application name from .Values.global.name, lowercased and truncated to 63 characters.
+*/}}
+{{- define "helm-helpers.appName" -}}
+{{- if .Values.global.name }}
+{{- .Values.global.name | trunc 63 | trimSuffix "-" | lower -}}
+{{- else }}
+{{- .Chart.Name | trunc 63 | trimSuffix "-" | lower -}}
+{{- end }}
+
+{{- end }}
+
+
+{{/*
+Returns the release namespace (where Helm installs the chart)
+*/}}
+{{- define "helm-helpers.namespace" -}}
+{{- .Release.Namespace | default "default" }}
+{{- end }}
+
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "helm-helpers.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+
+{{/*
+Common labels
+*/}}
+{{- define "helm-helpers.labels" -}}
+{{ include "helm-helpers.selectorLabels" . }}
+{{ include "helm-helpers.metaLabels" . }}
+{{- end }}
+
+
+{{/*
+Selector labels
+*/}}
+{{- define "helm-helpers.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "helm-helpers.appName" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/version: {{ .Chart.AppVersion }}
+{{- end }}
+
+
+{{/*
+Create unified labels
+*/}}
+{{- define "helm-helpers.metaLabels" -}}
+helm.sh/chart: {{ include "helm-helpers.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}

@@ -1,0 +1,18 @@
+# 06 - Basic Probes
+# The default HTTP probes rendered for every workload.
+# This example only tunes the port; type/path/timings stay at chart defaults.
+global:
+  name: "probes-basic-app"
+
+workload:
+  enabled: true
+  type: "Deployment"
+  image:
+    repository: nginx
+    tag: "1.25"
+  replicas: 1
+  applicationPort: 8080
+
+service:
+  enabled: true
+  targetPort: 8080

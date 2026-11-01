@@ -1,0 +1,35 @@
+{{- define "app.serviceHeadless" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.workload.serviceName | default (printf "%s-cluster" (include "helm-helpers.fullname" .)) }}
+  namespace: {{ include "helm-helpers.namespace" . }}
+  labels:
+    {{- include "helm-helpers.labels" . | nindent 4 }}
+    app.kubernetes.io/component: service-cluster
+  {{- with .Values.workload.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    {{- include "helm-helpers.selectorLabels" . | nindent 4 }}
+  ports:
+    {{- if .Values.workload.service.ports }}
+    {{- range .Values.workload.service.ports }}
+    - port: {{ .port }}
+      targetPort: {{ .targetPort }}
+      protocol: {{ .protocol | default "TCP" }}
+      name: {{ .name | quote }}
+    {{- end }}
+    {{- else }}
+    - port: {{ .Values.workload.service.port | default .Values.workload.applicationPort }}
+      targetPort: {{ .Values.workload.service.targetPort | default .Values.workload.applicationPort }}
+      protocol: TCP
+      name: "http"
+    {{- end }}
+
+{{- end -}}

@@ -1,0 +1,7 @@
+# Global settings
+global:
+  name: ""
+  # Optional overrides
+  nameOverride: ""
+  fullnameOverride: ""
+  namespaceOverride: ""

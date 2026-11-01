@@ -1,0 +1,11 @@
+global:
+    name: ""
+
+# Ingress definitions
+# Default internal ingress - name will be generated from helm-helpers
+ingresses:
+  - name: ""
+    type: "internal"
+    host: ""  # Leave empty for defaultBackend approach
+    servicePort: 80
+    # servicePortName: "https"  # Uncomment for HTTPS backend

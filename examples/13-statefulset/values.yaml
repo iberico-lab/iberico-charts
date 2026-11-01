@@ -1,0 +1,45 @@
+# 13 - StatefulSet
+# `workload.type: StatefulSet` for stable identity and per-pod storage.
+# `persistence` entries become volumeClaimTemplates (one PVC per pod) and a
+# headless Service (`<app>-cluster`) is rendered automatically.
+global:
+  name: "postgresql"
+
+workload:
+  enabled: true
+  type: "StatefulSet"
+  image:
+    repository: postgres
+    tag: "15"
+  replicas: 3
+  applicationPort: 5432
+  # Custom name for the headless Service (defaults to <app>-cluster).
+  serviceName: "postgresql-cluster"
+  terminationGracePeriodSeconds: 30
+  environment:
+    POSTGRES_DB: "mydb"
+    POSTGRES_USER: "postgres"
+    PGDATA: "/var/lib/postgresql/data/pgdata"
+  # Typed TCP probes for a database.
+  livenessProbe:
+    type: "tcp"
+    periodSeconds: 10
+  readinessProbe:
+    type: "tcp"
+    periodSeconds: 5
+  startupProbe:
+    type: "tcp"
+    initialDelaySeconds: 30
+    failureThreshold: 6
+
+persistence:
+  - name: data
+    size: 20Gi
+    accessModes: ["ReadWriteOnce"]
+    storageClassName: "fast-ssd"
+    mountPath: /var/lib/postgresql/data
+
+service:
+  enabled: true
+  port: 5432
+  targetPort: 5432

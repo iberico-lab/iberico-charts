@@ -1,0 +1,22 @@
+# 02 - Command and Args
+# Override the main container entrypoint (command) and its arguments (args).
+# Both are lists; leave them empty ([]) to inherit the image defaults.
+global:
+  name: "command-args-app"
+
+workload:
+  enabled: true
+  type: "Deployment"
+  image:
+    repository: nginx
+    tag: "1.25"
+  replicas: 1
+  applicationPort: 80
+
+  # Entrypoint override
+  command: ["/bin/sh"]
+  # Arguments passed to the entrypoint
+  args: ["-c", "exec nginx -g 'daemon off;'"]
+
+service:
+  enabled: true

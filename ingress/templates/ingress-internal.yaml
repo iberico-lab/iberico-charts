@@ -1,0 +1,42 @@
+{{/*
+Internal Ingress - Tailscale-based internal access
+Uses Tailscale ingress class, no external hostname required
+*/}}
+{{- if .Values.ingresses }}
+{{- range .Values.ingresses }}
+{{- if eq .type "internal" }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .host | default (include "helm-helpers.fullname" $) }}-{{ .type }}
+  namespace: {{ include "helm-helpers.namespace" $ }}
+  tailscale.com/hostname: {{ include "helm-helpers.fullname" $ }}
+  labels:
+    {{- include "helm-helpers.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: ingress
+  annotations:
+    {{- if .tailscaleExpose | default false }}
+    tailscale.com/serve: "true"
+    {{- end }}
+    {{- include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Internal" "root" $) | nindent 4 }}
+    {{- with .annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service:
+      name: {{ .name | default $.Values.defaultServiceName | default (include "helm-helpers.fullname" $) }}
+      port:
+        {{- if .servicePortName }}
+        name: {{ .servicePortName }}
+        {{- else }}
+        number: {{ .servicePort | default $.Values.defaultServicePort | default 80 }}
+        {{- end }}
+  tls:
+    - hosts:
+        - {{ .host | default (include "helm-helpers.fullname" $) }}
+{{- end }}
+{{- end }}
+{{- end }}

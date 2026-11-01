@@ -1,0 +1,44 @@
+# 08 - Custom Probes
+# Fully custom probes: when `custom: true`, `spec` is emitted VERBATIM,
+# bypassing the chart's handler/timing builder. Mix with typed probes freely.
+global:
+  name: "probes-custom-app"
+
+workload:
+  enabled: true
+  type: "Deployment"
+  image:
+    repository: nginx
+    tag: "1.25"
+  replicas: 1
+  applicationPort: 8080
+
+  # Raw probe spec, emitted exactly as written.
+  livenessProbe:
+    custom: true
+    spec:
+      httpGet:
+        path: /live
+        port: 8080
+        httpHeaders:
+          - name: X-Probe
+            value: liveness
+      initialDelaySeconds: 10
+      periodSeconds: 20
+      failureThreshold: 3
+
+  # Exec probe: `command` is REQUIRED for type "exec".
+  readinessProbe:
+    enabled: true
+    type: "exec"
+    command: ["cat", "/tmp/healthy"]
+
+  # TCP probe on a non-default port.
+  startupProbe:
+    enabled: true
+    type: "tcp"
+    port: 8080
+
+service:
+  enabled: true
+  targetPort: 8080

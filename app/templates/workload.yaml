@@ -1,0 +1,7 @@
+{{- if .Values.workload.enabled | default false -}}
+{{- if eq (.Values.workload.type | default "Deployment") "Deployment" -}}
+{{- include "app.deployment" . -}}
+{{- else if eq .Values.workload.type "StatefulSet" -}}
+{{- include "app.statefulset" . -}}
+{{- end -}}
+{{- end -}}

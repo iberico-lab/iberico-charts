@@ -1,0 +1,30 @@
+# 07 - Partial Probe Overrides
+# Override ONLY specific probe fields; every omitted field inherits its
+# values.yaml default via Helm's native map coalescing.
+global:
+  name: "probes-partial-app"
+
+workload:
+  enabled: true
+  type: "Deployment"
+  image:
+    repository: nginx
+    tag: "1.25"
+  replicas: 1
+  applicationPort: 8080
+
+  livenessProbe:
+    # type/path/port/timings inherited from chart defaults; only this changes.
+    periodSeconds: 20
+
+  readinessProbe:
+    # Change the path only.
+    path: "/ready"
+
+  startupProbe:
+    # Disable the startup probe entirely.
+    enabled: false
+
+service:
+  enabled: true
+  targetPort: 8080

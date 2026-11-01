@@ -1,0 +1,27 @@
+# 04 - Sidecars (extraContainers)
+# Add extra containers alongside the main app container.
+# Each entry is rendered VERBATIM into the pod and MUST define `name`.
+global:
+  name: "sidecar-app"
+
+workload:
+  enabled: true
+  type: "Deployment"
+  image:
+    repository: nginx
+    tag: "1.25"
+  replicas: 1
+  applicationPort: 80
+
+  extraContainers:
+    - name: metrics-exporter
+      image: prom/statsd-exporter:latest
+      ports:
+        - name: metrics
+          containerPort: 9102
+    - name: log-tailer
+      image: busybox:1.36
+      command: ["sh", "-c", "tail -F /var/log/app/access.log"]
+
+service:
+  enabled: true

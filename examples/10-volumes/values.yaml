@@ -1,0 +1,37 @@
+# 10 - Volumes
+# Pod volumes via `workload.volumes` (configMap | secret | emptyDir |
+# persistentVolumeClaim). These mount existing/standalone volumes rather than
+# chart-managed PVCs.
+global:
+  name: "volumes-app"
+
+workload:
+  enabled: true
+  type: "Deployment"
+  image:
+    repository: nginx
+    tag: "1.25"
+  replicas: 1
+  applicationPort: 80
+
+  volumes:
+    - name: config
+      configMap:
+        name: volumes-app-config
+      mountPath: /etc/app/config
+      readOnly: true
+    - name: tls
+      secret:
+        secretName: volumes-app-tls
+      mountPath: /etc/app/tls
+      readOnly: true
+    - name: cache
+      emptyDir: {}
+      mountPath: /var/cache/app
+    - name: existing-data
+      persistentVolumeClaim:
+        claimName: shared-data-pvc
+      mountPath: /data
+
+service:
+  enabled: true

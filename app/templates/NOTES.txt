@@ -1,0 +1,64 @@
+1. App chart (parent) has been deployed successfully!
+
+2. The following sub-charts have been deployed:
+   {{- if and (index .Values "external-secrets") (index .Values "external-secrets" "onepassword") (index .Values "external-secrets" "onepassword" "enabled") }}
+   - External Secrets: Manages secrets from 1Password
+   {{- end }}
+   {{- if .Values.ingress.enabled }}
+   - Ingress: Tailscale-based ingress configuration
+   {{- end }}
+   - App: Application deployment with secret and volume management
+
+3. Application resources created:
+   {{- if eq (.Values.workload.type | default "Deployment") "Deployment" }}
+   - Deployment: {{ include "helm-helpers.fullname" . }}
+   {{- else }}
+   - StatefulSet: {{ include "helm-helpers.fullname" . }}
+   {{- end }}
+   - Service: {{ include "helm-helpers.fullname" . }}
+
+4. Application configuration:
+   - Image: {{ .Values.workload.image.repository }}:{{ .Values.workload.image.tag }}
+   - Replicas: {{ .Values.workload.replicas }}
+   - Port: {{ .Values.workload.applicationPort }}
+   - Health probe: {{ .Values.workload.livenessProbe.type | default "http" }}{{ if eq (.Values.workload.livenessProbe.type | default "http") "http" }} {{ .Values.workload.livenessProbe.path | default "/" }}{{ end }}
+
+5. Your application is accessible via the configured ingress hostname
+
+6. Secret management:
+   {{- if .Values.workload.volumes }}
+   - Volume mounts:
+     {{- range .Values.workload.volumes }}
+     - {{ .name }} → {{ .mountPath }}
+     {{- end }}
+   {{- end }}
+
+7. Health checks:
+   {{- if .Values.workload.livenessProbe.enabled }}
+   - Liveness probe: {{ .Values.workload.livenessProbe.type | default "http" }}{{ if eq (.Values.workload.livenessProbe.type | default "http") "http" }} {{ .Values.workload.livenessProbe.path | default "/" }}{{ end }}
+   {{- end }}
+   {{- if .Values.workload.readinessProbe.enabled }}
+   - Readiness probe: {{ .Values.workload.readinessProbe.type | default "http" }}{{ if eq (.Values.workload.readinessProbe.type | default "http") "http" }} {{ .Values.workload.readinessProbe.path | default "/" }}{{ end }}
+   {{- end }}
+   {{- if .Values.workload.startupProbe.enabled }}
+   - Startup probe: {{ .Values.workload.startupProbe.type | default "http" }}{{ if eq (.Values.workload.startupProbe.type | default "http") "http" }} {{ .Values.workload.startupProbe.path | default "/" }}{{ end }}
+   {{- end }}
+
+8. To check the status of all resources:
+   kubectl get all -n {{ .Release.Namespace }}
+
+9. To check external secrets status:
+   kubectl get externalsecrets,secretstore -n {{ .Release.Namespace }}
+
+10. To check ingress status:
+    kubectl get ingress -n {{ .Release.Namespace }}
+
+11. To view application logs:
+    kubectl logs -l app.kubernetes.io/name={{ include "helm-helpers.appName" . }} -n {{ .Release.Namespace }}
+
+12. To scale the application:
+    {{- if eq (.Values.workload.type | default "Deployment") "Deployment" }}
+    kubectl scale deployment {{ include "helm-helpers.fullname" . }} --replicas=<desired-count> -n {{ .Release.Namespace }}
+    {{- else }}
+    kubectl scale statefulset {{ include "helm-helpers.fullname" . }} --replicas=<desired-count> -n {{ .Release.Namespace }}
+    {{- end }}

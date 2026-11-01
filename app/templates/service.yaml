@@ -1,0 +1,10 @@
+{{- if eq .Values.workload.type "Deployment" -}}
+{{- if .Values.service.enabled | default false -}}
+{{- include "app.service" . -}}
+{{- end -}}
+{{- else if eq .Values.workload.type "StatefulSet" -}}
+{{- include "app.serviceHeadless" . -}}
+{{- if .Values.service.enabled | default false -}}
+{{- include "app.service" . -}}
+{{- end -}}
+{{- end -}}

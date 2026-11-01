@@ -1,0 +1,34 @@
+# 09 - Persistence
+# Top-level `persistence` list. For a Deployment the chart creates standalone
+# PersistentVolumeClaims and mounts them into the main container.
+global:
+  name: "persistence-app"
+
+workload:
+  enabled: true
+  type: "Deployment"
+  image:
+    repository: mysql
+    tag: "8.0"
+  replicas: 1
+  applicationPort: 3306
+  environment:
+    MYSQL_ROOT_PASSWORD: "change-me"  # use external-secrets in production
+
+persistence:
+  - name: data
+    size: 20Gi
+    accessModes: ["ReadWriteOnce"]
+    storageClassName: "fast-ssd"
+    mountPath: /var/lib/mysql
+  - name: logs
+    size: 5Gi
+    accessModes: ["ReadWriteOnce"]
+    storageClassName: "standard"
+    mountPath: /var/log/mysql
+    readOnly: false
+
+service:
+  enabled: true
+  port: 3306
+  targetPort: 3306

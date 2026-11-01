@@ -1,0 +1,16 @@
+apiVersion: v2
+name: helm-helpers
+description: A shared Helm chart containing common helper functions
+type: library
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - helpers
+  - templates
+  - shared
+home: https://github.com/iberico-lab/iberico-charts
+sources:
+  - https://github.com/iberico-lab/iberico-charts
+maintainers:
+  - name: Iberico Lab
+    email: team@iberico-lab.com

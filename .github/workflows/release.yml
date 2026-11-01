@@ -1,0 +1,62 @@
+# name: Release Charts
+
+# # Packages and publishes every changed Helm chart as a GitHub Release and
+# # rebuilds the `gh-pages` branch chart repository (primary distribution).
+# #
+# # OCI (optional, GHCR) — to also publish to an OCI registry, add a step after
+# # chart-releaser:
+# #   - name: Login to GHCR
+# #     run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+# #   - name: Push charts to GHCR
+# #     run: |
+# #       for pkg in .cr-release-packages/*.tgz; do
+# #         helm push "$pkg" oci://ghcr.io/${{ github.repository_owner }}/charts
+# #       done
+
+# on:
+#   push:
+#     branches:
+#       - main
+#     tags:
+#       - "v*"
+#   workflow_dispatch:
+
+# permissions:
+#   contents: write
+
+# env:
+#   HELM_VERSION: v3.16.4
+#   CR_VERSION: v1.7.0
+
+# jobs:
+#   release:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           # chart-releaser diffs against the latest git tag; needs full history.
+#           fetch-depth: 0
+
+#       - name: Set up Helm
+#         uses: azure/setup-helm@v4
+#         with:
+#           version: ${{ env.HELM_VERSION }}
+
+#       # chart-releaser cannot resolve `file://` dependencies on its own, so the
+#       # vendored sub-charts MUST be materialised before chart-releaser packages.
+#       - name: Update chart dependencies
+#         run: |
+#           helm dependency update helm-helpers
+#           helm dependency update external-secrets
+#           helm dependency update ingress
+#           helm dependency update app
+
+#       - name: Run chart-releaser
+#         uses: helm/chart-releaser-action@v1.7.0
+#         with:
+#           charts_dir: .
+#           config: cr.yaml
+#           version: ${{ env.CR_VERSION }}
+#         env:
+#           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

@@ -1,0 +1,172 @@
+global:
+  name: ""
+
+# External Secrets sub-chart configuration
+external-secrets:
+  enabled: false
+  onepassword: {}
+
+# Ingress sub-chart configuration
+ingress:
+  enabled: false
+
+# Unified workload configuration (Deployment or StatefulSet)
+workload:
+  enabled: true
+  type: "Deployment"  # or "StatefulSet"
+  annotations: {}
+  image:
+    repository: nginx
+    tag: "1.25"
+    pullPolicy: IfNotPresent
+  replicas: 2
+  applicationPort: 80
+
+  # Explicit container ports; empty = single port from applicationPort.
+  # Each entry: { name, port, protocol }
+  ports: []
+  # ports:
+  #   - name: http
+  #     port: 8080
+  #     protocol: TCP
+
+  # Main container command (empty = inherit image defaults)
+  command: []
+  # Main container args (empty = inherit image defaults)
+  args: []
+
+  pod:
+    annotations: {}
+  
+  # Environment variables
+  environment: {}
+  volumes: []
+
+  # Sidecar containers rendered verbatim; each entry MUST define `name`
+  extraContainers: []
+  # extraContainers:
+  #   - name: metrics-exporter
+  #     image: prom/statsd-exporter:latest
+  #     ports:
+  #       - name: metrics
+  #         containerPort: 9102
+
+  # Extra init containers rendered verbatim; each entry MUST define `name`
+  extraInitContainers: []
+  # extraInitContainers:
+  #   - name: wait-for-db
+  #     image: busybox:1.36
+  #     command: ["sh", "-c", "until nc -z db 5432; do sleep 2; done"]
+
+  # Resources
+  resources:
+    requests:
+      cpu: "300m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "800Mi"
+
+  # Health checks
+  livenessProbe:
+    enabled: true
+    type: "http"
+    path: "/"
+    # host: ""            # optional http host
+    # scheme: ""          # optional http scheme (HTTP/HTTPS)
+    # httpHeaders: []     # optional http headers
+    # command: []         # exec probe command (type: "exec")
+    # spec: {}            # used verbatim when custom: true
+    custom: false
+    port: null            # null => use workload.applicationPort
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+    successThreshold: 1
+
+  readinessProbe:
+    enabled: true
+    type: "http"
+    path: "/"
+    # host: ""            # optional http host
+    # scheme: ""          # optional http scheme (HTTP/HTTPS)
+    # httpHeaders: []     # optional http headers
+    # command: []         # exec probe command (type: "exec")
+    # spec: {}            # used verbatim when custom: true
+    custom: false
+    port: null            # null => use workload.applicationPort
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 1
+    failureThreshold: 3
+    successThreshold: 1
+
+  startupProbe:
+    enabled: true
+    type: "http"
+    path: "/"
+    # host: ""            # optional http host
+    # scheme: ""          # optional http scheme (HTTP/HTTPS)
+    # httpHeaders: []     # optional http headers
+    # command: []         # exec probe command (type: "exec")
+    # spec: {}            # used verbatim when custom: true
+    custom: false
+    port: null            # null => use workload.applicationPort
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+    successThreshold: 1
+
+  # Deployment-specific rolling update strategy
+  strategy:  # Only used for Deployment type
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
+  # StatefulSet-specific configuration
+  serviceName: ""  # Optional: custom name for headless service (defaults to app-name-cluster)
+  updateStrategy:  # Optional: StatefulSet update strategy
+    type: RollingUpdate
+  terminationGracePeriodSeconds: 30  # Optional: grace period for pod termination
+  service:
+    annotations: {}
+    port: 80
+    targetPort: 80
+    ports: []
+
+# Service configuration (for external access)
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+  annotations: {}
+
+# Service Account configuration
+serviceAccount:
+  create: false
+  automount: true
+
+# Persistence configuration (used for both Deployment PVCs and StatefulSet volumeClaimTemplates)
+persistence: []
+
+# Pod Security Context
+podSecurityContext: {}
+
+# Container Security Context
+securityContext: {}
+
+# Node Selector
+nodeSelector: {}
+
+# Affinity
+affinity: {}
+
+# Tolerations
+tolerations: []
+
+# Image Pull Secrets
+imagePullSecrets: []

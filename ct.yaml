@@ -1,0 +1,20 @@
+# chart-testing (ct) configuration.
+#
+# All charts live at the repository root, so `chart-dirs` is `.`.
+
+remote: origin
+target-branch: main
+
+chart-dirs:
+  - .
+
+# No external chart repositories are required: every dependency is resolved
+# from the local `file://../helm-helpers` sub-chart.
+chart-repos: []
+
+# Do not enforce a version bump on every PR; releases are driven by
+# chart-releaser's own changed-chart + git-tag detection.
+check-version-increment: false
+
+# Maintainer metadata is optional in this repo.
+validate-maintainers: false

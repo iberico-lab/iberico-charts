@@ -1,0 +1,22 @@
+global:
+    name: ""
+
+# External Secrets configuration by provider
+onepassword:
+    enabled: false
+    refreshInterval: "10m"
+    clusterSecretStoreRef: onepassword-cluster
+    secretStore:
+      enabled: true
+      name: ""  # Will be generated using helm-helpers
+    # secrets:
+    #   - name: ""  # Will be generated using helm-helpers
+    #     envVars:
+    #       - secretPath: "credentials-example-secret-path"
+    #         mappings:
+    #           EXAMPLE_USERNAME: username
+    #           EXAMPLE_PASSWORD: password
+    #     files:
+    #       - secretPath: "certificates/fisglobal-truststore"
+    #         mappings:
+    #           fisglobal.truststore.jks: trust-jksBase64  # Files are stored as base64

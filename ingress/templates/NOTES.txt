@@ -1,0 +1,59 @@
+1. Ingress chart has been deployed successfully!
+
+2. The following ingress resources have been created:
+   {{- range .Values.ingresses }}
+   - {{ .name }}-{{ .type }} ({{ .type }})
+     {{- if ne .type "internal" }}
+     - Host: {{ .host }}
+     {{- else }}
+     - Internal host: {{ .host }}
+     {{- end }}
+     {{- if and .homepage .homepage.enabled }}
+     - Homepage: {{ .homepage.name | default .name }}
+     {{- end }}
+   {{- end }}
+
+3. Ingress types configured:
+   {{- $public := false }}
+   {{- $protected := false }}
+   {{- $internal := false }}
+   {{- range .Values.ingresses }}
+     {{- if eq .type "public" }}{{ $public = true }}{{ end }}
+     {{- if eq .type "public-protected" }}{{ $protected = true }}{{ end }}
+     {{- if eq .type "internal" }}{{ $internal = true }}{{ end }}
+   {{- end }}
+   {{- if $public }}
+   - Public (no auth): Uses Traefik + network-no-auth middleware
+   {{- end }}
+   {{- if $protected }}
+   - Public Protected (SSO): Uses Traefik + network-sso middleware
+   {{- end }}
+   {{- if $internal }}
+   - Internal: Uses Tailscale ingress class
+   {{- end }}
+
+4. TLS certificates:
+   {{- range .Values.ingresses }}
+   {{- if eq .type "internal" }}
+   - {{ .host }} (managed by Tailscale)
+   {{- else }}
+   - {{ .host }} (managed by cert-manager + Let's Encrypt)
+   {{- end }}
+   {{- end }}
+
+5. To check the status of your ingresses:
+   kubectl get ingress -n {{ .Release.Namespace }}
+
+6. To view ingress details:
+   {{- range .Values.ingresses }}
+   kubectl describe ingress {{ .name }}-{{ .type }} -n {{ $.Release.Namespace }}
+   {{- end }}
+
+7. Access your services:
+   {{- range .Values.ingresses }}
+   {{- if ne .type "internal" }}
+   - {{ .host }} ({{ .type }})
+   {{- else }}
+   - {{ .host }} (internal via Tailscale)
+   {{- end }}
+   {{- end }}

@@ -1,0 +1,38 @@
+# 12 - Ingress
+# Enable the bundled `ingress` sub-chart to expose the app via Traefik
+# (public) and/or Tailscale (internal).
+global:
+  name: "ingress-app"
+
+workload:
+  enabled: true
+  type: "Deployment"
+  image:
+    repository: nginx
+    tag: "1.25"
+  replicas: 1
+  applicationPort: 80
+
+service:
+  enabled: true
+  port: 80
+  targetPort: 80
+
+ingress:
+  enabled: true
+  ingresses:
+    # Public HTTPS route via Traefik + cert-manager.
+    - name: "ingress-app"
+      type: "public"
+      host: "app.example.com"
+      servicePort: 80
+      homepage:
+        name: "Ingress App"
+        description: "Public demo app"
+        group: "Applications"
+        icon: "kubernetes"
+    # Internal route via Tailscale (no hostname required).
+    - name: "ingress-app"
+      type: "internal"
+      host: ""
+      servicePort: 80
