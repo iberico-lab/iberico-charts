@@ -47,6 +47,8 @@ Every feature is a few lines in your values file. Most are **off** until you tur
 | StatefulSet | One disk and a fixed name per copy, for databases | [StatefulSet](docs/statefulset.md) |
 | External Secrets | Passwords from 1Password as env vars or files | [External Secrets](docs/external-secrets.md) |
 | Ingress | Private (Tailscale), public, or public with login | [Ingress](docs/ingress.md) |
+| Metrics | Prometheus ServiceMonitor with one switch | [Metrics](docs/metrics.md) |
+| Availability & scaling | PodDisruptionBudget, autoscaling, spread across nodes | [Availability](docs/availability.md) |
 | Security | Safe defaults on, stricter settings one block away | [Security](docs/security.md) |
 | Extra manifests | Ship any extra object (ConfigMap, CronJob…) with the app | [Extra manifests](docs/extra-manifests.md) |
 

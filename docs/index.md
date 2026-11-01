@@ -21,6 +21,7 @@
 | Run a database or anything with "state" | [StatefulSet](statefulset.md) |
 | Use passwords from 1Password | [External Secrets](external-secrets.md) |
 | Put my app on a URL (private or public) | [Ingress](ingress.md) |
+| Collect my app's metrics with Prometheus | [Metrics](metrics.md) |
 | Keep it running during maintenance, or scale with traffic | [Availability & scaling](availability.md) |
 | Lock down what the app is allowed to do | [Security](security.md) |
 | Ship an extra object (ConfigMap, CronJob…) with my app | [Extra manifests](extra-manifests.md) |

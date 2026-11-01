@@ -20,6 +20,7 @@ For explanations and examples, follow the  link in each section.
 | `service` | see below | Address inside the cluster ([docs](service.md)) |
 | `persistence` | `[]` | Disks the chart creates ([docs](persistence.md)) |
 | `serviceAccount` | see below | Kubernetes identity for the pods |
+| `metrics.serviceMonitor` | `{enabled: false, path: /metrics, interval: 30s}` | Prometheus scraping ([docs](metrics.md)) |
 | `autoscaling` | `{enabled: false, minReplicas: 2, maxReplicas: 5, targetCPUUtilizationPercentage: 80}` | Scale with CPU/memory ([docs](availability.md)) |
 | `podDisruptionBudget` | `{enabled: false, minAvailable: null, maxUnavailable: 1}` | Pods allowed down during maintenance ([docs](availability.md)) |
 | `podSecurityContext` | `seccompProfile: RuntimeDefault` | Security settings for the pod ([docs](security.md)) |

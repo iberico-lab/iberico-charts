@@ -170,6 +170,16 @@ serviceAccount:
   name: ""
   annotations: {}
 
+# Prometheus scraping via a ServiceMonitor (needs the Prometheus Operator CRDs).
+metrics:
+  serviceMonitor:
+    enabled: false
+    port: ""          # Service port NAME to scrape; "" = the first/only port
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: ""
+    labels: {}        # e.g. { release: kube-prometheus-stack } so Prometheus finds it
+
 # Scale the number of pods with CPU/memory use (HorizontalPodAutoscaler).
 # When enabled, workload.replicas is ignored. Needs metrics-server in the cluster.
 autoscaling:
