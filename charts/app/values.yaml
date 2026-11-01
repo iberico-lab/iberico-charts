@@ -229,6 +229,12 @@ podDisruptionBudget:
 # storageClassName, readOnly, annotations). accessModes default: ReadWriteOnce.
 persistence: []
 
+# "restricted" = what Kubernetes' strictest Pod Security Standard requires:
+# non-root, no privilege escalation, all capabilities dropped, seccomp, also on
+# sidecars without their own securityContext. Needs an image that runs as a
+# non-root user (docs/security.md). "" = only the safe defaults below.
+securityPreset: ""
+
 # Pod Security Context. Safe defaults that work with any image; see
 # docs/security.md for the stricter opt-in settings. Set a key to null to drop it.
 podSecurityContext:

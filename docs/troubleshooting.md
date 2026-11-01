@@ -45,6 +45,7 @@ These come from the chart and stop **before** anything is created.
 | `workload.configFiles: … must be a full file path` / `invalid propertyName` | A config file path without a leading `/` | Write the full path: `/etc/app/config.yaml` |
 | `maxUnavailable and maxSurge can't both be 0` | No pod could ever be replaced | Set `workload.strategy.rollingUpdate.maxSurge: 1` |
 | `workload.shutdownDelaySeconds (…) must be lower than workload.terminationGracePeriodSeconds` | The pod would be killed while it waits | Lower the delay or raise the grace period |
+| `securityPreset restricted: … can't be …` / `may only contain NET_BIND_SERVICE` | A setting breaks the restricted standard | Remove that setting, or drop `securityPreset` |
 | `field is immutable` (on upgrade) | A locked field changed | See [Upgrading](upgrading.md) |
 | `updates to statefulset spec for fields other than ... are forbidden` | StatefulSet installed with 0.2.x and has disks | One-time `--cascade=orphan` step in [Upgrading](upgrading.md#statefulsets-with-disks-one-time-step) |
 

@@ -33,6 +33,8 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 - Install notes warn when fewer than 2 replicas run, note that 3 is needed for high availability,
   and warn when nothing spreads the pods across nodes.
 - `metrics.serviceMonitor` (Prometheus Operator).
+- `securityPreset: restricted`: everything the restricted Pod Security Standard requires, also on
+  sidecars; forbidden settings fail the render.
 - `networkPolicy` (opt-in): only the app's namespace and listed namespaces may connect.
 - `workload.extraEnv`, `workload.extraEnvFrom`, `workload.pod.labels`, `workload.lifecycle`,
   `workload.podManagementPolicy`, `workload.reloadOnSecretChange` (Stakater Reloader).

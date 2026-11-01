@@ -302,6 +302,60 @@ Usage: {{ include "app.volume" . }}
 {{- end }}
 
 {{/*
+Security contexts with securityPreset applied. "restricted" adds what the
+Kubernetes "restricted" Pod Security Standard requires; your own settings win,
+but ones that break the standard fail the render.
+*/}}
+{{- define "app.restricted" -}}
+{{- eq (.Values.securityPreset | default "") "restricted" -}}
+{{- end }}
+
+{{- define "app.restrictedContainerContext" -}}
+{{- toYaml (dict "allowPrivilegeEscalation" false "capabilities" (dict "drop" (list "ALL"))) -}}
+{{- end }}
+
+{{- define "app.checkRestricted" -}}
+{{- $ctx := .ctx | default dict -}}
+{{- if eq (toString $ctx.runAsNonRoot) "false" }}{{ fail (printf "securityPreset restricted: %s.runAsNonRoot can't be false" .where) }}{{ end -}}
+{{- if and (hasKey $ctx "runAsUser") (eq (toString $ctx.runAsUser) "0") }}{{ fail (printf "securityPreset restricted: %s.runAsUser can't be 0 (root)" .where) }}{{ end -}}
+{{- if eq (toString $ctx.allowPrivilegeEscalation) "true" }}{{ fail (printf "securityPreset restricted: %s.allowPrivilegeEscalation can't be true" .where) }}{{ end -}}
+{{- if eq (toString $ctx.privileged) "true" }}{{ fail (printf "securityPreset restricted: %s.privileged can't be true" .where) }}{{ end -}}
+{{- range (($ctx.capabilities | default dict).add | default list) -}}
+{{- if ne . "NET_BIND_SERVICE" }}{{ fail (printf "securityPreset restricted: %s.capabilities.add may only contain NET_BIND_SERVICE, not %s" $.where .) }}{{ end -}}
+{{- end -}}
+{{- end }}
+
+{{- define "app.podSecurityContext" -}}
+{{- $ctx := deepCopy (.Values.podSecurityContext | default dict) -}}
+{{- if eq (include "app.restricted" .) "true" -}}
+{{- include "app.checkRestricted" (dict "ctx" $ctx "where" "podSecurityContext") -}}
+{{- $ctx = merge $ctx (dict "runAsNonRoot" true "seccompProfile" (dict "type" "RuntimeDefault")) -}}
+{{- end -}}
+{{- with $ctx }}{{ toYaml . }}{{ end -}}
+{{- end }}
+
+{{- define "app.containerSecurityContext" -}}
+{{- $ctx := deepCopy (.Values.securityContext | default dict) -}}
+{{- if eq (include "app.restricted" .) "true" -}}
+{{- include "app.checkRestricted" (dict "ctx" $ctx "where" "securityContext") -}}
+{{- $ctx = merge $ctx (include "app.restrictedContainerContext" . | fromYaml) -}}
+{{- end -}}
+{{- with $ctx }}{{ toYaml . }}{{ end -}}
+{{- end }}
+
+{{/*
+A sidecar or init container, with the restricted container context added
+when it sets no securityContext of its own.
+*/}}
+{{- define "app.extraContainer" -}}
+{{- $c := deepCopy .container -}}
+{{- if and (eq (include "app.restricted" .root) "true") (not $c.securityContext) -}}
+{{- $_ := set $c "securityContext" (include "app.restrictedContainerContext" .root | fromYaml) -}}
+{{- end -}}
+{{- toYaml (list $c) -}}
+{{- end }}
+
+{{/*
 "true" when a Deployment's pods mount a disk from `persistence` that only one
 node can use (ReadWriteOnce / ReadWriteOncePod, the default). A rolling update
 would start the new pod while the old one still holds the disk.
@@ -338,9 +392,9 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
 */}}
 {{- define "app.container" -}}
 - name: {{ include "helm-helpers.appName" . }}
-  {{- with .Values.securityContext }}
+  {{- with include "app.containerSecurityContext" . }}
   securityContext:
-    {{- toYaml . | nindent 4 }}
+    {{- . | nindent 4 }}
   {{- end }}
   image: {{ include "app.image" . | quote }}
   imagePullPolicy: {{ .Values.workload.image.pullPolicy }}
@@ -440,9 +494,9 @@ Usage: {{- include "app.extraContainers" . | nindent 8 }}
 {{- range $i, $container := .Values.workload.extraContainers }}
 {{- $_ := required "workload.extraContainers[].name is required" $container.name -}}
 {{- if $i }}
-{{ toYaml (list $container) }}
+{{ include "app.extraContainer" (dict "root" $ "container" $container) }}
 {{- else -}}
-{{- toYaml (list $container) }}
+{{- include "app.extraContainer" (dict "root" $ "container" $container) }}
 {{- end -}}
 {{- end }}
 {{- end }}
@@ -455,9 +509,9 @@ Usage: {{- include "app.initContainers" . | nindent 8 }}
 {{- range $i, $container := .Values.workload.extraInitContainers }}
 {{- $_ := required "workload.extraInitContainers[].name is required" $container.name -}}
 {{- if $i }}
-{{ toYaml (list $container) }}
+{{ include "app.extraContainer" (dict "root" $ "container" $container) }}
 {{- else -}}
-{{- toYaml (list $container) }}
+{{- include "app.extraContainer" (dict "root" $ "container" $container) }}
 {{- end -}}
 {{- end }}
 {{- end }}

@@ -16,19 +16,17 @@ workload:
 service:
   port: 80                                     # other apps still use port 80
 
+# Non-root, no privilege escalation, all capabilities dropped, seccomp on:
+# what Kubernetes' "restricted" Pod Security Standard requires.
+securityPreset: restricted
+
 podSecurityContext:
-  runAsNonRoot: true
-  runAsUser: 101
+  runAsUser: 101           # the user this image is built for
   runAsGroup: 101
-  fsGroup: 101
-  seccompProfile:
-    type: RuntimeDefault
+  fsGroup: 101             # lets that user write to mounted disks
 
 securityContext:
-  allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: true
-  capabilities:
-    drop: ["ALL"]
+  readOnlyRootFilesystem: true   # not required by the standard, but safer
 
 # Only pods in this namespace and the ingress controller may connect.
 networkPolicy:

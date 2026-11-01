@@ -22,6 +22,7 @@ For explanations and examples, follow the  link in each section.
 | `metrics.serviceMonitor` | `{enabled: false, path: /metrics, interval: 30s}` | Prometheus scraping ([docs](metrics.md)) |
 | `autoscaling` | `{enabled: false, minReplicas: 2, maxReplicas: 5, targetCPUUtilizationPercentage: 80}` | Scale with CPU/memory ([docs](availability.md)) |
 | `podDisruptionBudget` | `{enabled: false, minAvailable: null, maxUnavailable: 1}` | Pods allowed down during maintenance ([docs](availability.md)) |
+| `securityPreset` | `""` | `restricted`: non-root, no privilege escalation, no capabilities, seccomp ([docs](security.md)) |
 | `podSecurityContext` | `seccompProfile: RuntimeDefault` | Security settings for the pod ([docs](security.md)) |
 | `securityContext` | `allowPrivilegeEscalation: false` | Security settings for the main container ([docs](security.md)) |
 | `networkPolicy.enabled` | `false` | Only let chosen pods connect ([docs](security.md#who-can-connect-networkpolicy-opt-in)) |

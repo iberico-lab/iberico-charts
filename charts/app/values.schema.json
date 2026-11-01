@@ -801,6 +801,12 @@
         "null"
       ]
     },
+    "securityPreset": {
+      "enum": [
+        "",
+        "restricted"
+      ]
+    },
     "securityContext": {
       "type": [
         "object",

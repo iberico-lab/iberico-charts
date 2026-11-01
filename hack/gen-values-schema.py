@@ -85,7 +85,8 @@ def app():
             "properties": {
                 "global": GLOBAL, "workload": workload, "service": service, "persistence": persistence,
                 "serviceAccount": obj({"create": B(), "automount": B(), "name": S(), "annotations": STRMAP}),
-                "podSecurityContext": {"type": ["object", "null"]}, "securityContext": {"type": ["object", "null"]},
+                "podSecurityContext": {"type": ["object", "null"]},
+                "securityPreset": {"enum": ["", "restricted"]}, "securityContext": {"type": ["object", "null"]},
                 "metrics": obj({"serviceMonitor": obj({"enabled": B(), "port": S(), "path": S(),
                                                        "interval": S(), "scrapeTimeout": S(), "labels": STRMAP})}),
                 "autoscaling": obj({"enabled": B(), "minReplicas": I(mn=1), "maxReplicas": I(mn=1),

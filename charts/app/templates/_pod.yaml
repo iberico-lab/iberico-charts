@@ -30,9 +30,9 @@ spec:
   {{- with .Values.workload.terminationGracePeriodSeconds }}
   terminationGracePeriodSeconds: {{ . }}
   {{- end }}
-  {{- with .Values.podSecurityContext }}
+  {{- with include "app.podSecurityContext" . }}
   securityContext:
-    {{- toYaml . | nindent 4 }}
+    {{- . | nindent 4 }}
   {{- end }}
   {{- if .Values.workload.extraInitContainers }}
   initContainers:

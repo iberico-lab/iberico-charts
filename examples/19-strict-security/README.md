@@ -17,6 +17,7 @@ Open [`values.yaml`](values.yaml). The comments explain each line.
 
 ## What you get
 
+- `securityPreset: restricted`: passes Kubernetes' strictest Pod Security Standard
 - The container runs as user `101`, never root
 - It can't write anywhere except `/tmp`
 - All Linux capabilities dropped
