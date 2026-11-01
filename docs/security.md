@@ -44,6 +44,38 @@ securityContext:
 
 ---
 
+## Who can connect (NetworkPolicy, opt-in)
+
+By default, **any pod in the cluster** can connect to your app. A NetworkPolicy
+limits that to the pods you choose:
+
+```yaml
+networkPolicy:
+  enabled: true
+  allowSameNamespace: true           # pods in the app's own namespace (the default)
+  allowNamespaces:                   # plus everything in these namespaces:
+    - traefik                        #   public ingress
+    - tailscale                      #   Tailscale ingress proxies
+    - monitoring                     #   Prometheus, if you turned on metrics
+```
+
+- The app's own pods can always reach each other (StatefulSet peers).
+- Only **incoming** traffic is limited. The app can still connect out.
+- With `allowSameNamespace: false`, `helm test` still works: its pod is allowed by name.
+- Need something else (an IP range, one port only)? Add raw rules to
+  `extraIngress`; they're copied as-is.
+
+**Watch out**
+
+- It only works if the cluster's network plugin enforces policies (Calico,
+  Cilium, ...). Plain flannel, kindnet, and minikube's default ignore them:
+  the policy is accepted, but everything stays open.
+- **Forgot a namespace?** The ingress returns 502/504, or Prometheus shows the
+  target as down. Find the namespace with `kubectl get pods -A | grep traefik`
+  and add it.
+
+---
+
 ## Watch out
 
 - Setting `securityContext` or `podSecurityContext` **adds to** the defaults; it

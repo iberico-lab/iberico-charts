@@ -1,0 +1,33 @@
+{{- /* Who may connect to the app's pods. Incoming traffic only: outgoing is left open. */ -}}
+{{- $np := .Values.networkPolicy -}}
+{{- if and (.Values.workload.enabled | default false) $np.enabled -}}
+{{- $selector := include "helm-helpers.selectorLabels" . | fromYaml -}}
+{{- /* the app's own pods (StatefulSet peers, sidecars calling each other) are always allowed */ -}}
+{{- $from := list (dict "podSelector" (dict "matchLabels" $selector)) -}}
+{{- if $np.allowSameNamespace -}}
+{{- $from = append $from (dict "podSelector" dict) -}}
+{{- else if and .Values.service.enabled .Values.helmTest.enabled -}}
+{{- $from = append $from (dict "podSelector" (dict "matchLabels" (dict "app.kubernetes.io/instance" .Release.Name "app.kubernetes.io/component" "test"))) -}}
+{{- end -}}
+{{- range $np.allowNamespaces -}}
+{{- $from = append $from (dict "namespaceSelector" (dict "matchLabels" (dict "kubernetes.io/metadata.name" .))) -}}
+{{- end -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "helm-helpers.fullname" . }}
+  namespace: {{ include "helm-helpers.namespace" . }}
+  labels:
+    {{- include "helm-helpers.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- toYaml $selector | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        {{- toYaml $from | nindent 8 }}
+    {{- with $np.extraIngress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}

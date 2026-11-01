@@ -239,6 +239,16 @@ podSecurityContext:
 securityContext:
   allowPrivilegeEscalation: false
 
+# Only let chosen pods connect to the app (NetworkPolicy, docs/security.md).
+# Needs a network plugin that enforces policies (Calico, Cilium, ...).
+networkPolicy:
+  enabled: false
+  allowSameNamespace: true   # any pod in the app's namespace may connect
+  # Namespaces whose pods may connect, e.g. your ingress controller, Tailscale
+  # operator and Prometheus: [traefik, tailscale, monitoring]
+  allowNamespaces: []
+  extraIngress: []           # raw NetworkPolicy ingress rules, copied as-is
+
 # Spread pods across nodes (or zones) so one failure doesn't take them all.
 # On by default as a preference (ScheduleAnyway): pods still start when there
 # aren't enough nodes. The selector is filled in for you.

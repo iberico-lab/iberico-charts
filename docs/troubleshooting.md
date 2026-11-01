@@ -96,6 +96,13 @@ kubectl describe externalsecret <name>    # the reason if it isn't
 
 ---
 
+## Ingress gives 502/504, or Prometheus can't scrape
+
+With `networkPolicy.enabled: true`, only the listed namespaces get in. Add the
+ingress controller's (or Prometheus's) namespace to `networkPolicy.allowNamespaces`.
+
+---
+
 ## Still stuck?
 
 Render with `--debug` to see the generated YAML, even when it's invalid:

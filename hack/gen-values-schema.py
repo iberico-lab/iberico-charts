@@ -97,6 +97,8 @@ def app():
                                             "maxUnavailable": {"type": ["integer", "string", "null"]}}),
                 "topologySpread": obj({"enabled": B(), "topologyKey": S(), "maxSkew": I(mn=1),
                                        "whenUnsatisfiable": {"enum": ["ScheduleAnyway", "DoNotSchedule"]}}),
+                "networkPolicy": obj({"enabled": B(), "allowSameNamespace": B(),
+                                      "allowNamespaces": LIST({"type": "string"}), "extraIngress": LIST()}),
                 "topologySpreadConstraints": LIST(), "priorityClassName": S(),
                 "nodeSelector": STRMAP, "affinity": ANYMAP, "tolerations": LIST(), "imagePullSecrets": LIST(),
                 "extraManifests": LIST({"type": ["object", "string"]}),

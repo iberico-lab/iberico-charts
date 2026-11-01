@@ -29,3 +29,8 @@ securityContext:
   readOnlyRootFilesystem: true
   capabilities:
     drop: ["ALL"]
+
+# Only pods in this namespace and the ingress controller may connect.
+networkPolicy:
+  enabled: true
+  allowNamespaces: [traefik]

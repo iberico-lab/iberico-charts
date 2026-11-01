@@ -20,6 +20,7 @@ Open [`values.yaml`](values.yaml). The comments explain each line.
 - The container runs as user `101`, never root
 - It can't write anywhere except `/tmp`
 - All Linux capabilities dropped
+- Only pods in the same namespace and the `traefik` namespace can connect (NetworkPolicy)
 
 ## Watch out
 
