@@ -82,10 +82,26 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 
 {{/*
+Value for the app.kubernetes.io/version label, in order of preference:
+global.version, workload.image.tag (app chart), the chart's appVersion.
+Sanitised to a valid label value (max 63 chars, [A-Za-z0-9._-]).
+*/}}
+{{- define "helm-helpers.version" -}}
+{{- $v := .Chart.AppVersion -}}
+{{- if and .Values.workload .Values.workload.image .Values.workload.image.tag -}}
+{{- $v = .Values.workload.image.tag | toString -}}
+{{- end -}}
+{{- if and .Values.global .Values.global.version -}}
+{{- $v = .Values.global.version | toString -}}
+{{- end -}}
+{{- regexReplaceAll "[^-A-Za-z0-9_.]" $v "-" | trunc 63 | trimAll "-_." -}}
+{{- end }}
+
+{{/*
 Create unified labels
 */}}
 {{- define "helm-helpers.metaLabels" -}}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+app.kubernetes.io/version: {{ include "helm-helpers.version" . | quote }}
 helm.sh/chart: {{ include "helm-helpers.chart" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}

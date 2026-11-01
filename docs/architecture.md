@@ -47,6 +47,10 @@ Names are made lowercase and cut to 63 characters, which is a Kubernetes limit.
 Allowed characters are lowercase letters, digits and `-` (no `_` or `.`). Anything
 else stops the render with an error.
 
+**Version label:** every resource gets `app.kubernetes.io/version`. It's your
+image tag by default. Set `global.version` to use the same value on everything,
+including the ingress and secret objects.
+
 **Namespace:** everything is created in the namespace you install into, so use
 `helm install -n <namespace>`.
 
