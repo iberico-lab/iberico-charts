@@ -62,7 +62,7 @@ You can list **several** ingresses to get, say, a private and a public URL at th
 ## Homepage dashboard
 
 Every ingress is added to your [Homepage](https://gethomepage.dev) dashboard
-automatically. To change how it looks:
+automatically. Hide one with `homepage: { enabled: false }`. To change how it looks:
 
 ```yaml
       homepage:
@@ -104,7 +104,7 @@ automatically. To change how it looks:
 | `certManagerIssuer` | `letsencrypt-staging` | TLS certificate issuer (public types) |
 | `tailscaleExpose` | `false` | Turn on Tailscale "serve" (`internal` only) |
 | `annotations` | `{}` | Extra annotations (`internal` only) |
-| `homepage` | — | `name`, `description`, `group`, `icon` |
+| `homepage` | — | `enabled` (default `true`), `name`, `description`, `group`, `icon` |
 
 ---
 

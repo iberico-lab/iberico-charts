@@ -19,7 +19,9 @@ metadata:
     {{- if .tailscaleExpose | default false }}
     tailscale.com/serve: "true"
     {{- end }}
-    {{- include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Internal" "root" $) | nindent 4 }}
+    {{- with include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Internal" "root" $) }}
+    {{- . | nindent 4 }}
+    {{- end }}
     {{- with .annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
