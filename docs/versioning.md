@@ -161,6 +161,19 @@ setting → minor, fix → patch.
    GitHub Release with the CHANGELOG notes. A version that is already published
    is never overwritten: bump instead.
 
+### Keeping dependencies up to date
+
+[Renovate](https://docs.renovatebot.com/) (`renovate.json`) opens a PR every
+Monday morning when something newer exists: image tags in examples and test
+scenarios, the chart's default image, GitHub Actions, Helm, kind, kubeconform,
+helm-unittest, and the add-ons the e2e test installs. CI runs on each PR, so a
+green one is safe to merge.
+
+- It needs the [Renovate GitHub app](https://github.com/apps/renovate) installed
+  on the repository (once).
+- Kubernetes versions in the e2e matrix only get patch updates. Moving to a new
+  minor is a decision: see the release checklist above.
+
 ### Why the charts have no `appVersion`
 
 `appVersion` is meant for "the version of the app this chart ships". These

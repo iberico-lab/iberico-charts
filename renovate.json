@@ -1,0 +1,176 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Keeps image tags, GitHub Actions and test tool versions up to date. Needs the Renovate GitHub app installed on the repo.",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits"
+  ],
+  "schedule": [
+    "before 6am on monday"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "helm-values": {
+    "managerFilePatterns": [
+      "/(^|/)values\\.ya?ml$/",
+      "/^charts/app/ci/.+-values\\.ya?ml$/",
+      "/^hack/e2e/.+\\.ya?ml$/"
+    ]
+  },
+  "customManagers": [
+    {
+      "description": "Add-ons the e2e test installs",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^hack/e2e\\.sh$/"
+      ],
+      "matchStrings": [
+        "ESO_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://charts.external-secrets.io",
+      "depNameTemplate": "external-secrets"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^hack/e2e\\.sh$/"
+      ],
+      "matchStrings": [
+        "PROM_CRDS_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://prometheus-community.github.io/helm-charts",
+      "depNameTemplate": "prometheus-operator-crds"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^hack/e2e\\.sh$/"
+      ],
+      "matchStrings": [
+        "GATEWAY_API_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "kubernetes-sigs/gateway-api"
+    },
+    {
+      "description": "Helm 3 in CI and releases",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "HELM_VERSION: (?<currentValue>v3\\.\\S+)",
+        "helm: (?<currentValue>v3\\.[0-9.]+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "helm-v3",
+      "packageNameTemplate": "helm/helm"
+    },
+    {
+      "description": "Helm 4 in the CI matrix",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "helm: (?<currentValue>v4\\.[0-9.]+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "helm-v4",
+      "packageNameTemplate": "helm/helm"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "helm-unittest --version (?<currentValue>v\\S+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "helm-unittest/helm-unittest"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "kubeconform/releases/download/(?<currentValue>v[^/]+)/"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "yannh/kubeconform"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "kind-action@v1\\s+with:\\s+version: (?<currentValue>v\\S+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "kubernetes-sigs/kind"
+    },
+    {
+      "description": "Kubernetes versions in the e2e matrix (patch updates only: the minors are chosen on purpose)",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "kube: (?<currentValue>v1\\.[0-9]+\\.[0-9]+)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "kindest/node"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Helm 3 stays on 3.x",
+      "matchDepNames": [
+        "helm-v3"
+      ],
+      "allowedVersions": "<4"
+    },
+    {
+      "description": "Don't change which Kubernetes minors CI tests",
+      "matchDepNames": [
+        "kindest/node"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "One PR for routine CI and tooling updates",
+      "matchManagers": [
+        "github-actions",
+        "custom.regex"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest"
+      ],
+      "groupName": "CI and test tools"
+    },
+    {
+      "description": "Image tags in examples and test scenarios, grouped",
+      "matchManagers": [
+        "helm-values"
+      ],
+      "matchFileNames": [
+        "examples/**",
+        "hack/e2e/**",
+        "charts/app/ci/**"
+      ],
+      "groupName": "example and test images"
+    }
+  ]
+}
