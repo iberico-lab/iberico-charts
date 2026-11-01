@@ -51,6 +51,8 @@ workload:
   volumes: []
 
   # Sidecar containers rendered verbatim; each entry MUST define `name`
+  # Container lifecycle hooks, copied as-is (postStart / preStop)
+  lifecycle: {}
   extraContainers: []
   # extraContainers:
   #   - name: metrics-exporter

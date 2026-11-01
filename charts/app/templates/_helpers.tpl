@@ -311,6 +311,10 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
   volumeMounts:
     {{- include "app.volumeMount" . | nindent 4 }}
   {{- end }}
+  {{- with .Values.workload.lifecycle }}
+  lifecycle:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- if .Values.workload.resources }}
   resources:
     {{- toYaml .Values.workload.resources | nindent 4 }}

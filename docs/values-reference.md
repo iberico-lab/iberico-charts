@@ -49,6 +49,7 @@ For explanations and examples, follow the  link in each section.
 | `workload.extraEnv` | `[]` | Raw env entries (supports `valueFrom`) |
 | `workload.extraEnvFrom` | `[]` | Raw `envFrom` entries |
 | `workload.volumes` | `[]` | Mount existing things ([docs](volumes.md)) |
+| `workload.lifecycle` | `{}` | `postStart` / `preStop` hooks |
 | `workload.extraContainers` | `[]` | Sidecars ([docs](sidecars.md)) |
 | `workload.extraInitContainers` | `[]` | Init containers ([docs](sidecars.md)) |
 | `workload.resources` | requests `300m`/`512Mi`, limits `1000m`/`800Mi` | CPU and memory |

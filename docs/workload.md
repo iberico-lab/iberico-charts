@@ -58,6 +58,17 @@ workload:
     - configMapRef: { name: my-app-settings }
 ```
 
+**Run something just before the app stops** (for example, wait for in-flight
+requests to finish):
+
+```yaml
+workload:
+  lifecycle:
+    preStop:
+      exec:
+        command: ["sh", "-c", "sleep 10"]
+```
+
 **Give it more (or less) CPU and memory:**
 
 ```yaml
@@ -103,6 +114,7 @@ workload:
 | `workload.extraEnv` | `[]` | Raw env entries (supports `valueFrom`) |
 | `workload.extraEnvFrom` | `[]` | Raw `envFrom` entries (whole ConfigMaps/Secrets) |
 | `workload.resources` | see above | CPU and memory |
+| `workload.lifecycle` | `{}` | `postStart` / `preStop` hooks, copied as-is |
 | `workload.annotations` | `{}` | Annotations on the Deployment/StatefulSet |
 | `workload.pod.annotations` | `{}` | Annotations on each pod |
 | `workload.pod.labels` | `{}` | Extra labels on each pod (the chart's own labels can't be overridden) |
