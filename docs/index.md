@@ -21,6 +21,7 @@
 | Run a database or anything with "state" | [StatefulSet](statefulset.md) |
 | Use passwords from 1Password | [External Secrets](external-secrets.md) |
 | Put my app on a URL (private or public) | [Ingress](ingress.md) |
+| Lock down what the app is allowed to do | [Security](security.md) |
 | Look up one exact setting | [Values Reference](values-reference.md) |
 | Understand how the charts fit together | [Architecture](architecture.md) |
 | Upgrade to a new chart version | [Upgrading](upgrading.md) |

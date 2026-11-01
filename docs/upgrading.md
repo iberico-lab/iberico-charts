@@ -28,6 +28,14 @@ named `app`, so two releases in one namespace overwrote each other.
   deletes the old ones. That means a short outage, and **Deployment disks
   (PVCs) get new, empty volumes**, so pin `global.name` if you have data.
 
+### Safer security defaults
+
+Pods now get `seccompProfile: RuntimeDefault`, the main container gets
+`allowPrivilegeEscalation: false`, and **no Kubernetes API token is mounted**.
+
+- **Your app calls the Kubernetes API?** Set `serviceAccount.automount: true`.
+- Anything else that breaks? Set the specific key to `null`. See [Security](security.md).
+
 ---
 
 ## 0.1.x to 0.2.0

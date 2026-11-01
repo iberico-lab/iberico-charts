@@ -19,8 +19,8 @@ For explanations and examples, follow the  link in each section.
 | `service` | see below | Address inside the cluster ([docs](service.md)) |
 | `persistence` | `[]` | Disks the chart creates ([docs](persistence.md)) |
 | `serviceAccount` | see below | Kubernetes identity for the pods |
-| `podSecurityContext` | `{}` | Security settings for the pod |
-| `securityContext` | `{}` | Security settings for the main container |
+| `podSecurityContext` | `seccompProfile: RuntimeDefault` | Security settings for the pod ([docs](security.md)) |
+| `securityContext` | `allowPrivilegeEscalation: false` | Security settings for the main container ([docs](security.md)) |
 | `nodeSelector` | `{}` | Only run on nodes with these labels |
 | `affinity` | `{}` | Rules for where pods should (or shouldn't) run |
 | `tolerations` | `[]` | Allow running on "tainted" nodes |
@@ -108,7 +108,7 @@ Defaults are shown as **liveness / readiness / startup**.
 | Setting | Default | What it does |
 |---------|---------|--------------|
 | `serviceAccount.create` | `false` | Create a ServiceAccount |
-| `serviceAccount.automount` | `true` | Give pods the account token automatically |
+| `serviceAccount.automount` | `false` | Mount a Kubernetes API token into the pods |
 | `serviceAccount.name` | `""` | Name (`""` = app name) |
 | `serviceAccount.annotations` | `{}` | Annotations |
 

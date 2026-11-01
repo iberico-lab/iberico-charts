@@ -17,6 +17,7 @@ spec:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   serviceAccountName: {{ include "app.serviceAccountName" . }}
+  automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
   {{- with .Values.workload.terminationGracePeriodSeconds }}
   terminationGracePeriodSeconds: {{ . }}
   {{- end }}

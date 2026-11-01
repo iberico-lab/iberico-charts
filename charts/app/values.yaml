@@ -148,16 +148,24 @@ service:
 # Service Account configuration
 serviceAccount:
   create: false
-  automount: true
+  # Mount a Kubernetes API token into the pods. Most apps don't talk to the
+  # API, so it's off by default; set true if yours does.
+  automount: false
+  name: ""
+  annotations: {}
 
 # Persistence configuration (used for both Deployment PVCs and StatefulSet volumeClaimTemplates)
 persistence: []
 
-# Pod Security Context
-podSecurityContext: {}
+# Pod Security Context. Safe defaults that work with any image; see
+# docs/security.md for the stricter opt-in settings. Set a key to null to drop it.
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
 
-# Container Security Context
-securityContext: {}
+# Container Security Context (main container)
+securityContext:
+  allowPrivilegeEscalation: false
 
 # Node Selector
 nodeSelector: {}
