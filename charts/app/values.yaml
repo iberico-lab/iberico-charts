@@ -170,6 +170,16 @@ serviceAccount:
   name: ""
   annotations: {}
 
+# Scale the number of pods with CPU/memory use (HorizontalPodAutoscaler).
+# When enabled, workload.replicas is ignored. Needs metrics-server in the cluster.
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80     # % of workload.resources.requests.cpu
+  targetMemoryUtilizationPercentage: null
+  behavior: {}                            # optional scale up/down tuning, copied as-is
+
 # Keep some pods running during voluntary disruptions (node drains, upgrades).
 # minAvailable wins when set; otherwise maxUnavailable is used. Numbers or "50%".
 podDisruptionBudget:

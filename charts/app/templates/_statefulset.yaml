@@ -12,7 +12,10 @@ metadata:
   {{- end }}
 spec:
   serviceName: {{ .Values.workload.serviceName | default (printf "%s-cluster" (include "helm-helpers.fullname" .)) }}
+  {{- /* the autoscaler owns the replica count; setting it here would reset it on every upgrade */}}
+  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.workload.replicas }}
+  {{- end }}
   {{- with .Values.workload.podManagementPolicy }}
   podManagementPolicy: {{ . }}
   {{- end }}

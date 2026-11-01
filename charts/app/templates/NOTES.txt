@@ -6,7 +6,11 @@
 {{- if .Values.workload.enabled -}}
 {{ $name }} is deployed as a {{ $type }} in namespace "{{ $ns }}"
   image:    {{ include "app.image" . }}
+{{- if .Values.autoscaling.enabled }}
+  replicas: autoscaled, {{ .Values.autoscaling.minReplicas }} to {{ .Values.autoscaling.maxReplicas }}
+{{- else }}
   replicas: {{ .Values.workload.replicas }}
+{{- end }}
 {{- else -}}
 workload.enabled is false: no pods or Services were created for {{ $name }}.
 {{- end }}

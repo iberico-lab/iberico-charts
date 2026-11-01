@@ -3,8 +3,10 @@
 {{- if and (.Values.workload.enabled | default false) $pdb.enabled -}}
 {{- $min := $pdb.minAvailable -}}
 {{- $hasMin := not (kindIs "invalid" $min) -}}
-{{- if and $hasMin (not (kindIs "string" $min)) (ge (int $min) (int .Values.workload.replicas)) -}}
-{{- fail (printf "podDisruptionBudget.minAvailable (%v) must be lower than workload.replicas (%v), or no pod could ever be evicted and node drains would hang" $min .Values.workload.replicas) -}}
+{{- $replicas := ternary .Values.autoscaling.minReplicas .Values.workload.replicas (.Values.autoscaling.enabled | default false) -}}
+{{- $what := ternary "autoscaling.minReplicas" "workload.replicas" (.Values.autoscaling.enabled | default false) -}}
+{{- if and $hasMin (not (kindIs "string" $min)) (ge (int $min) (int $replicas)) -}}
+{{- fail (printf "podDisruptionBudget.minAvailable (%v) must be lower than %s (%v), or no pod could ever be evicted and node drains would hang" $min $what $replicas) -}}
 {{- end -}}
 apiVersion: policy/v1
 kind: PodDisruptionBudget

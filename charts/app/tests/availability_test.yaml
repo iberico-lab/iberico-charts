@@ -24,6 +24,37 @@ tests:
       - equal: { path: spec.minAvailable, value: "50%" }
       - notExists: { path: spec.maxUnavailable }
 
+  - it: renders an HPA and drops replicas from the workload
+    templates: [templates/hpa.yaml, templates/workload.yaml]
+    set: { autoscaling.enabled: true }
+    asserts:
+      - isKind: { of: HorizontalPodAutoscaler }
+        template: templates/hpa.yaml
+      - equal: { path: spec.scaleTargetRef.kind, value: Deployment }
+        template: templates/hpa.yaml
+      - equal: { path: 'spec.metrics[0].resource.target.averageUtilization', value: 80 }
+        template: templates/hpa.yaml
+      - notExists: { path: spec.replicas }
+        template: templates/workload.yaml
+
+  - it: targets the StatefulSet when that's the workload type
+    templates: [templates/hpa.yaml]
+    set: { autoscaling.enabled: true, workload.type: StatefulSet }
+    asserts:
+      - equal: { path: spec.scaleTargetRef.kind, value: StatefulSet }
+
+  - it: fails when minReplicas is above maxReplicas
+    templates: [templates/hpa.yaml]
+    set: { autoscaling: { enabled: true, minReplicas: 6, maxReplicas: 3 } }
+    asserts:
+      - failedTemplate: { errorPattern: "must not be greater than maxReplicas" }
+
+  - it: fails on a CPU target without a CPU request
+    templates: [templates/hpa.yaml]
+    set: { autoscaling.enabled: true, workload.resources: { requests: { cpu: null } } }
+    asserts:
+      - failedTemplate: { errorPattern: "needs workload.resources.requests.cpu" }
+
   - it: fails when minAvailable would block every eviction
     templates: [templates/pdb.yaml]
     set: { podDisruptionBudget: { enabled: true, minAvailable: 2 } }

@@ -33,6 +33,30 @@ If you set `minAvailable`, it wins and `maxUnavailable` is ignored.
 
 ---
 
+## Scale with traffic (autoscaling)
+
+Add pods when they get busy, remove them when it's quiet:
+
+```yaml
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80      # add pods above 80% of requested CPU
+  # targetMemoryUtilizationPercentage: 80 # optional, same idea for memory
+```
+
+**Watch out**
+
+- `workload.replicas` is **ignored** while autoscaling is on. The autoscaler
+  decides, and Helm upgrades no longer reset the count.
+- The percentage is measured against `workload.resources.requests`. Without a
+  CPU (or memory) request, the chart stops with an error.
+- The cluster needs **metrics-server**. Without it, the autoscaler can't see usage.
+- Combined with a PodDisruptionBudget, `minAvailable` is checked against `minReplicas`.
+
+---
+
 ## Next
 
 - [Workload](workload.md) · [Values Reference](values-reference.md)
