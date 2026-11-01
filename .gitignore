@@ -1,0 +1,15 @@
+.DS_Store
+.idea
+.debug
+
+# Chart dependencies
+**/charts/*.tgz
+**/charts/*/charts
+Chart.lock
+
+# Snapshot files should be added
+!__snapshot__/*_test.yaml.snap
+
+tests/e2e/charts
+
+other
