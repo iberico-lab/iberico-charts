@@ -76,4 +76,5 @@ together in `charts/`.
 | `make lint` | Check every chart for mistakes |
 | `make template` | Show the YAML the `app` chart creates with default values |
 | `make examples` | Check that every example still works |
+| `make schema` | Regenerate `values.schema.json` after changing values |
 | `make clean` | Delete downloaded chart files |

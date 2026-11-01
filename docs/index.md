@@ -36,3 +36,4 @@ Want working files to copy? See **[examples/](../examples/README.md)**.
 1. **Good defaults.** Every feature already works out of the box. You only set what you want to change.
 2. **Change one thing, keep the rest.** If you set one field in a block, every other field in that block keeps its default.
 3. **Loud errors.** If a setting is wrong, the chart stops with a clear message. It won't quietly create something broken.
+   A typo in a setting name (like `replica` instead of `replicas`) is caught too, because every chart has a `values.schema.json`.

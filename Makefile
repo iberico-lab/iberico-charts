@@ -10,7 +10,7 @@ EXAMPLES   := $(sort $(wildcard examples/*/values.yaml))
 # configured Helm repos (a single broken repo would otherwise fail the build).
 HELM_DEP   := HELM_REPOSITORY_CONFIG=/dev/null helm dependency update --skip-refresh
 
-.PHONY: help deps lint template examples clean
+.PHONY: help deps lint template examples schema schema-check clean
 
 help: ## Show available targets
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-10s %s\n", $$1, $$2}'
@@ -26,6 +26,12 @@ template: deps ## Render the umbrella app chart with default values
 
 examples: deps ## Render every example under examples/ against the app chart
 	@for f in $(EXAMPLES); do echo "==> $$f"; helm template t $(CHARTS_DIR)/app -f $$f > /dev/null || exit 1; done
+
+schema: ## Regenerate values.schema.json files (run after changing values)
+	python3 hack/gen-values-schema.py .
+
+schema-check: ## Fail if values.schema.json files are out of date
+	python3 hack/gen-values-schema.py . && git diff --exit-code -- 'charts/*/values.schema.json'
 
 clean: ## Remove vendored sub-chart artifacts and lock files
 	rm -rf $(CHARTS_DIR)/*/charts $(CHARTS_DIR)/*/Chart.lock

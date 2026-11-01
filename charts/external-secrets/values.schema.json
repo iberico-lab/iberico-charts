@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "external-secrets chart values",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Shared with all charts",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Base name for all resources (empty = release name)"
+        },
+        "nameOverride": {
+          "type": "string"
+        },
+        "fullnameOverride": {
+          "type": "string"
+        },
+        "version": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "Version label value"
+        }
+      },
+      "additionalProperties": true
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "onepassword": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "refreshInterval": {
+          "type": "string"
+        },
+        "clusterSecretStoreRef": {
+          "type": "string"
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "envVars": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "secretKey": {
+                      "type": "string",
+                      "description": "1Password item"
+                    },
+                    "mappings": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "minProperties": 1
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "secretKey",
+                    "mappings"
+                  ]
+                }
+              },
+              "files": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "secretKey": {
+                      "type": "string",
+                      "description": "1Password item"
+                    },
+                    "mappings": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "minProperties": 1
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "secretKey",
+                    "mappings"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "helm-helpers": {
+      "type": "object"
+    }
+  }
+}
