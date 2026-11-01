@@ -7,7 +7,9 @@ CHARTS     := helm-helpers external-secrets ingress app
 EXAMPLES   := $(sort $(wildcard examples/*/values.yaml))
 CI_VALUES  := $(sort $(wildcard $(CHARTS_DIR)/app/ci/*-values.yaml))
 # Kubernetes schemas plus CRD schemas (ExternalSecret, ServiceMonitor, ...)
-KUBECONFORM := kubeconform -strict -summary -schema-location default \
+# KUBE_VERSION=1.30.9 checks against an older Kubernetes (default: the newest).
+KUBE_VERSION ?= master
+KUBECONFORM := kubeconform -strict -summary -kubernetes-version $(KUBE_VERSION) -schema-location default \
 	-schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
 
 # Every dependency is a local file:// sibling chart, so ignore the user's

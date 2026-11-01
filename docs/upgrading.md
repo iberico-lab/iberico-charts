@@ -117,6 +117,11 @@ workload:
     limits:   { cpu: 1000m, memory: 800Mi }
 ```
 
+### Kubernetes 1.30 or newer
+
+The charts refuse to install on older clusters. 1.30 is needed for the
+built-in `sleep` used by `shutdownDelaySeconds`.
+
 ### Updates, shutdown and Service env vars
 
 Three new defaults. Most apps need nothing.

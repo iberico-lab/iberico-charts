@@ -9,7 +9,7 @@
 
 ## Quick start
 
-From the repository root:
+Needs Kubernetes **1.30+** and Helm 3 or 4. From the repository root:
 
 ```bash
 helm dependency update ./charts/app       # or: make deps

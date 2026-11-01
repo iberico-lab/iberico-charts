@@ -128,6 +128,8 @@ setting → minor, fix → patch.
 2. In [CHANGELOG.md](../CHANGELOG.md), the notes sit under `## [x.y.z] - unreleased`.
    Replace `unreleased` with today's date.
 3. Breaking change? Make sure [Upgrading](upgrading.md) has a section for it.
+   Raised the minimum Kubernetes? Change `kubeVersion` in every `Chart.yaml`
+   and `MIN_KUBE_VERSION` plus the oldest matrix entry in `.github/workflows/lint.yml`.
 4. Merge to `main`. Once the release workflow (`.github/workflows/release.yml`)
    is turned on, this publishes the charts.
 

@@ -20,6 +20,8 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 - Smaller default resources: requests `100m`/`128Mi`, memory limit `512Mi`, no CPU limit
   (was `300m`/`512Mi` and `1000m`/`800Mi`).
 - Unknown or mistyped values are rejected by `values.schema.json`.
+- Needs Kubernetes 1.30 or newer (`kubeVersion` in every chart). CI installs on 1.30, 1.34 and 1.37,
+  with Helm 3 and 4.
 - Rolling updates start new pods before stopping old ones (`maxUnavailable: 0`); Deployments with a
   ReadWriteOnce disk use `Recreate` (`workload.strategy.type: ""` = automatic).
 - `enableServiceLinks: false`: no `<SERVICE>_PORT`-style env vars (`workload.enableServiceLinks`).

@@ -2,7 +2,8 @@
 
 > **In one line:** write a small values file, then run two commands. Your app is running.
 
-About 5 minutes. You need: `helm` and access to a Kubernetes cluster.
+About 5 minutes. You need: `helm` (3 or 4) and access to a Kubernetes cluster,
+version **1.30 or newer** (older clusters are refused with a clear message).
 
 ---
 
