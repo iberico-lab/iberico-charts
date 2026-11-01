@@ -117,8 +117,14 @@ def ingress():
                "certManagerIssuer": S(), "tailscaleExpose": B(), "annotations": STRMAP,
                "homepage": obj({"enabled": B(), "name": S(), "description": S(), "group": S(), "icon": S()})},
               req=("type",))
+    gw = obj({"name": S("Gateway name"), "namespace": S('"" = the app\'s namespace'),
+              "sectionName": S("Listener name; \"\" = every listener")})
+    route = obj({"name": S('HTTPRoute name; "" = the app\'s name'), "host": S(), "path": S(),
+                 "serviceName": S("Backend Service name (default: the app's Service)"), "servicePort": PORT,
+                 "gateway": gw, "filters": LIST(), "annotations": STRMAP}, req=("host",))
     return {"$schema": D, "title": "ingress chart values", "type": "object", "additionalProperties": False,
             "properties": {"global": GLOBAL, "enabled": B(), "tailnetDomain": S(), "ingresses": LIST(ing),
+                           "httpRoutes": LIST(route), "gateway": gw,
                            "helm-helpers": {"type": "object"}}}
 
 def external_secrets():

@@ -37,6 +37,8 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 - `metrics.serviceMonitor` (Prometheus Operator).
 - `securityPreset: restricted`: everything the restricted Pod Security Standard requires, also on
   sidecars; forbidden settings fail the render.
+- Gateway API: `ingress.httpRoutes` and `ingress.gateway` create HTTPRoutes next to (or instead of)
+  Ingresses.
 - `networkPolicy` (opt-in): only the app's namespace and listed namespaces may connect.
 - `workload.extraEnv`, `workload.extraEnvFrom`, `workload.pod.labels`, `workload.lifecycle`,
   `workload.podManagementPolicy`, `workload.reloadOnSecretChange` (Stakater Reloader).

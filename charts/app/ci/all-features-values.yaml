@@ -56,6 +56,10 @@ ingress:
     - {type: internal}
     - {type: public, host: app.example.com, certManagerIssuer: letsencrypt-prod}
     - {type: public-protected, host: admin.example.com, certManagerIssuer: letsencrypt-prod}
+  gateway: {name: traefik-gateway, namespace: traefik, sectionName: websecure}
+  httpRoutes:
+    - {host: app.example.com}
+    - {name: kitchen-sink-api, host: api.example.com, path: /v1, servicePort: 8080}
 extraManifests:
   - apiVersion: v1
     kind: ConfigMap

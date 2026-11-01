@@ -75,6 +75,60 @@ You can list **several** ingresses to get, say, a private and a public URL at th
 
 ---
 
+## Gateway API routes (HTTPRoute)
+
+[Gateway API](https://gateway-api.sigs.k8s.io/) is the successor to Ingress:
+the Ingress API gets no new features. If your cluster has a Gateway (Traefik
+can provide one), give the app a route to it:
+
+```yaml
+ingress:
+  enabled: true
+  ingresses: []                      # only routes, no Ingress (drop this line to keep both)
+  gateway:                           # the Gateway every route attaches to
+    name: traefik-gateway
+    namespace: traefik
+    sectionName: websecure           # one listener only; "" = every listener
+  httpRoutes:
+    - host: shop.example.com
+    - host: api.example.com          # each extra route needs its own name
+      name: shop-api
+      path: /v1
+      servicePort: 8080
+```
+
+**Watch out**
+
+- **HTTPS is set on the Gateway**, not on the route. The Gateway's listener
+  holds the certificate (cert-manager can fill it in), so there's no
+  `certManagerIssuer` here.
+- **A Gateway in another namespace must accept routes from yours.** Its listener
+  needs `allowedRoutes.namespaces.from: All` (or a selector that matches). If not,
+  `kubectl describe httproute` shows `NotAllowedByListeners`.
+- The cluster needs the Gateway API CRDs. Without them, the install fails with
+  `no matches for kind "HTTPRoute"`.
+- Login (SSO) and other Traefik middlewares: add them as `filters`, e.g.
+  `{type: ExtensionRef, extensionRef: {group: traefik.io, kind: Middleware, name: network-sso}}`.
+  The Middleware must be in the app's namespace.
+
+### Route settings (`ingress.httpRoutes[]`)
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| `ingress.httpRoutes[].host` | — (required) | The domain |
+| `ingress.httpRoutes[].name` | the app's name | HTTPRoute name; set it when you have more than one route |
+| `ingress.httpRoutes[].path` | `/` | Only requests under this path |
+| `ingress.httpRoutes[].serviceName` | the app's Service | Send traffic to a different Service |
+| `ingress.httpRoutes[].servicePort` | `80` | Service port to send traffic to |
+| `ingress.httpRoutes[].gateway` | `ingress.gateway` | A different Gateway for this route (`name`, `namespace`, `sectionName`) |
+| `ingress.httpRoutes[].filters` | `[]` | Raw Gateway API filters (headers, redirects, middlewares), copied as-is |
+| `ingress.httpRoutes[].annotations` | `{}` | Extra annotations |
+| `ingress.gateway.name` | `""` | Gateway the routes attach to (required when you have routes) |
+| `ingress.gateway.namespace` | `""` | The Gateway's namespace; `""` = the app's |
+| `ingress.gateway.sectionName` | `""` | Listener name; `""` = every listener |
+
+---
+
 ## Homepage dashboard
 
 Every ingress is added to your [Homepage](https://gethomepage.dev) dashboard

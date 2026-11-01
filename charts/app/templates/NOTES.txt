@@ -75,6 +75,9 @@ FROM OUTSIDE THE CLUSTER
                       certificate warning. Set certManagerIssuer for real use.
 {{- end }}
 {{- end }}
+{{- range .Values.ingress.httpRoutes }}
+  Gateway route:    https://{{ .host }}   (HTTPRoute; TLS is set on the Gateway)
+{{- end }}
 {{- if not $tailnet }}
 {{- range .Values.ingress.ingresses }}{{ if eq .type "internal" }}
   (set ingress.tailnetDomain, e.g. "tail1234.ts.net", to print the full Tailscale URL)

@@ -1,0 +1,46 @@
+{{/*
+Gateway API HTTPRoutes: the successor to Ingress. Each route attaches to a
+Gateway (yours, e.g. Traefik's) and sends one host to the app's Service. TLS
+is set on the Gateway's listener, not here.
+*/}}
+{{- range $i, $route := .Values.httpRoutes }}
+{{- $gw := merge (deepCopy ($route.gateway | default dict)) (deepCopy ($.Values.gateway | default dict)) }}
+{{- $gwName := required (printf "ingress.httpRoutes[%d]: set gateway.name (here or in ingress.gateway) to the Gateway this route attaches to" $i) $gw.name }}
+{{- $host := required (printf "ingress.httpRoutes[%d] requires a host" $i) $route.host }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "ingress.routeName" (dict "route" $route "root" $) }}
+  namespace: {{ include "helm-helpers.namespace" $ }}
+  labels:
+    {{- include "helm-helpers.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: httproute
+  {{- with $route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    - name: {{ $gwName }}
+      {{- with $gw.namespace }}
+      namespace: {{ . }}
+      {{- end }}
+      {{- with $gw.sectionName }}
+      sectionName: {{ . }}
+      {{- end }}
+  hostnames:
+    - {{ $host | quote }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ $route.path | default "/" }}
+      {{- with $route.filters }}
+      filters:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      backendRefs:
+        - name: {{ include "ingress.serviceName" (dict "ingress" $route "root" $) }}
+          port: {{ $route.servicePort | default 80 }}
+{{- end }}

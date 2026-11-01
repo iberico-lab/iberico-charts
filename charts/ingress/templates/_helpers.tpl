@@ -22,7 +22,19 @@ Validate ingress entries before anything renders:
   public / public-protected => <fullname>-<type>.
 Usage: include "ingress.validate" .
 */}}
+{{- define "ingress.routeName" -}}
+{{- .route.name | default (include "helm-helpers.fullname" .root) -}}
+{{- end }}
+
 {{- define "ingress.validate" -}}
+{{- $routes := dict -}}
+{{- range $i, $r := .Values.httpRoutes -}}
+{{- $n := include "ingress.routeName" (dict "route" $r "root" $) -}}
+{{- if hasKey $routes $n -}}
+{{- fail (printf "ingress.httpRoutes[%d] would create HTTPRoute %q, which entry %v already creates. Give each route its own name" $i $n (get $routes $n)) -}}
+{{- end -}}
+{{- $_ := set $routes $n $i -}}
+{{- end -}}
 {{- $seen := dict -}}
 {{- range $i, $ing := .Values.ingresses -}}
 {{- if hasKey $ing "name" -}}
