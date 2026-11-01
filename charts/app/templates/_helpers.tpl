@@ -103,6 +103,29 @@ Usage: include "app.onepassword.has" (dict "root" $ "field" "files")
 {{- end }}
 
 {{/*
+Merged annotations for one persistence entry, as YAML (or "" when none).
+Used by both the Deployment PVCs and the StatefulSet volumeClaimTemplates so
+they can't drift apart. For storageClassName "opendrive" the rclone defaults
+come first, then rclone.annotations, then the entry's own annotations (which
+win on conflicts).
+Usage: include "app.pvcAnnotations" (dict "root" $ "pvc" .)
+*/}}
+{{- define "app.pvcAnnotations" -}}
+{{- $pvc := .pvc -}}
+{{- $out := dict -}}
+{{- if eq ($pvc.storageClassName | default "") "opendrive" -}}
+{{- $rclone := $pvc.rclone | default dict -}}
+{{- $_ := set $out "csi-rclone/storage-path" ($rclone.storagePath | default (include "helm-helpers.fullname" .root)) -}}
+{{- $_ := set $out "csi-rclone/umask" ($rclone.umask | default "022" | toString) -}}
+{{- $out = merge (deepCopy ($rclone.annotations | default dict)) $out -}}
+{{- end -}}
+{{- $out = merge (deepCopy ($pvc.annotations | default dict)) $out -}}
+{{- if $out -}}
+{{- toYaml $out -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Render volumeMount configuration
 Usage: {{ include "app.volumeMount" . }}
 */}}

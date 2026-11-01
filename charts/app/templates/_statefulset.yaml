@@ -74,19 +74,9 @@ spec:
         labels:
           {{- include "helm-helpers.labels" $ | nindent 10 }}
           app.kubernetes.io/component: pvc
-        {{- with .annotations }}
+        {{- with include "app.pvcAnnotations" (dict "root" $ "pvc" .) }}
         annotations:
-          {{- toYaml . | nindent 10 }}
-        {{- end }}
-        {{- if eq (.storageClassName | default "") "opendrive" }}
-        annotations:
-          csi-rclone/storage-path: {{ if .rclone }}{{ .rclone.storagePath | default (include "helm-helpers.fullname" $) }}{{ else }}{{ include "helm-helpers.fullname" $ }}{{ end }}
-          csi-rclone/umask: {{ if .rclone }}{{ .rclone.umask | default "022" | quote }}{{ else }}"022"{{ end }}
-          {{- if .rclone }}
-          {{- if .rclone.annotations }}
-          {{- toYaml .rclone.annotations | nindent 10 }}
-          {{- end }}
-          {{- end }}
+          {{- . | nindent 10 }}
         {{- end }}
       spec:
         accessModes:
