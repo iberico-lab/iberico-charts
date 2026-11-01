@@ -2,7 +2,13 @@
 # Runs after `integrations` is installed: did each value reach the pod?
 # Called by hack/e2e.sh with $NS set and kubectl wrapped for the context.
 set -euo pipefail
-pod_exec() { kubectl exec -n "$NS" deploy/integrations -c integrations -- "$@"; }
+# A running app pod that isn't shutting down. `kubectl exec deploy/...` can pick
+# an old pod that is still terminating right after an upgrade.
+live_pod() {
+  kubectl get pod -n "$NS" -l app.kubernetes.io/name=integrations,app.kubernetes.io/instance=integrations \
+    -o go-template='{{range .items}}{{if and (not .metadata.deletionTimestamp) (eq .status.phase "Running")}}{{.metadata.name}}{{"\n"}}{{end}}{{end}}' | head -n1
+}
+pod_exec() { kubectl exec -n "$NS" "$(live_pod)" -c integrations -- "$@"; }
 expect() {  # expect <what> <want> <got>
   if [ "$2" != "$3" ]; then echo "!! $1: want '$2', got '$3'"; exit 1; fi
   echo "   ok: $1"
