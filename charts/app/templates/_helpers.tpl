@@ -96,7 +96,9 @@ Usage: {{ if include "app.probeHasContent" (dict "probe" .Values.workload.livene
 {{- end }}
 
 {{/*
-Returns "true" when any onepassword.secrets entry defines the given field
+Returns "true" when external-secrets AND onepassword are both enabled (i.e.
+the subchart actually renders the ExternalSecrets) and any onepassword.secrets
+entry defines the given field
 ("envVars" or "files"), otherwise "". All entries of a kind are merged into a
 single ExternalSecret by the external-secrets chart, so the app mounts or
 references each kind at most once.
@@ -106,7 +108,7 @@ Usage: include "app.onepassword.has" (dict "root" $ "field" "files")
 {{- $es := index .root.Values "external-secrets" | default dict -}}
 {{- $op := $es.onepassword | default dict -}}
 {{- $found := false -}}
-{{- if $op.enabled -}}
+{{- if and $es.enabled $op.enabled -}}
 {{- range $op.secrets -}}
 {{- if index . $.field -}}{{- $found = true -}}{{- end -}}
 {{- end -}}

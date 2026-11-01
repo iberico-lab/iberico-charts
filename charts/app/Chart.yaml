@@ -14,7 +14,7 @@ sources:
   - https://github.com/iberico-lab/iberico-charts
 maintainers:
   - name: Iberico Lab
-    email: team@mediumrare.ai
+    email: team@iberico-lab.com
 
 dependencies:
   - name: helm-helpers
