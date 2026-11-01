@@ -1,21 +1,23 @@
 {{/*
 Internal Ingress - Tailscale-based internal access
-Uses Tailscale ingress class, no external hostname required
+Uses the Tailscale ingress class. The machine name (and so the URL
+https://<machine>.<tailnet>.ts.net) is `host`, or the app's name.
 */}}
 {{- if .Values.ingresses }}
-{{- range .Values.ingresses }}
+{{- range $i, $ing := .Values.ingresses }}
+{{- with $ing }}
 {{- if eq .type "internal" }}
+{{- $machine := include "ingress.machineName" (dict "ingress" . "root" $ "index" $i) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .host | default (include "helm-helpers.fullname" $) }}-{{ .type }}
+  name: {{ $machine }}-internal
   namespace: {{ include "helm-helpers.namespace" $ }}
   labels:
     {{- include "helm-helpers.labels" $ | nindent 4 }}
     app.kubernetes.io/component: ingress
   annotations:
-    tailscale.com/hostname: {{ include "helm-helpers.fullname" $ }}
     {{- if .tailscaleExpose | default false }}
     tailscale.com/serve: "true"
     {{- end }}
@@ -36,9 +38,12 @@ spec:
         {{- else }}
         number: {{ .servicePort | default 80 }}
         {{- end }}
+  # The Tailscale operator names the machine after the first tls host
+  # (https://tailscale.com/docs/kubernetes-operator/manage-and-configure/custom-machine-names).
   tls:
     - hosts:
-        - {{ .host | default (include "helm-helpers.fullname" $) }}
+        - {{ $machine }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

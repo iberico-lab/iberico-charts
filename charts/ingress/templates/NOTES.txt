@@ -33,9 +33,9 @@
    {{- end }}
 
 4. TLS certificates:
-   {{- range .Values.ingresses }}
+   {{- range $i, $ing := .Values.ingresses }}
    {{- if eq .type "internal" }}
-   - {{ .host }} (managed by Tailscale)
+   - {{ include "ingress.machineName" (dict "ingress" $ing "root" $ "index" $i) }}{{ with $.Values.tailnetDomain }}.{{ . }}{{ end }} (managed by Tailscale)
    {{- else }}
    - {{ .host }} (managed by cert-manager + Let's Encrypt)
    {{- end }}

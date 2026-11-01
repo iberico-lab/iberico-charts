@@ -2,11 +2,31 @@ suite: ingress
 release:
   name: shop
 tests:
-  - it: puts the Tailscale hostname under annotations
+  - it: names the Tailscale machine after the app by default (first tls host)
     templates: [templates/ingress-internal.yaml]
     asserts:
-      - equal: { path: 'metadata.annotations["tailscale.com/hostname"]', value: shop }
-      - notExists: { path: 'metadata["tailscale.com/hostname"]' }
+      - equal: { path: 'spec.tls[0].hosts', value: [shop] }
+      - equal: { path: metadata.name, value: shop-internal }
+      - notExists: { path: 'metadata.annotations["tailscale.com/hostname"]' }
+
+  - it: uses host as the Tailscale machine name
+    templates: [templates/ingress-internal.yaml]
+    set: { ingresses: [{ type: internal, host: store }] }
+    asserts:
+      - equal: { path: 'spec.tls[0].hosts', value: [store] }
+      - equal: { path: metadata.name, value: store-internal }
+
+  - it: rejects a full domain as an internal host
+    templates: [templates/validate.yaml]
+    set: { ingresses: [{ type: internal, host: store.tail1234.ts.net }] }
+    asserts:
+      - failedTemplate: { errorPattern: 'Tailscale machine name only' }
+
+  - it: rejects an invalid machine name
+    templates: [templates/validate.yaml]
+    set: { ingresses: [{ type: internal, host: My_Store }] }
+    asserts:
+      - failedTemplate: { errorPattern: 'not a valid Tailscale machine name' }
 
   - it: requires a host for public ingresses
     templates: [templates/ingress-public.yaml]

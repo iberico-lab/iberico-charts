@@ -42,6 +42,10 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 - Deployments now honour `workload.terminationGracePeriodSeconds`; one pod template is shared by
   Deployments and StatefulSets.
 - No Services are created when `workload.enabled: false`.
+- Tailscale ingress: the machine name now comes only from `host` (or the app's name), placed in
+  `spec.tls.hosts` where the operator reads it. The `tailscale.com/hostname` annotation, which the
+  operator only documents for Services and which disagreed with `host`, is gone. A full domain or
+  invalid name in `host` now fails with a clear error.
 - StatefulSets with `persistence` can be upgraded: disk templates no longer carry the
   version and chart labels, which Kubernetes refuses to change. Needs a one-time
   `--cascade=orphan` step (see docs/upgrading.md).

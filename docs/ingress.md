@@ -52,6 +52,17 @@ ingress:
       certManagerIssuer: "letsencrypt-prod"
 ```
 
+**Private, with your own machine name.** The URL becomes
+`https://store.<your-tailnet>.ts.net`:
+
+```yaml
+ingress:
+  enabled: true
+  ingresses:
+    - type: "internal"
+      host: "store"          # the machine name only, not a full domain
+```
+
 **Want the full Tailscale URL in the install message?** Tell the chart your
 tailnet domain (find it in the Tailscale admin console under DNS):
 
@@ -87,6 +98,10 @@ automatically. Hide one with `homepage: { enabled: false }`. To change how it lo
 - `public` and `public-protected` **need a `host`**. Without one, the chart stops with an error.
 - If you set `ingress.enabled: true` but don't list any `ingresses`, you get
   **one `internal` ingress** by default.
+- **For `internal`, `host` is the Tailscale machine name**, not a domain: `store`,
+  not `store.tail1234.ts.net`. It must be up to 63 lowercase letters, numbers and
+  `-`, otherwise the chart stops with an error. Empty = the app's name. If that
+  name is already taken in your tailnet, Tailscale adds a suffix (e.g. `store-1`).
 - `servicePort` must match your [Service](service.md) port (default `80`).
 - Traefik middlewares must exist in the cluster: `network-no-auth` for `public`,
   `network-sso` for `public-protected`.
@@ -103,7 +118,7 @@ automatically. Hide one with `homepage: { enabled: false }`. To change how it lo
 |---------|---------|--------------|
 | `serviceName` | the app's Service | Send traffic to a different Service (`name` still works as an alias) |
 | `type` | `internal` | `internal`, `public` or `public-protected` |
-| `host` | — | Hostname (required for public types) |
+| `host` | — | Public types: the domain (required). `internal`: the Tailscale machine name (default: the app's name) |
 | `servicePort` | `80` | Service port to send traffic to |
 | `servicePortName` | — | Use a named port instead of a number (`internal` only) |
 | `certManagerIssuer` | `letsencrypt-staging` | TLS certificate issuer (public types) |

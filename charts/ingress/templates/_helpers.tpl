@@ -31,13 +31,31 @@ Usage: include "ingress.validate" .
 {{- end -}}
 {{- $name := printf "%s-%s" (include "helm-helpers.fullname" $) $type -}}
 {{- if eq $type "internal" -}}
-{{- $name = printf "%s-internal" ($ing.host | default (include "helm-helpers.fullname" $)) -}}
+{{- $name = printf "%s-internal" (include "ingress.machineName" (dict "ingress" $ing "root" $ "index" $i)) -}}
 {{- end -}}
 {{- if hasKey $seen $name -}}
 {{- fail (printf "ingress.ingresses[%d] would create Ingress %q, which entry %v already creates. Use only one %s ingress per release." $i $name (get $seen $name) $type) -}}
 {{- end -}}
 {{- $_ := set $seen $name $i -}}
 {{- end -}}
+{{- end }}
+
+{{/*
+Tailscale machine name for an internal ingress: `host`, or the app's name.
+The Tailscale operator takes an Ingress's machine name from the first
+spec.tls.hosts entry, and machine names follow DNS label rules: up to 63
+lowercase letters, numbers and "-", no dots.
+Usage: include "ingress.machineName" (dict "ingress" . "root" $ "index" $i)
+*/}}
+{{- define "ingress.machineName" -}}
+{{- $host := .ingress.host | default (include "helm-helpers.fullname" .root) -}}
+{{- if contains "." $host -}}
+{{- fail (printf "ingress.ingresses[%v].host %q: for type \"internal\" this is the Tailscale machine name only (e.g. \"shop\"), not a full domain. Put your tailnet (e.g. tail1234.ts.net) in ingress.tailnetDomain." .index $host) -}}
+{{- end -}}
+{{- if not (regexMatch "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" $host) -}}
+{{- fail (printf "ingress.ingresses[%v].host %q is not a valid Tailscale machine name: use up to 63 lowercase letters, numbers and \"-\", starting and ending with a letter or number." .index $host) -}}
+{{- end -}}
+{{- $host -}}
 {{- end }}
 
 {{/*
