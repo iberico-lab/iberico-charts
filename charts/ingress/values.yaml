@@ -1,5 +1,5 @@
 global:
-    name: ""
+  name: ""
 
 # Ingress definitions
 # Default internal ingress - name will be generated from helm-helpers

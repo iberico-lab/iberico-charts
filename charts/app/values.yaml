@@ -37,7 +37,7 @@ workload:
 
   pod:
     annotations: {}
-  
+
   # Environment variables
   environment: {}
   volumes: []
