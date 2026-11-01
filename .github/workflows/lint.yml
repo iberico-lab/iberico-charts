@@ -46,6 +46,12 @@ jobs:
       - name: Run helm lint on all charts
         run: make lint
 
+      - name: Install helm-unittest
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest --version v0.6.3
+
+      - name: Run unit tests
+        run: make test
+
       # Every example must keep rendering against the app chart.
       - name: Render all examples
         run: make examples

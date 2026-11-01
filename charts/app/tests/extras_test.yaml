@@ -1,0 +1,31 @@
+suite: extra manifests and notes
+release:
+  name: shop
+  namespace: web
+tests:
+  - it: renders extraManifests through tpl
+    templates: [templates/extra-manifests.yaml]
+    set:
+      extraManifests:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata: { name: '{{ include "helm-helpers.fullname" . }}-settings' }
+    asserts:
+      - isKind: { of: ConfigMap }
+      - equal: { path: metadata.name, value: shop-settings }
+
+  - it: prints in-cluster, external and port-forward access in NOTES
+    templates: [templates/NOTES.txt]
+    set:
+      ingress:
+        enabled: true
+        tailnetDomain: tail1234.ts.net
+        ingresses:
+          - { type: internal }
+          - { type: public, host: shop.example.com }
+    asserts:
+      - matchRegexRaw: { pattern: 'shop\.web\.svc\.cluster\.local:80' }
+      - matchRegexRaw: { pattern: 'https://shop\.tail1234\.ts\.net' }
+      - matchRegexRaw: { pattern: 'https://shop\.example\.com' }
+      - matchRegexRaw: { pattern: 'letsencrypt-staging' }
+      - matchRegexRaw: { pattern: 'kubectl port-forward -n web svc/shop 8080:80' }

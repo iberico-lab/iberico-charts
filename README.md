@@ -74,6 +74,7 @@ together in `charts/`.
 |---------|--------------|
 | `make deps` | Fetch the bundled charts (run this first) |
 | `make lint` | Check every chart for mistakes |
+| `make test` | Run the unit tests (needs the [helm-unittest](https://github.com/helm-unittest/helm-unittest) plugin) |
 | `make template` | Show the YAML the `app` chart creates with default values |
 | `make examples` | Check that every example still works |
 | `make schema` | Regenerate `values.schema.json` after changing values |

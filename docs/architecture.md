@@ -62,7 +62,8 @@ including the ingress and secret objects.
 2. Add it to `dependencies:` in `charts/app/Chart.yaml` with `repository: "file://../<new-chart>"` and a `condition:`.
 3. Add an empty `<new-chart>:` block to `charts/app/values.yaml` so people can find it.
 4. Describe its values in `hack/gen-values-schema.py` and run `make schema`.
-5. Run `make lint` to check everything.
+5. Add tests in `charts/<new-chart>/tests/` and run `make test`.
+6. Run `make lint` to check everything.
 
 ---
 

@@ -10,7 +10,7 @@ EXAMPLES   := $(sort $(wildcard examples/*/values.yaml))
 # configured Helm repos (a single broken repo would otherwise fail the build).
 HELM_DEP   := HELM_REPOSITORY_CONFIG=/dev/null helm dependency update --skip-refresh
 
-.PHONY: help deps lint template examples schema schema-check clean
+.PHONY: help deps lint test template examples schema schema-check clean
 
 help: ## Show available targets
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-10s %s\n", $$1, $$2}'
@@ -20,6 +20,9 @@ deps: ## Resolve file:// sub-chart dependencies for every chart
 
 lint: deps ## helm lint every chart
 	@for c in $(CHARTS); do helm lint $(CHARTS_DIR)/$$c || exit 1; done
+
+test: deps ## Run unit tests (needs the helm-unittest plugin)
+	helm unittest $(CHARTS_DIR)/app $(CHARTS_DIR)/ingress $(CHARTS_DIR)/external-secrets
 
 template: deps ## Render the umbrella app chart with default values
 	helm template app $(CHARTS_DIR)/app

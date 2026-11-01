@@ -1,0 +1,25 @@
+suite: services
+templates:
+  - templates/service.yaml
+release:
+  name: shop
+tests:
+  - it: renders one ClusterIP Service by default
+    asserts:
+      - hasDocuments: { count: 1 }
+      - equal: { path: spec.type, value: ClusterIP }
+      - equal: { path: 'spec.ports[0].name', value: http }
+
+  - it: renders nothing when the workload is disabled
+    set: { workload.enabled: false }
+    asserts:
+      - hasDocuments: { count: 0 }
+
+  - it: makes the headless Service follow applicationPort and portName
+    set: { workload.type: StatefulSet, workload.applicationPort: 5432, service.portName: postgres }
+    asserts:
+      - hasDocuments: { count: 2 }
+      - equal: { path: spec.clusterIP, value: None }
+        documentIndex: 0
+      - equal: { path: 'spec.ports[0]', value: { port: 5432, targetPort: 5432, protocol: TCP, name: postgres } }
+        documentIndex: 0
