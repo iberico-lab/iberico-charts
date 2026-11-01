@@ -46,6 +46,8 @@ For explanations and examples, follow the  link in each section.
 | `workload.command` | `[]` | Start command (`[]` = image default) |
 | `workload.args` | `[]` | Start arguments (`[]` = image default) |
 | `workload.environment` | `{}` | Plain settings as `KEY: value` |
+| `workload.extraEnv` | `[]` | Raw env entries (supports `valueFrom`) |
+| `workload.extraEnvFrom` | `[]` | Raw `envFrom` entries |
 | `workload.volumes` | `[]` | Mount existing things ([docs](volumes.md)) |
 | `workload.extraContainers` | `[]` | Sidecars ([docs](sidecars.md)) |
 | `workload.extraInitContainers` | `[]` | Init containers ([docs](sidecars.md)) |

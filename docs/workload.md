@@ -42,6 +42,22 @@ workload:
   args: ["-c", "exec my-app --fast"]   # replaces the image's CMD
 ```
 
+**Read a value from Kubernetes** (the pod's own name, a key from another
+Secret…): `extraEnv` takes normal Kubernetes env entries.
+
+```yaml
+workload:
+  extraEnv:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef: { fieldPath: metadata.name }
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef: { name: my-db, key: password }
+  extraEnvFrom:                       # load every key of a ConfigMap/Secret
+    - configMapRef: { name: my-app-settings }
+```
+
 **Give it more (or less) CPU and memory:**
 
 ```yaml
@@ -84,6 +100,8 @@ workload:
 | `workload.command` | `[]` | Start command (`[]` = image default) |
 | `workload.args` | `[]` | Start arguments (`[]` = image default) |
 | `workload.environment` | `{}` | Plain settings as `KEY: value` |
+| `workload.extraEnv` | `[]` | Raw env entries (supports `valueFrom`) |
+| `workload.extraEnvFrom` | `[]` | Raw `envFrom` entries (whole ConfigMaps/Secrets) |
 | `workload.resources` | see above | CPU and memory |
 | `workload.annotations` | `{}` | Annotations on the Deployment/StatefulSet |
 | `workload.pod.annotations` | `{}` | Annotations on each pod |

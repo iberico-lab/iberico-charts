@@ -286,17 +286,26 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
       containerPort: {{ .Values.workload.applicationPort }}
       protocol: TCP
     {{- end }}
-  {{- if .Values.workload.environment }}
+  {{- if or .Values.workload.environment .Values.workload.extraEnv }}
   env:
     {{- range $key, $value := .Values.workload.environment }}
     - name: {{ $key }}
       value: {{ $value | quote }}
     {{- end }}
+    {{- with .Values.workload.extraEnv }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- end }}
-  {{- if include "app.onepassword.has" (dict "root" . "field" "envVars") }}
+  {{- $onepasswordEnv := include "app.onepassword.has" (dict "root" . "field" "envVars") }}
+  {{- if or $onepasswordEnv .Values.workload.extraEnvFrom }}
   envFrom:
+    {{- if $onepasswordEnv }}
     - secretRef:
         name: {{ printf "%s-onepassword-env" (include "helm-helpers.fullname" .) }}
+    {{- end }}
+    {{- with .Values.workload.extraEnvFrom }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- end }}
   {{- if or .Values.workload.volumes .Values.persistence (include "app.onepassword.has" (dict "root" . "field" "files")) }}
   volumeMounts:

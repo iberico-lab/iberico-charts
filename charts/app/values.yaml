@@ -43,6 +43,10 @@ workload:
 
   # Environment variables
   environment: {}
+  # Raw env entries, copied as-is (use for valueFrom: fieldRef, secretKeyRef...)
+  extraEnv: []
+  # Raw envFrom entries, copied as-is (load a whole ConfigMap or Secret)
+  extraEnvFrom: []
   volumes: []
 
   # Sidecar containers rendered verbatim; each entry MUST define `name`
