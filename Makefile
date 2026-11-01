@@ -14,7 +14,7 @@ KUBECONFORM := kubeconform -strict -summary -schema-location default \
 # configured Helm repos (a single broken repo would otherwise fail the build).
 HELM_DEP   := HELM_REPOSITORY_CONFIG=/dev/null helm dependency update --skip-refresh
 
-.PHONY: help deps lint test validate template examples schema schema-check clean
+.PHONY: help deps lint test validate template examples schema schema-check docs-check clean
 
 help: ## Show available targets
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-10s %s\n", $$1, $$2}'
@@ -42,6 +42,9 @@ schema: ## Regenerate values.schema.json files (run after changing values)
 
 schema-check: ## Fail if values.schema.json files are out of date
 	python3 hack/gen-values-schema.py . && git diff --exit-code -- 'charts/*/values.schema.json'
+
+docs-check: ## Fail if a setting in the app schema isn't documented in docs/
+	python3 hack/check-docs.py .
 
 clean: ## Remove vendored sub-chart artifacts and lock files
 	rm -rf $(CHARTS_DIR)/*/charts $(CHARTS_DIR)/*/Chart.lock

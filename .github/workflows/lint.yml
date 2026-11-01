@@ -39,6 +39,9 @@ jobs:
       - name: Check values schemas are up to date
         run: make schema-check
 
+      - name: Check every setting is documented
+        run: make docs-check
+
       - name: Run chart-testing (lint)
         run: ct lint --config .github/configs/ct.yaml --all
 

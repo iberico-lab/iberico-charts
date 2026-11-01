@@ -86,6 +86,28 @@ can push lower-priority pods out.
 
 ---
 
+## All settings
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| `podDisruptionBudget.enabled` | `false` | Create a PodDisruptionBudget |
+| `podDisruptionBudget.minAvailable` | `null` | Pods that must stay up (number or `"50%"`); wins over `maxUnavailable` |
+| `podDisruptionBudget.maxUnavailable` | `1` | Pods that may be down at once |
+| `autoscaling.enabled` | `false` | Create a HorizontalPodAutoscaler (`workload.replicas` is then ignored) |
+| `autoscaling.minReplicas` | `2` | Fewest pods |
+| `autoscaling.maxReplicas` | `5` | Most pods |
+| `autoscaling.targetCPUUtilizationPercentage` | `80` | Add pods above this % of requested CPU (`null` = off) |
+| `autoscaling.targetMemoryUtilizationPercentage` | `null` | Same for memory (`null` = off) |
+| `autoscaling.behavior` | `{}` | Scale-up/down tuning, copied as-is |
+| `topologySpread.enabled` | `false` | Spread pods with the preset |
+| `topologySpread.topologyKey` | `kubernetes.io/hostname` | Spread across nodes, or `topology.kubernetes.io/zone` |
+| `topologySpread.maxSkew` | `1` | Allowed difference in pod count between nodes/zones |
+| `topologySpread.whenUnsatisfiable` | `ScheduleAnyway` | `ScheduleAnyway` (best effort) or `DoNotSchedule` (strict) |
+| `topologySpreadConstraints` | `[]` | Raw rules, added after the preset |
+| `priorityClassName` | `""` | PriorityClass for the pods |
+
+---
+
 ## Next
 
 - [Workload](workload.md) · [Values Reference](values-reference.md)
