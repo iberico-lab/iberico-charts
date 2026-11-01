@@ -153,8 +153,8 @@ service: { port: 5672, targetPort: 5672 }
 | `workload.serviceName` | `""` | Name of the headless Service (`""` = `<app>-cluster`) |
 | `workload.updateStrategy` | `{type: RollingUpdate}` | How pods are updated |
 | `workload.terminationGracePeriodSeconds` | `30` | Seconds to shut down cleanly |
-| `workload.service.port` | `80` | Headless Service port |
-| `workload.service.targetPort` | `80` | Headless Service target port |
+| `workload.service.port` | `null` | Headless Service port (`null` = `applicationPort`) |
+| `workload.service.targetPort` | `null` | Headless Service target port (`null` = `applicationPort`) |
 | `workload.service.ports` | `[]` | Several ports for the headless Service |
 | `workload.service.annotations` | `{}` | Headless Service annotations |
 

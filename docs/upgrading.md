@@ -33,3 +33,9 @@ Your data is safe: `--cascade=orphan` leaves the pods and their disks alone.
 
 Services don't need anything special. Their selector isn't locked, so Helm
 updates it in place.
+
+### Also in 0.2.0 (no action needed)
+
+- **StatefulSet headless Service port:** it now follows `workload.applicationPort`
+  (it was always `80`). Helm updates the Service in place. Set
+  `workload.service.port` / `targetPort` if you want to keep `80`.
