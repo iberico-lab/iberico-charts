@@ -85,6 +85,19 @@ tests:
       - notExists: { path: spec.template.spec.volumes }
       - equal: { path: 'spec.volumeClaimTemplates[0].metadata.name', value: data }
 
+  - it: keeps StatefulSet PVC labels stable so upgrades don't hit the immutable field
+    set:
+      workload.type: StatefulSet
+      global.version: "9.9.9"
+      persistence: [{ name: data, size: 1Gi, mountPath: /data }]
+    asserts:
+      - equal:
+          path: 'spec.volumeClaimTemplates[0].metadata.labels'
+          value:
+            app.kubernetes.io/name: shop
+            app.kubernetes.io/instance: shop
+            app.kubernetes.io/component: pvc
+
   - it: merges StatefulSet PVC annotations into one block
     set:
       workload.type: StatefulSet

@@ -41,6 +41,9 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 - Deployments now honour `workload.terminationGracePeriodSeconds`; one pod template is shared by
   Deployments and StatefulSets.
 - No Services are created when `workload.enabled: false`.
+- StatefulSets with `persistence` can be upgraded: disk templates no longer carry the
+  version and chart labels, which Kubernetes refuses to change. Needs a one-time
+  `--cascade=orphan` step (see docs/upgrading.md).
 
 ### Removed
 

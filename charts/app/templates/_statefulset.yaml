@@ -33,8 +33,10 @@ spec:
     {{- range .Values.persistence }}
     - metadata:
         name: {{ .name }}
+        {{- /* volumeClaimTemplates can't change after creation, so only stable
+               labels here: no version or chart label, or upgrades would fail */}}
         labels:
-          {{- include "helm-helpers.labels" $ | nindent 10 }}
+          {{- include "helm-helpers.selectorLabels" $ | nindent 10 }}
           app.kubernetes.io/component: pvc
         {{- with include "app.pvcAnnotations" (dict "root" $ "pvc" .) }}
         annotations:

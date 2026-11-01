@@ -56,6 +56,24 @@ StatefulSet headless Service settings moved from `workload.service` to
 `service.headless`, next to the normal Service. `workload.service` still works
 for now, but please move it.
 
+### StatefulSets with disks: one-time step
+
+Disk templates (`volumeClaimTemplates`) now carry only stable labels. Before,
+they also had the chart and version labels, so **every** upgrade of a
+StatefulSet with `persistence` failed with
+`updates to statefulset spec for fields other than ... are forbidden`.
+
+Kubernetes won't let you change that part of an existing StatefulSet, so do
+this once per StatefulSet that has `persistence`. Your pods and disks keep
+running and keep their data:
+
+```bash
+kubectl delete statefulset <app> -n <namespace> --cascade=orphan
+helm upgrade <release> ./charts/app -f values-myapp.yaml
+```
+
+Deployments, and StatefulSets without `persistence`, need nothing.
+
 ### Safer security defaults
 
 Pods now get `seccompProfile: RuntimeDefault`, the main container gets

@@ -40,6 +40,7 @@ These come from the chart and stop **before** anything is created.
 | `serviceMonitor.port "…" is not a Service port name` | Prometheus would scrape a port that doesn't exist | Use one of the names listed in the error |
 | `… is mapped more than once in onepassword.secrets` | Same env var or file name used twice | Rename one of them |
 | `field is immutable` (on upgrade) | A locked field changed | See [Upgrading](upgrading.md) |
+| `updates to statefulset spec for fields other than ... are forbidden` | StatefulSet installed with 0.2.x and has disks | One-time `--cascade=orphan` step in [Upgrading](upgrading.md#statefulsets-with-disks-one-time-step) |
 
 ---
 
