@@ -33,19 +33,19 @@ workload:
 ### 2. Resolve bundled subcharts
 
 ```bash
-helm dependency update ./app
+helm dependency update ./charts/app
 ```
 
 ### 3. Install
 
 ```bash
-helm install my-app ./app -f values-myapp.yaml
+helm install my-app ./charts/app -f values-myapp.yaml
 ```
 
 ### 4. Preview before installing (recommended)
 
 ```bash
-helm template my-app ./app -f values-myapp.yaml
+helm template my-app ./charts/app -f values-myapp.yaml
 ```
 
 ## Example

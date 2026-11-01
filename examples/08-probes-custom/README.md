@@ -19,7 +19,7 @@ without a `command`.
 ## Render it
 
 ```bash
-helm template t <repo>/app -f values.yaml
+helm template t <repo>/charts/app -f values.yaml
 ```
 
 ## Expected output

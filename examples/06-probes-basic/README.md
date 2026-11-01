@@ -15,7 +15,7 @@ port as the app. Start here, then override individual fields only when needed
 ## Render it
 
 ```bash
-helm template t <repo>/app -f values.yaml
+helm template t <repo>/charts/app -f values.yaml
 ```
 
 ## Expected output

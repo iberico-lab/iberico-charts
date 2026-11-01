@@ -19,6 +19,7 @@ so you add features by **toggling values**, not by writing manifests.
 | [Volumes](volumes.md) | ConfigMaps, secrets, emptyDir, existing PVCs |
 | [Service](service.md) | Exposing the app inside the cluster |
 | [StatefulSet](statefulset.md) | Stable identity + per-pod storage |
+| [StatefulSet Guide](statefulset-guide.md) | End-to-end StatefulSet walkthrough with worked examples |
 | [External Secrets](external-secrets.md) | 1Password secrets → env vars / files |
 | [Ingress](ingress.md) | Tailscale internal + Traefik public routing |
 | [Values Reference](values-reference.md) | Every field, type, and default |
@@ -37,7 +38,7 @@ so you add features by **toggling values**, not by writing manifests.
 
 ## Design principles
 
-- **Sensible defaults** — every feature has a working default in `app/values.yaml`.
+- **Sensible defaults** — every feature has a working default in `charts/app/values.yaml`.
 - **Partial overrides** — set only what changes; the rest inherits defaults.
 - **Fail-loud** — bad config aborts the render with a clear error instead of
   producing a broken manifest.

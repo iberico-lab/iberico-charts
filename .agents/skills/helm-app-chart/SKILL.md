@@ -25,7 +25,7 @@ keywords:
 
 ## What the `app` chart is
 
-The `app` chart (repo root: `app/`) is a **reusable "Lego block" application
+The `app` chart (`charts/app/`) is a **reusable "Lego block" application
 chart**. It already bundles the pieces every app needs, so consumers **add
 features by toggling values — not by adding charts**:
 
@@ -37,9 +37,9 @@ features by toggling values — not by adding charts**:
 
 A single `workload:` block drives either a **Deployment** or a **StatefulSet**
 (`workload.type`). Do **not** copy or fork the chart per app — create a values
-file and install `app/`.
+file and install `charts/app/`.
 
-> Authoritative schema lives in `app/values.yaml`. Always read it before
+> Authoritative schema lives in `charts/app/values.yaml`. Always read it before
 > authoring values; do not rely on memory.
 
 ## How to consume it
@@ -66,8 +66,8 @@ workload:
 Install:
 
 ```bash
-helm dependency update ./app
-helm install my-app ./app -f values-myapp.yaml
+helm dependency update ./charts/app
+helm install my-app ./charts/app -f values-myapp.yaml
 ```
 
 ## Key features
@@ -120,7 +120,7 @@ workload:
 ### Probes (partial override)
 
 `livenessProbe`, `readinessProbe`, `startupProbe` support **partial overrides**:
-omitted fields inherit their `app/values.yaml` default via Helm native map
+omitted fields inherit their `charts/app/values.yaml` default via Helm native map
 coalescing — set only what changes.
 
 ```yaml
@@ -242,7 +242,7 @@ and per-pod storage.
 
 ## Conventions
 
-- **Sensible defaults**: every feature has a working default in `app/values.yaml`.
+- **Sensible defaults**: every feature has a working default in `charts/app/values.yaml`.
 - **Partial overrides**: rely on Helm's native map coalescing — never restate
   defaults you are not changing.
 - **Fail-loud**: unsupported probe `type`, `type: exec` without `command`, and
@@ -253,19 +253,19 @@ and per-pod storage.
 
 ## The subchart pattern
 
-`app` is a **parent chart** that composes subcharts declared in `app/Chart.yaml`
+`app` is a **parent chart** that composes subcharts declared in `charts/app/Chart.yaml`
 (`dependencies:` with `file://../<name>` repositories, gated by a `condition`).
 Consumers enable a bundled subchart by toggling its values — they never add
 charts themselves. To add a *new* reusable capability, create a sibling chart
-and wire it into `app/Chart.yaml`. Full walkthrough:
+and wire it into `charts/app/Chart.yaml`. Full walkthrough:
 `references/subchart-pattern.md`.
 
 ## Validate before deploying
 
 ```bash
-helm dependency update ./app     # resolve/refresh bundled subcharts
-helm lint ./app -f values-myapp.yaml
-helm template my-app ./app -f values-myapp.yaml   # render locally, inspect output
+helm dependency update ./charts/app     # resolve/refresh bundled subcharts
+helm lint ./charts/app -f values-myapp.yaml
+helm template my-app ./charts/app -f values-myapp.yaml   # render locally, inspect output
 ```
 
 `helm template` is the fastest way to confirm your values produce the expected
@@ -276,5 +276,5 @@ Deployment/StatefulSet, Service, Ingress, and ExternalSecret objects.
 - `references/values-schema.md` — complete `workload:` + top-level field reference.
 - `references/subchart-pattern.md` — composing subcharts and adding a new one.
 - `references/conventions.md` — defaults, partial overrides, fail-loud rules.
-- `app/values.yaml` — authoritative schema (read this first).
-- `app/values.example.yaml`, `README.md`, `STATEFULSET-GUIDE.md` — worked examples.
+- `charts/app/values.yaml` — authoritative schema (read this first).
+- `charts/app/values.example.yaml`, `README.md`, `docs/statefulset-guide.md` — worked examples.

@@ -3,7 +3,7 @@
 ## Overview
 
 The `app` chart is a **parent chart**. It composes three subcharts declared in
-`app/Chart.yaml` and driven by a single `workload:` block.
+`charts/app/Chart.yaml` and driven by a single `workload:` block.
 
 | Subchart | Purpose | Enabled by |
 |----------|---------|------------|
@@ -16,7 +16,7 @@ The `app` chart is a **parent chart**. It composes three subcharts declared in
 You don't choose this — it's how the chart is built. Understand it so you know
 **why** features are grouped the way they are, and where a new capability should
 live. If you need a brand-new reusable capability, add a sibling chart and wire
-it into `app/Chart.yaml`.
+it into `charts/app/Chart.yaml`.
 
 ## How names are built
 

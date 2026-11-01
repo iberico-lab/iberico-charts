@@ -12,12 +12,12 @@ Traefik route (with cert-manager TLS and Homepage annotations) and an
 When the app must be reachable by hostname. Use `type: public` for
 internet-facing HTTPS behind Traefik; `type: internal` for Tailscale-only
 access (no public hostname needed); `public-protected` for auth-gated public
-access. See `ingress/values.yaml` for the full schema.
+access. See `charts/ingress/values.yaml` for the full schema.
 
 ## Render it
 
 ```bash
-helm template t <repo>/app -f values.yaml
+helm template t <repo>/charts/app -f values.yaml
 ```
 
 ## Expected output

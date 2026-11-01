@@ -5,11 +5,11 @@ bundled capabilities by toggling values; they never add charts themselves.
 
 ## How the parent composes subcharts
 
-`app/Chart.yaml` declares dependencies with local `file://` repositories and a
+`charts/app/Chart.yaml` declares dependencies with local `file://` repositories and a
 `condition` that maps to a values flag:
 
 ```yaml
-# app/Chart.yaml
+# charts/app/Chart.yaml
 dependencies:
   - name: helm-helpers
     version: "0.1.0"
@@ -33,14 +33,14 @@ Key points:
 - `external-secrets` and `ingress` are **gated** by their `enabled` flag. Setting
   `external-secrets.enabled: true` (or `ingress.enabled: true`) activates the
   subchart; its own values live under the same key.
-- `app/values.yaml` already contains an empty stub for each subchart
+- `charts/app/values.yaml` already contains an empty stub for each subchart
   (`external-secrets: { enabled: false, onepassword: {} }`, `ingress: { enabled:
   false }`), so consumers just fill them in.
 
-Subcharts are resolved into `app/charts/*.tgz` by:
+Subcharts are resolved into `charts/app/charts/*.tgz` by:
 
 ```bash
-helm dependency update ./app
+helm dependency update ./charts/app
 ```
 
 (The `charts/*.tgz` and `Chart.lock` files are gitignored — regenerate locally.)
@@ -89,7 +89,7 @@ To add a new reusable capability (e.g. `monitoring`):
        repository: "file://../helm-helpers"
    ```
 
-3. **Wire it into the parent** `app/Chart.yaml` with a condition:
+3. **Wire it into the parent** `charts/app/Chart.yaml` with a condition:
 
    ```yaml
    - name: monitoring
@@ -98,7 +98,7 @@ To add a new reusable capability (e.g. `monitoring`):
      condition: monitoring.enabled
    ```
 
-4. **Add a stub to `app/values.yaml`** so the schema is discoverable:
+4. **Add a stub to `charts/app/values.yaml`** so the schema is discoverable:
 
    ```yaml
    monitoring:
@@ -108,13 +108,13 @@ To add a new reusable capability (e.g. `monitoring`):
 5. **Resolve and validate**:
 
    ```bash
-   helm dependency update ./app
-   helm lint ./app
-   helm template my-app ./app -f values-myapp.yaml
+   helm dependency update ./charts/app
+   helm lint ./charts/app
+   helm template my-app ./charts/app -f values-myapp.yaml
    ```
 
 6. If the new subchart needs to inject into the app's pod (env, volumes,
-   mounts), extend `app/templates/_helpers.tpl` following the existing
+   mounts), extend `charts/app/templates/_helpers.tpl` following the existing
    `external-secrets` handling as the reference implementation.
 
 ## Why this pattern

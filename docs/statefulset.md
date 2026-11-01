@@ -68,3 +68,4 @@ persistence:
 - [Workload](workload.md)
 - [Persistence](persistence.md)
 - [Service](service.md)
+- [StatefulSet Guide](statefulset-guide.md) — end-to-end walkthrough

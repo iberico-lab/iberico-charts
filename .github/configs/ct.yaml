@@ -1,15 +1,18 @@
 # chart-testing (ct) configuration.
 #
-# All charts live at the repository root, so `chart-dirs` is `.`.
+# Chart sources live under `charts/<name>/`.
 
 remote: origin
 target-branch: main
 
 chart-dirs:
-  - .
+  - charts
+
+# yamllint rules used by `ct lint`.
+lint-conf: .github/configs/lintconf.yaml
 
 # No external chart repositories are required: every dependency is resolved
-# from the local `file://../helm-helpers` sub-chart.
+# from the local `file://../<name>` sibling chart under charts/.
 chart-repos: []
 
 # Do not enforce a version bump on every PR; releases are driven by

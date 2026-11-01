@@ -1,6 +1,6 @@
 # Values Reference
 
-Every field in `app/values.yaml`, with type and default.
+Every field in `charts/app/values.yaml`, with type and default.
 
 ## Overview
 

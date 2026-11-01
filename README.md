@@ -8,14 +8,35 @@ integration.
 
 ---
 
+## 📁 Repository Layout
+
+```text
+charts/
+  app/               # Umbrella application chart (depends on the charts below)
+  external-secrets/  # ExternalSecret / SecretStore subchart (1Password Connect)
+  ingress/           # Tailscale + Traefik ingress subchart
+  helm-helpers/      # Shared library chart (template helpers)
+docs/                # Per-feature documentation (start at docs/index.md)
+examples/            # Copy-paste values files for the app chart
+.github/
+  configs/           # ct.yaml, cr.yaml, lintconf.yaml (chart-testing / releaser)
+  workflows/         # Lint + release pipelines
+Makefile             # make deps | lint | template | examples | clean
+```
+
+Subcharts reference each other as siblings (`file://../<name>`), so they must
+stay together under `charts/`.
+
+---
+
 ## ⚡ Quick Start
 
 Deploy a simple application with minimal configuration:
 
 ```bash
-helm dependency update ./app
+helm dependency update ./charts/app
 
-helm install my-app ./app \
+helm install my-app ./charts/app \
   --set global.name=my-app \
   --set workload.image.repository=nginx \
   --set workload.image.tag=alpine
@@ -393,4 +414,3 @@ workload:
       emptyDir: { }
       mountPath: "/tmp"
 ```
-# iberico-charts

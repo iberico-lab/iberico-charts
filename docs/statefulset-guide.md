@@ -1,7 +1,7 @@
 # StatefulSet Configuration Guide
 
-> 📚 See also [`docs/statefulset.md`](docs/statefulset.md) for the per-feature
-> reference, and [`docs/index.md`](docs/index.md) for all documentation.
+> 📚 See also [`statefulset.md`](statefulset.md) for the per-feature
+> reference, and [`index.md`](index.md) for all documentation.
 
 ## Quick Start
 

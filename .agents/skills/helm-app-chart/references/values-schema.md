@@ -1,7 +1,7 @@
 # `app` Chart Values Schema Reference
 
-Authoritative source: `app/values.yaml`. This document mirrors it. When in
-doubt, read `app/values.yaml` — it is the source of truth.
+Authoritative source: `charts/app/values.yaml`. This document mirrors it. When in
+doubt, read `charts/app/values.yaml` — it is the source of truth.
 
 ## Top-level keys
 
@@ -156,11 +156,11 @@ Each entry has `name`, `mountPath`, optional `readOnly`, and exactly one source:
 ```yaml
 external-secrets:
   enabled: false          # condition for the subchart
-  onepassword: {}         # see external-secrets/values.yaml
+  onepassword: {}         # see charts/external-secrets/values.yaml
 
 ingress:
   enabled: false          # condition for the subchart
-  ingresses: []           # see ingress/values.yaml
+  ingresses: []           # see charts/ingress/values.yaml
 ```
 
 See `subchart-pattern.md` for how these are wired.
