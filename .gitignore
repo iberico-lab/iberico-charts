@@ -3,7 +3,10 @@
 .debug
 
 # Chart dependencies
+# Chart sources live under charts/<name>/; their vendored sub-charts land in
+# charts/<name>/charts/ and must never be committed.
 **/charts/*.tgz
+charts/*/charts/
 **/charts/*/charts
 Chart.lock
 
