@@ -8,9 +8,9 @@ keywords:
   - external-secrets
   - 1password
   - secrets-management
-home: https://github.com/iberico-lab/iberico-charts
+home: https://github.com/alexbaeza/iberico-charts
 sources:
-  - https://github.com/iberico-lab/iberico-charts
+  - https://github.com/alexbaeza/iberico-charts
 maintainers:
   - name: Iberico Lab
 
