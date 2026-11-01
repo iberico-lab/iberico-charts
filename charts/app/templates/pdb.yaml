@@ -1,0 +1,25 @@
+{{- /* minAvailable wins when set; otherwise maxUnavailable (default 1) is used */ -}}
+{{- $pdb := .Values.podDisruptionBudget -}}
+{{- if and (.Values.workload.enabled | default false) $pdb.enabled -}}
+{{- $min := $pdb.minAvailable -}}
+{{- $hasMin := not (kindIs "invalid" $min) -}}
+{{- if and $hasMin (not (kindIs "string" $min)) (ge (int $min) (int .Values.workload.replicas)) -}}
+{{- fail (printf "podDisruptionBudget.minAvailable (%v) must be lower than workload.replicas (%v), or no pod could ever be evicted and node drains would hang" $min .Values.workload.replicas) -}}
+{{- end -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "helm-helpers.fullname" . }}
+  namespace: {{ include "helm-helpers.namespace" . }}
+  labels:
+    {{- include "helm-helpers.labels" . | nindent 4 }}
+spec:
+  {{- if $hasMin }}
+  minAvailable: {{ $min }}
+  {{- else }}
+  maxUnavailable: {{ $pdb.maxUnavailable | default 1 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "helm-helpers.selectorLabels" . | nindent 6 }}
+{{- end -}}

@@ -752,6 +752,29 @@
         "null"
       ]
     },
+    "podDisruptionBudget": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minAvailable": {
+          "type": [
+            "integer",
+            "string",
+            "null"
+          ]
+        },
+        "maxUnavailable": {
+          "type": [
+            "integer",
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "nodeSelector": {
       "type": "object",
       "additionalProperties": {

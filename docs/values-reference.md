@@ -20,6 +20,7 @@ For explanations and examples, follow the  link in each section.
 | `service` | see below | Address inside the cluster ([docs](service.md)) |
 | `persistence` | `[]` | Disks the chart creates ([docs](persistence.md)) |
 | `serviceAccount` | see below | Kubernetes identity for the pods |
+| `podDisruptionBudget` | `{enabled: false, minAvailable: null, maxUnavailable: 1}` | Pods allowed down during maintenance ([docs](availability.md)) |
 | `podSecurityContext` | `seccompProfile: RuntimeDefault` | Security settings for the pod ([docs](security.md)) |
 | `securityContext` | `allowPrivilegeEscalation: false` | Security settings for the main container ([docs](security.md)) |
 | `nodeSelector` | `{}` | Only run on nodes with these labels |

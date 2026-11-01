@@ -170,6 +170,13 @@ serviceAccount:
   name: ""
   annotations: {}
 
+# Keep some pods running during voluntary disruptions (node drains, upgrades).
+# minAvailable wins when set; otherwise maxUnavailable is used. Numbers or "50%".
+podDisruptionBudget:
+  enabled: false
+  minAvailable: null
+  maxUnavailable: 1
+
 # Persistence configuration (used for both Deployment PVCs and StatefulSet volumeClaimTemplates)
 persistence: []
 
