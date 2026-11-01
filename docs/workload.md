@@ -63,6 +63,8 @@ workload:
   can see them. Use [External Secrets](external-secrets.md) instead.
 - `type` is case-sensitive: only `Deployment` or `StatefulSet`. Anything else stops
   the render with an error.
+- **Always quote the image tag:** `tag: "1.10"`. Unquoted, YAML reads `1.10` as the
+  number `1.1`, so the chart stops with an error asking you to quote it.
 - Changing `applicationPort`? Also set `service.targetPort`. See [Service](service.md).
 
 ---

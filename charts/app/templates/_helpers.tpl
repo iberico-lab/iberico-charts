@@ -25,6 +25,23 @@ Fails on anything else (e.g. a lowercase typo) instead of rendering nothing.
 {{- end }}
 
 {{/*
+Main container image reference "<repository>:<tag>".
+YAML turns an unquoted tag like 1.10 into the number 1.1, which silently
+pulls the wrong image, so a non-string tag containing "." fails with a hint.
+Whole-number tags (e.g. 15) are safe and are converted to text.
+*/}}
+{{- define "app.image" -}}
+{{- $tag := .Values.workload.image.tag -}}
+{{- if not (kindIs "string" $tag) -}}
+{{- if contains "." (toString $tag) -}}
+{{- fail (printf "workload.image.tag was read as the number %v (YAML drops trailing zeros, so 1.10 becomes 1.1). Quote the tag exactly as published, e.g. tag: \"1.10\"" $tag) -}}
+{{- end -}}
+{{- $tag = toString $tag -}}
+{{- end -}}
+{{- required "workload.image.repository is required" .Values.workload.image.repository -}}:{{- required "workload.image.tag is required" $tag -}}
+{{- end }}
+
+{{/*
 Render a complete probe block (handler + timings) based on type.
 When probe.custom is true the probe.spec is emitted verbatim (nothing when spec empty).
 Usage: {{ include "app.probe" (dict "probe" .Values.workload.livenessProbe "applicationPort" .Values.workload.applicationPort) }}
@@ -218,7 +235,7 @@ Usage: {{- include "app.container" . | nindent 8 }} inside containers:
   securityContext:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  image: "{{ .Values.workload.image.repository }}:{{ .Values.workload.image.tag }}"
+  image: {{ include "app.image" . | quote }}
   imagePullPolicy: {{ .Values.workload.image.pullPolicy }}
   {{- if .Values.workload.command }}
   command:
