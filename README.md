@@ -3,7 +3,7 @@
 > **In one line:** Helm charts that run your app on Kubernetes. You write a short
 > values file, and the chart creates everything else.
 
-**Full docs: [docs/](docs/index.md)** · **Copy-paste examples: [examples/](examples/README.md)**
+**Full docs: [docs/](docs/index.md)** · **Copy-paste examples: [examples/](examples/README.md)** · **Something broken? [Troubleshooting](docs/troubleshooting.md)**
 
 ---
 
