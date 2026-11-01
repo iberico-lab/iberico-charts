@@ -1,0 +1,32 @@
+# 17 - High availability: survive maintenance, scale with traffic.
+global:
+  name: "ha-demo"
+
+workload:
+  image:
+    repository: nginx
+    tag: "1.27"
+  resources:
+    requests: { cpu: 200m, memory: 128Mi }   # autoscaling measures against this
+    limits:   { memory: 256Mi }
+  # Give in-flight requests time to finish before the pod stops.
+  lifecycle:
+    preStop:
+      exec:
+        command: ["sh", "-c", "sleep 10"]
+
+# Between 2 and 6 pods, aiming for 70% CPU. workload.replicas is ignored.
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+# Node drains and upgrades never take the last pod away.
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Prefer putting pods on different nodes.
+topologySpread:
+  enabled: true

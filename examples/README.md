@@ -34,5 +34,10 @@ New here? Go through them **in order**. Each one adds one idea.
 | [12](12-ingress/README.md) | URLs (ingress) | Give the app two URLs: a **public** one and a **private** Tailscale one. |
 | [13](13-statefulset/README.md) | Database (StatefulSet) | Run a 3-copy PostgreSQL where **each copy has its own disk** and a fixed name. |
 | [14](14-multi-port-service/README.md) | Several ports | Open **three** ports at once: `http`, `grpc` and `metrics`. |
+| [15](15-config-files/README.md) | Config files | Write an nginx config file **right in your values**. Change it and the pods restart by themselves. |
+| [16](16-secrets-and-urls/README.md) | Secrets and URLs (a real web app) | A typical web app: passwords from **1Password**, a **private** Tailscale URL and a **public** HTTPS URL. |
+| [17](17-high-availability/README.md) | High availability | Keep the app up during node drains and upgrades, and **add pods when it gets busy**. |
+| [18](18-metrics/README.md) | Metrics (Prometheus) | Let **Prometheus** collect your app's metrics from a second port. |
+| [19](19-strict-security/README.md) | Strict security | Lock the container down: **not root**, **read-only** filesystem, no extra Linux powers. |
 
 For full explanations, see the [docs](../docs/index.md).

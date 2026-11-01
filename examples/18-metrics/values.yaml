@@ -1,0 +1,26 @@
+# 18 - Metrics: Prometheus scrapes a dedicated port.
+global:
+  name: "metrics-demo"
+
+workload:
+  image:
+    repository: ghcr.io/example/api
+    tag: "1.0.0"
+  ports:
+    - { name: http, port: 8080 }
+    - { name: metrics, port: 9090 }
+  livenessProbe:  { port: 8080, path: /healthz }
+  readinessProbe: { port: 8080, path: /healthz }
+  startupProbe:   { port: 8080, path: /healthz }
+
+service:
+  ports:
+    - { name: http, port: 80, targetPort: 8080 }
+    - { name: metrics, port: 9090, targetPort: 9090 }
+
+metrics:
+  serviceMonitor:
+    enabled: true
+    port: metrics                            # the Service port NAME
+    labels:
+      release: kube-prometheus-stack         # so your Prometheus finds it

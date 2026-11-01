@@ -26,4 +26,4 @@ Open [`values.yaml`](values.yaml). The comments explain each line.
 
 ---
 
-Learn more: [Service](../../docs/service.md)
+Learn more: [Service](../../docs/service.md) · Next: [15 · Config files](../15-config-files/README.md)
