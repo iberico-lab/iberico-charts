@@ -1,0 +1,18 @@
+suite: persistence
+templates: [templates/pvc.yaml]
+release:
+  name: shop
+tests:
+  - it: fails on a ReadWriteOnce disk shared by several Deployment pods
+    set:
+      workload.replicas: 2
+      persistence: [{ name: data, size: 1Gi, mountPath: /data, accessModes: [ReadWriteOnce] }]
+    asserts:
+      - failedTemplate: { errorPattern: 'persistence "data" is ReadWriteOnce' }
+
+  - it: allows a ReadWriteOnce disk with a single replica
+    set:
+      workload.replicas: 1
+      persistence: [{ name: data, size: 1Gi, mountPath: /data, accessModes: [ReadWriteOnce] }]
+    asserts:
+      - isKind: { of: PersistentVolumeClaim }

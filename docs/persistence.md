@@ -45,8 +45,10 @@ Need more than one disk? Add more items to the list.
 - **The default access mode is `ReadWriteMany`.** Many storage types don't
   support it, and then the disk gets stuck as "Pending". Most of the time you want
   `accessModes: ["ReadWriteOnce"]`.
-- `ReadWriteOnce` + a Deployment with `replicas` > 1 = only one copy can use the
-  disk. Use 1 replica, or switch to a [StatefulSet](statefulset.md).
+- `ReadWriteOnce` + a Deployment with `replicas` > 1 (or autoscaling) means only
+  one copy can use the disk, and the others would hang in `ContainerCreating`.
+  The chart stops with an error instead. Use 1 replica, or switch to a
+  [StatefulSet](statefulset.md) (one disk per copy).
 - Using `storageClassName: "opendrive"`? The chart adds the rclone settings for you.
   The storage path defaults to the app name and the umask defaults to `022`. Change them with
   `rclone: { storagePath: ..., umask: ..., annotations: {...} }`.

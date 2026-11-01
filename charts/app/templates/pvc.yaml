@@ -1,5 +1,10 @@
 {{- if and (.Values.workload.enabled | default false) (eq (include "app.workloadType" .) "Deployment") -}}
+{{- $multi := or (gt (int $.Values.workload.replicas) 1) ($.Values.autoscaling.enabled | default false) -}}
 {{- range .Values.persistence }}
+{{- $modes := .accessModes | default (list "ReadWriteMany") -}}
+{{- if and $multi (or (has "ReadWriteOnce" $modes) (has "ReadWriteOncePod" $modes)) -}}
+{{- fail (printf "persistence %q is %s, so only one pod can use it, but this Deployment runs several pods (replicas > 1 or autoscaling). Use replicas: 1, a ReadWriteMany storage class, or workload.type: StatefulSet (one disk per pod)" .name (join "/" $modes)) -}}
+{{- end }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
