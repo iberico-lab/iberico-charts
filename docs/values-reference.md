@@ -55,6 +55,7 @@ For explanations and examples, follow the  link in each section.
 | `workload.annotations` | `{}` | Annotations on the Deployment/StatefulSet |
 | `workload.pod.annotations` | `{}` | Annotations on each pod |
 | `workload.strategy` | `RollingUpdate`, `maxUnavailable: 1`, `maxSurge: 1` | Deployment update style |
+| `workload.terminationGracePeriodSeconds` | `30` | Seconds the app gets to shut down cleanly |
 
 ### StatefulSet only ([docs](statefulset.md))
 
@@ -62,7 +63,6 @@ For explanations and examples, follow the  link in each section.
 |---------|---------|--------------|
 | `workload.serviceName` | `""` | Headless Service name (`""` = `<app>-cluster`) |
 | `workload.updateStrategy` | `{type: RollingUpdate}` | How pods are updated |
-| `workload.terminationGracePeriodSeconds` | `30` | Seconds to shut down cleanly |
 | `workload.service.port` | `null` | Headless Service port (`null` = `applicationPort`) |
 | `workload.service.targetPort` | `null` | Headless Service target port (`null` = `applicationPort`) |
 | `workload.service.ports` | `[]` | Several ports |

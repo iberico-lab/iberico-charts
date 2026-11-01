@@ -86,6 +86,7 @@ workload:
 | `workload.annotations` | `{}` | Annotations on the Deployment/StatefulSet |
 | `workload.pod.annotations` | `{}` | Annotations on each pod |
 | `workload.strategy` | rolling update, 1 at a time | How a Deployment rolls out updates |
+| `workload.terminationGracePeriodSeconds` | `30` | Seconds the app gets to shut down cleanly |
 
 ---
 

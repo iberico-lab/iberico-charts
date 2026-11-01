@@ -130,7 +130,7 @@ workload:
   serviceName: ""  # Optional: custom name for headless service (defaults to app-name-cluster)
   updateStrategy:  # Optional: StatefulSet update strategy
     type: RollingUpdate
-  terminationGracePeriodSeconds: 30  # Optional: grace period for pod termination
+  terminationGracePeriodSeconds: 30  # Seconds pods get to shut down (Deployment and StatefulSet)
   service:  # StatefulSet headless service
     annotations: {}
     port: null        # null => use workload.applicationPort

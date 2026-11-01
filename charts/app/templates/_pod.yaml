@@ -1,0 +1,53 @@
+{{/*
+Pod template shared by the Deployment and the StatefulSet, so both workload
+types always get the same pod. Render under `template:` with nindent 4.
+Usage: {{- include "app.podTemplate" . | nindent 4 }}
+*/}}
+{{- define "app.podTemplate" -}}
+metadata:
+  {{- with .Values.workload.pod.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "helm-helpers.labels" . | nindent 4 }}
+spec:
+  {{- with .Values.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  serviceAccountName: {{ include "app.serviceAccountName" . }}
+  {{- with .Values.workload.terminationGracePeriodSeconds }}
+  terminationGracePeriodSeconds: {{ . }}
+  {{- end }}
+  {{- with .Values.podSecurityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if .Values.workload.extraInitContainers }}
+  initContainers:
+    {{- include "app.initContainers" . | nindent 4 }}
+  {{- end }}
+  containers:
+    {{- include "app.container" . | nindent 4 }}
+    {{- if .Values.workload.extraContainers }}
+    {{- include "app.extraContainers" . | nindent 4 }}
+    {{- end }}
+  {{- $persistenceVolumes := and .Values.persistence (eq (include "app.workloadType" .) "Deployment") }}
+  {{- if or .Values.workload.volumes $persistenceVolumes (include "app.onepassword.has" (dict "root" . "field" "files")) }}
+  volumes:
+    {{- include "app.volume" . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.nodeSelector }}
+  nodeSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.affinity }}
+  affinity:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.tolerations }}
+  tolerations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end -}}
