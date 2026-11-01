@@ -87,3 +87,5 @@ together in `charts/`.
 | `make validate` | Check the rendered YAML against Kubernetes schemas (needs [kubeconform](https://github.com/yannh/kubeconform)) |
 | `make schema` | Regenerate `values.schema.json` after changing values |
 | `make clean` | Delete downloaded chart files |
+
+See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
