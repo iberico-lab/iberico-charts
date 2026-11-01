@@ -5,12 +5,16 @@
 CHARTS_DIR := charts
 CHARTS     := helm-helpers external-secrets ingress app
 EXAMPLES   := $(sort $(wildcard examples/*/values.yaml))
+CI_VALUES  := $(sort $(wildcard $(CHARTS_DIR)/app/ci/*-values.yaml))
+# Kubernetes schemas plus CRD schemas (ExternalSecret, ServiceMonitor, ...)
+KUBECONFORM := kubeconform -strict -summary -schema-location default \
+	-schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
 
 # Every dependency is a local file:// sibling chart, so ignore the user's
 # configured Helm repos (a single broken repo would otherwise fail the build).
 HELM_DEP   := HELM_REPOSITORY_CONFIG=/dev/null helm dependency update --skip-refresh
 
-.PHONY: help deps lint test template examples schema schema-check clean
+.PHONY: help deps lint test validate template examples schema schema-check clean
 
 help: ## Show available targets
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-10s %s\n", $$1, $$2}'
@@ -23,6 +27,9 @@ lint: deps ## helm lint every chart
 
 test: deps ## Run unit tests (needs the helm-unittest plugin)
 	helm unittest $(CHARTS_DIR)/app $(CHARTS_DIR)/ingress $(CHARTS_DIR)/external-secrets
+
+validate: deps ## Check rendered manifests against Kubernetes schemas (needs kubeconform)
+	@for f in $(EXAMPLES) $(CI_VALUES); do echo "==> $$f"; helm template t $(CHARTS_DIR)/app -f $$f | $(KUBECONFORM) || exit 1; done
 
 template: deps ## Render the umbrella app chart with default values
 	helm template app $(CHARTS_DIR)/app

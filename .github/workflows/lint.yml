@@ -52,6 +52,14 @@ jobs:
       - name: Run unit tests
         run: make test
 
+      - name: Install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+
+      - name: Validate rendered manifests against Kubernetes schemas
+        run: make validate
+
       # Every example must keep rendering against the app chart.
       - name: Render all examples
         run: make examples

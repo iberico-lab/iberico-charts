@@ -23,3 +23,5 @@
 .vscode/
 # Unit tests (helm-unittest) are not part of the package
 tests/
+# CI-only values files
+ci/
