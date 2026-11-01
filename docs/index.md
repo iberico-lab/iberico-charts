@@ -22,6 +22,7 @@
 | Use passwords from 1Password | [External Secrets](external-secrets.md) |
 | Put my app on a URL (private or public) | [Ingress](ingress.md) |
 | Lock down what the app is allowed to do | [Security](security.md) |
+| Ship an extra object (ConfigMap, CronJob…) with my app | [Extra manifests](extra-manifests.md) |
 | Look up one exact setting | [Values Reference](values-reference.md) |
 | Understand how the charts fit together | [Architecture](architecture.md) |
 | Upgrade to a new chart version | [Upgrading](upgrading.md) |

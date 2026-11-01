@@ -191,3 +191,13 @@ tolerations: []
 
 # Image Pull Secrets
 imagePullSecrets: []
+
+# Extra Kubernetes objects to ship with the release (maps or strings).
+# Each is passed through `tpl`, so template expressions work, e.g.
+#   - apiVersion: v1
+#     kind: ConfigMap
+#     metadata:
+#       name: '{{ include "helm-helpers.fullname" . }}-settings'
+#     data:
+#       mode: production
+extraManifests: []

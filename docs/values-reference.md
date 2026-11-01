@@ -28,6 +28,7 @@ For explanations and examples, follow the  link in each section.
 | `imagePullSecrets` | `[]` | Login details for private image registries |
 | `external-secrets` | `{enabled: false}` | Secrets from 1Password ([docs](external-secrets.md)) |
 | `ingress` | `{enabled: false}` | URLs ([docs](ingress.md)) |
+| `extraManifests` | `[]` | Extra objects to install ([docs](extra-manifests.md)) |
 
 ---
 

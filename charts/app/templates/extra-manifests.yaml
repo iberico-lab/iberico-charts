@@ -1,0 +1,13 @@
+{{- /*
+Extra objects shipped with the release. Each entry is a map or a string and is
+passed through `tpl`, so it may use template expressions such as
+{{ include "helm-helpers.fullname" . }} or {{ .Release.Namespace }}.
+*/}}
+{{- range .Values.extraManifests }}
+---
+{{- if kindIs "string" . }}
+{{ tpl . $ }}
+{{- else }}
+{{ tpl (toYaml .) $ }}
+{{- end }}
+{{- end }}
