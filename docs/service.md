@@ -56,6 +56,7 @@ When `service.ports` is set, `service.port` and `service.targetPort` are ignored
 - StatefulSets **also** get a second "headless" Service named `<app>-cluster`.
   See [StatefulSet](statefulset.md).
 - Don't want a Service? Set `service.enabled: false`.
+- `workload.enabled: false` also turns off the Service (it would have no pods to send traffic to).
 
 ---
 
