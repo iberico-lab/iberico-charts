@@ -41,6 +41,8 @@ def app():
         "enabled": B(), "type": {"enum": ["Deployment", "StatefulSet"]},
         "annotations": STRMAP, "reloadOnSecretChange": B(),
         "image": obj({"repository": S(), "tag": {"type": ["string", "number"], "description": "Quote it: \"1.10\""},
+                      "digest": {"type": "string", "pattern": "^(sha256:[a-f0-9]{64})?$",
+                                 "description": "Pin the exact image, e.g. sha256:abc...; wins over tag"},
                       "pullPolicy": {"enum": ["Always", "IfNotPresent", "Never"]}}, req=("repository", "tag")),
         "replicas": I(mn=0), "applicationPort": PORT,
         "ports": LIST(obj({"name": S(), "port": PORT, "protocol": {"enum": ["TCP", "UDP", "SCTP"]}}, req=("name", "port"))),

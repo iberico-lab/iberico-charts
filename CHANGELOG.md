@@ -28,6 +28,7 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 - `workload.extraEnv`, `workload.extraEnvFrom`, `workload.pod.labels`, `workload.lifecycle`,
   `workload.podManagementPolicy`, `workload.reloadOnSecretChange` (Stakater Reloader).
 - `extraManifests` for shipping extra objects with the release.
+- `workload.image.digest` to pin the exact image (`repo:tag@sha256:...`).
 - `workload.configFiles`: write config files in your values (`/path: contents`); pods restart
   when a file changes.
 - `helm test` support: a pod that checks every Service port accepts connections (`helmTest`).

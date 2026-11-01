@@ -58,7 +58,14 @@ Whole-number tags (e.g. 15) are safe and are converted to text.
 {{- end -}}
 {{- $tag = toString $tag -}}
 {{- end -}}
-{{- required "workload.image.repository is required" .Values.workload.image.repository -}}:{{- required "workload.image.tag is required" $tag -}}
+{{- $repo := required "workload.image.repository is required" .Values.workload.image.repository -}}
+{{- $digest := .Values.workload.image.digest | default "" -}}
+{{- if $digest -}}
+{{- /* repo:tag@digest — the digest decides what's pulled, the tag stays readable */ -}}
+{{- $repo -}}{{- with $tag -}}:{{ . }}{{- end -}}@{{ $digest }}
+{{- else -}}
+{{- $repo -}}:{{- required "workload.image.tag is required (or set workload.image.digest)" $tag -}}
+{{- end -}}
 {{- end }}
 
 {{/*

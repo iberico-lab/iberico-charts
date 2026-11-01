@@ -28,6 +28,7 @@ workload:
   image:
     repository: nginx
     tag: "1.25"
+    digest: ""  # e.g. "sha256:..." pins the exact image (the tag is then just a label)
     pullPolicy: IfNotPresent
   replicas: 2
   applicationPort: 80

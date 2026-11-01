@@ -92,6 +92,10 @@ workload:
   the render with an error.
 - **Always quote the image tag:** `tag: "1.10"`. Unquoted, YAML reads `1.10` as the
   number `1.1`, so the chart stops with an error asking you to quote it.
+- **Want the exact same image every time?** A tag like `1.25` can be re-pushed
+  with different contents. A digest can't. Set
+  `digest: "sha256:..."` (find it with `docker buildx imagetools inspect nginx:1.25`).
+  Keep the tag too: it only shows humans which version it is.
 
 ---
 
@@ -103,6 +107,7 @@ workload:
 | `workload.type` | `Deployment` | `Deployment` or `StatefulSet` |
 | `workload.image.repository` | `nginx` | Image to run |
 | `workload.image.tag` | `1.25` | Image version |
+| `workload.image.digest` | `""` | Pin the exact image (`sha256:...`); wins over the tag |
 | `workload.image.pullPolicy` | `IfNotPresent` | When to download the image again |
 | `workload.replicas` | `2` | Number of copies |
 | `workload.applicationPort` | `80` | Port the app listens on |

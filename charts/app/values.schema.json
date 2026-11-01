@@ -66,6 +66,11 @@
               ],
               "description": "Quote it: \"1.10\""
             },
+            "digest": {
+              "type": "string",
+              "pattern": "^(sha256:[a-f0-9]{64})?$",
+              "description": "Pin the exact image, e.g. sha256:abc...; wins over tag"
+            },
             "pullPolicy": {
               "enum": [
                 "Always",

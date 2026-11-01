@@ -48,6 +48,7 @@ For explanations and examples, follow the  link in each section.
 | `workload.type` | `Deployment` | `Deployment` or `StatefulSet` |
 | `workload.image.repository` | `nginx` | Image to run |
 | `workload.image.tag` | `1.25` | Image version |
+| `workload.image.digest` | `""` | Pin the exact image (`sha256:...`); wins over the tag |
 | `workload.image.pullPolicy` | `IfNotPresent` | When to download the image again |
 | `workload.replicas` | `2` | Number of copies |
 | `workload.applicationPort` | `80` | Port the app listens on |

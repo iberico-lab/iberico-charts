@@ -121,3 +121,13 @@ tests:
       workload.serviceName: db-cluster
     asserts:
       - failedTemplate: { errorPattern: 'use service.headless.name' }
+
+  - it: pins the image by digest and keeps the tag readable
+    set: { workload.image: { repository: nginx, tag: "1.25", digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" } }
+    asserts:
+      - equal: { path: 'spec.template.spec.containers[0].image', value: "nginx:1.25@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+
+  - it: allows a digest without a tag
+    set: { workload.image: { repository: nginx, tag: "", digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" } }
+    asserts:
+      - equal: { path: 'spec.template.spec.containers[0].image', value: "nginx@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
