@@ -17,13 +17,6 @@
         },
         "fullnameOverride": {
           "type": "string"
-        },
-        "version": {
-          "type": [
-            "string",
-            "number"
-          ],
-          "description": "Version label value"
         }
       },
       "additionalProperties": true

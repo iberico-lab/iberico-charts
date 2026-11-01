@@ -72,3 +72,8 @@ tests:
     set: { ingresses: [{ type: internal, name: web }] }
     asserts:
       - failedTemplate: { errorPattern: 'name was renamed to serviceName' }
+
+  - it: has no version label (it can't see the app's image tag, and doesn't run one)
+    templates: [templates/ingress-internal.yaml]
+    asserts:
+      - notExists: { path: 'metadata.labels["app.kubernetes.io/version"]' }

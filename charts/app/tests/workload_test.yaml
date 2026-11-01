@@ -88,7 +88,7 @@ tests:
   - it: keeps StatefulSet PVC labels stable so upgrades don't hit the immutable field
     set:
       workload.type: StatefulSet
-      global.version: "9.9.9"
+      workload.image.tag: "9.9.9"
       persistence: [{ name: data, size: 1Gi, mountPath: /data }]
     asserts:
       - equal:
@@ -131,3 +131,8 @@ tests:
     set: { workload.image: { repository: nginx, tag: "", digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" } }
     asserts:
       - equal: { path: 'spec.template.spec.containers[0].image', value: "nginx@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+
+  - it: leaves the version label off when the image is pinned by digest only
+    set: { workload.image: { repository: nginx, tag: "", digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" } }
+    asserts:
+      - notExists: { path: 'metadata.labels["app.kubernetes.io/version"]' }

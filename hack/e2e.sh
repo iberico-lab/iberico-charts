@@ -68,7 +68,7 @@ for f in hack/e2e/*.yaml; do
   helm test "$name" -n "$NS" --timeout 3m || { dump "$name test"; exit 1; }
   check "$name" || { dump "$name checks"; exit 1; }
   echo "==> [$name] upgrade"
-  helm upgrade "$name" charts/app -n "$NS" -f "$f" --set global.version=e2e-upgrade --wait --timeout 5m || { dump "$name upgrade"; exit 1; }
+  helm upgrade "$name" charts/app -n "$NS" -f "$f" --set-string workload.pod.annotations.e2e/upgrade=1 --wait --timeout 5m || { dump "$name upgrade"; exit 1; }
   helm test "$name" -n "$NS" --timeout 3m || { dump "$name test after upgrade"; exit 1; }
   check "$name" || { dump "$name checks after upgrade"; exit 1; }
   echo "==> [$name] OK"

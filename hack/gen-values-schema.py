@@ -22,8 +22,7 @@ PORT = {"type": "integer", "minimum": 1, "maximum": 65535}
 NULLPORT = {"type": ["integer", "null"], "minimum": 1, "maximum": 65535}
 GLOBAL = {"type": "object", "description": "Shared with all charts",
           "properties": {"name": S("Base name for all resources (empty = release name)"),
-                         "nameOverride": S(), "fullnameOverride": S(),
-                         "version": {"type": ["string", "number"], "description": "Version label value"}},
+                         "nameOverride": S(), "fullnameOverride": S()},
           "additionalProperties": True}
 
 def app():

@@ -35,7 +35,8 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
   when a file changes.
 - `helm test` support: a pod that checks every Service port accepts connections (`helmTest`).
 - `service.portName`; `homepage.enabled` per ingress.
-- `global.version` and an `app.kubernetes.io/version` label taken from the image tag.
+- An `app.kubernetes.io/version` label taken from the image tag (not the placeholder chart
+  `appVersion`, which is removed).
 - Safe security defaults: seccomp `RuntimeDefault`, `allowPrivilegeEscalation: false`.
 - One switch for secrets: `external-secrets.enabled` (1Password is on by default inside it).
 - Docs: security, availability & scaling, metrics, extra manifests, troubleshooting, per-chart READMEs.

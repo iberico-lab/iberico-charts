@@ -15,7 +15,6 @@ For explanations and examples, follow the  link in each section.
 | `global.name` | `""` | Base name for everything (`""` = release name) ([docs](architecture.md)) |
 | `global.fullnameOverride` | `""` | Replaces the full name |
 | `global.nameOverride` | `""` | Changes the name label only |
-| `global.version` | `""` | Version label for every resource (`""` = image tag) |
 | `workload` | see below | Your app ([docs](workload.md)) |
 | `service` | see below | Address inside the cluster ([docs](service.md)) |
 | `persistence` | `[]` | Disks the chart creates ([docs](persistence.md)) |

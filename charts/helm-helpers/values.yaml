@@ -4,6 +4,3 @@ global:
   # Optional overrides
   nameOverride: ""
   fullnameOverride: ""
-  # Value for the app.kubernetes.io/version label on every resource.
-  # Empty = the app's image tag (app chart) or the chart appVersion.
-  version: ""
