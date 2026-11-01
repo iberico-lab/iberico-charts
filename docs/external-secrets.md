@@ -11,9 +11,8 @@ Off by default.
 
 ```yaml
 external-secrets:
-  enabled: true                  # (1) turn on the feature
+  enabled: true                  # the only switch you need
   onepassword:
-    enabled: true                # (2) turn on 1Password (yes, both are needed)
     secrets:
       - envVars:                       # → environment variables
           - secretKey: "credentials-database"   # 1Password item name
@@ -56,8 +55,6 @@ workload:
 
 ## Gotchas
 
-- **You need both** `external-secrets.enabled: true` **and**
-  `onepassword.enabled: true`. With only one of them, nothing happens.
 - The cluster needs the External Secrets Operator and a `ClusterSecretStore`
   named `onepassword-cluster` (or set `clusterSecretStoreRef`).
 - You can list **several** `secrets` entries. They are combined into one secret
@@ -73,7 +70,7 @@ workload:
 | Setting | Default | What it does |
 |---------|---------|--------------|
 | `external-secrets.enabled` | `false` | Turn the feature on |
-| `external-secrets.onepassword.enabled` | `false` | Turn 1Password on |
+| `external-secrets.onepassword.enabled` | `true` | Set `false` to turn 1Password off while keeping the rest |
 | `external-secrets.onepassword.refreshInterval` | `10m` | How often to sync |
 | `external-secrets.onepassword.clusterSecretStoreRef` | `onepassword-cluster` | Which secret store to use |
 | `external-secrets.onepassword.secrets[].envVars[]` | — | `secretKey` + `mappings` → env vars |
