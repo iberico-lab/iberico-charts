@@ -12,7 +12,7 @@ For explanations and examples, follow the  link in each section.
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `global.name` | `""` | Base name for everything ([docs](architecture.md)) |
+| `global.name` | `""` | Base name for everything (`""` = release name) ([docs](architecture.md)) |
 | `global.fullnameOverride` | `""` | Replaces the full name |
 | `global.nameOverride` | `""` | Changes the name label only |
 | `workload` | see below | Your app ([docs](workload.md)) |

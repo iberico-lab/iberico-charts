@@ -5,6 +5,31 @@
 
 ---
 
+## 0.2.x to 0.3.0
+
+### Names now default to the release name
+
+If `global.name` is empty, resources are now named after the **Helm release**
+(for example `helm install shop ...` gives you `shop`). Before, they were all
+named `app`, so two releases in one namespace overwrote each other.
+
+**Do you need to do anything?**
+
+- **You set `global.name`:** no. Names don't change.
+- **You didn't set `global.name`:** yes. The simplest fix is to keep the old
+  name by adding this to your values file:
+
+  ```yaml
+  global:
+    name: "app"
+  ```
+
+  Or let the names change: Helm creates new resources with the new names and
+  deletes the old ones. That means a short outage, and **Deployment disks
+  (PVCs) get new, empty volumes**, so pin `global.name` if you have data.
+
+---
+
 ## 0.1.x to 0.2.0
 
 ### What changed

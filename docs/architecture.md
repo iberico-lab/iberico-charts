@@ -39,7 +39,7 @@ global:
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `global.name` | `""` | The base name. If empty, the chart name is used. |
+| `global.name` | `""` | The base name. If empty, the **release name** is used. |
 | `global.fullnameOverride` | `""` | Wins over `global.name` if set |
 | `global.nameOverride` | `""` | Changes the `app.kubernetes.io/name` label only |
 

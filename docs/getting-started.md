@@ -12,7 +12,7 @@ Make a file called `values-myapp.yaml`:
 
 ```yaml
 global:
-  name: "my-app"            # used to name everything the chart creates
+  name: "my-app"            # names everything the chart creates (default: the release name)
 
 workload:
   image:

@@ -31,14 +31,12 @@ Examples:
 
 
 {{/*
-Returns the base application name from .Values.global.name, lowercased and truncated to 63 characters.
+Returns the base application name, lowercased and truncated to 63 characters:
+.Values.global.name if set, otherwise the Helm release name. (Falling back to
+the chart name made every release without global.name collide on "app".)
 */}}
 {{- define "helm-helpers.appName" -}}
-{{- if .Values.global.name }}
-{{- .Values.global.name | trunc 63 | trimSuffix "-" | lower -}}
-{{- else }}
-{{- .Chart.Name | trunc 63 | trimSuffix "-" | lower -}}
-{{- end }}
+{{- .Values.global.name | default .Release.Name | trunc 63 | trimSuffix "-" | lower -}}
 
 {{- end }}
 
