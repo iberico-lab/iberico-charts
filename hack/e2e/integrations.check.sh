@@ -29,4 +29,5 @@ expect "ServiceMonitor accepted by the API" "integrations" \
 # place, so without the checksum annotation the old contents would stay.
 helm upgrade integrations charts/app -n "$NS" --reuse-values --wait --timeout 5m \
   --set-json 'workload.configFiles={"/usr/share/nginx/html/index.html":"e2e-config-file-v2"}' >/dev/null
+kubectl rollout status deploy/integrations -n "$NS" --timeout 5m >/dev/null
 expect "edited config file reaches the new pods" "e2e-config-file-v2" "$(pod_exec cat /usr/share/nginx/html/index.html)"

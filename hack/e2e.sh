@@ -60,15 +60,27 @@ HELM_REPOSITORY_CONFIG=/dev/null helm upgrade --install external-secrets externa
 for _ in $(seq 30); do kubectl apply -f hack/e2e/setup/fake-secret-store.yaml >/dev/null 2>&1 && break; sleep 5; done
 kubectl apply -f hack/e2e/setup/fake-secret-store.yaml
 
+# Helm 3's --wait counts a Deployment as ready once `replicas - maxUnavailable`
+# pods are up, which is 0 for one replica with the default maxUnavailable: 1.
+# Wait for the rollout itself to finish.
+settle() {  # settle <release>
+  local w
+  for w in $(kubectl get deploy,sts -n "$NS" -l app.kubernetes.io/instance="$1" -o name); do
+    kubectl rollout status "$w" -n "$NS" --timeout 5m || return 1
+  done
+}
+
 for f in hack/e2e/*.yaml; do
   name=$(basename "$f" .yaml)
   echo "==> [$name] install"
   helm install "$name" charts/app -n "$NS" --create-namespace -f "$f" --wait --timeout 5m || { dump "$name install"; exit 1; }
+  settle "$name" || { dump "$name rollout"; exit 1; }
   echo "==> [$name] helm test"
   helm test "$name" -n "$NS" --timeout 3m || { dump "$name test"; exit 1; }
   check "$name" || { dump "$name checks"; exit 1; }
   echo "==> [$name] upgrade"
   helm upgrade "$name" charts/app -n "$NS" -f "$f" --set-string workload.pod.annotations.e2e/upgrade=1 --wait --timeout 5m || { dump "$name upgrade"; exit 1; }
+  settle "$name" || { dump "$name rollout after upgrade"; exit 1; }
   helm test "$name" -n "$NS" --timeout 3m || { dump "$name test after upgrade"; exit 1; }
   check "$name" || { dump "$name checks after upgrade"; exit 1; }
   echo "==> [$name] OK"
