@@ -20,13 +20,17 @@ First release. The charts are built to be installed from scratch: read
   StatefulSets.
 - `ingress`: URLs through the Tailscale operator (`internal`) or Traefik (`public`,
   `public-sso`), as Ingresses or Gateway API `httpRoutes` with the same three types.
-  What each type runs is set once per environment in `ingress.types`: its Traefik
+  Nothing is created until you list one.
+- One hostname rule for every type: `host` as written, else
+  `<subdomain or app name>[-<suffix>].<domain>`, with `domain` and `suffix` set per
+  environment (`ingress.domain`, `ingress.types.<type>.domain` / `.suffix`), so app
+  values don't need hostnames. Tailscale Ingresses use the one-label
+  `<label>.<tailnetDomain>` form; internal routes can use a private zone of your own.
+- What each type runs is set once per environment in `ingress.types`: its Traefik
   middlewares (always run first, so an entry's own `middlewares` can't skip the
   login) and, for routes, its Gateway. `public-sso` without a login middleware, and
-  an `internal` route without a private Gateway, stop the render.
-- Routes that work across environments: a route without `host` is named from
-  `ingress.domain` (`<app name>.<domain>`, or `<subdomain>.<domain>`). HTTPRoutes
-  carry Homepage annotations like ingresses (`homepage.enabled: false` hides one).
+  an `internal` route without a private Gateway, stop the render. HTTPRoutes carry
+  Homepage annotations like ingresses (`homepage.enabled: false` hides one).
 - `external-secrets`: one switch (`external-secrets.enabled`) to turn 1Password items
   into env vars and files for the pod.
 - Availability and scaling: `autoscaling` (HPA), `podDisruptionBudget`, a

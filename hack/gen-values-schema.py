@@ -110,7 +110,9 @@ def ingress():
     homepage = obj({"enabled": B(), "name": S(), "description": S(), "group": S(), "icon": S()})
     ing = obj({"serviceName": S("Backend Service name (default: the app's Service)"),
                "type": {"enum": ["internal", "public", "public-sso"]},
-               "host": S(), "servicePort": PORT, "servicePortName": S(),
+               "host": S("Full hostname; internal: <label>.<tailnetDomain>"),
+               "subdomain": S("First hostname label (default: the app's name)"),
+               "servicePort": PORT, "servicePortName": S(),
                "certManagerIssuer": S(), "tailscaleExpose": B(), "annotations": STRMAP,
                "middlewares": LIST(S(), "Extra Traefik Middlewares, run after the type's"),
                "homepage": homepage}, req=("type",))
@@ -119,17 +121,19 @@ def ingress():
     route = obj({"type": {"enum": ["internal", "public", "public-sso"]},
                  "name": S('HTTPRoute name; "" = the app\'s name'),
                  "host": S('Full hostname; "" = <subdomain or app name>.<ingress.domain>'),
-                 "subdomain": S("Hostname is <subdomain>.<ingress.domain>"),
+                 "subdomain": S("First hostname label (default: the app's name)"),
                  "path": S(),
                  "serviceName": S("Backend Service name (default: the app's Service)"), "servicePort": PORT,
                  "gateway": gw, "middlewares": LIST(S(), "Extra Traefik Middlewares, run after the type's"),
                  "filters": LIST(), "annotations": STRMAP, "homepage": homepage}, req=("type",))
     typ = obj({"middlewares": LIST(S(), "Traefik Middlewares every entry of this type runs first"),
+               "domain": S('Base domain for this type; "" = ingress.domain'),
+               "suffix": S('Added to the first hostname label with "-", e.g. "dev"'),
                "gateway": gw})
     return {"$schema": D, "title": "ingress chart values", "type": "object", "additionalProperties": False,
             "properties": {"global": GLOBAL, "enabled": B(), "tailnetDomain": S(), "ingresses": LIST(ing),
                            "httpRoutes": LIST(route), "gateway": gw,
-                           "domain": S('Base domain for routes without a host, e.g. "apps.example.com"'),
+                           "domain": S('Base domain for entries without a host, e.g. "apps.example.com"'),
                            "types": obj({"internal": typ, "public": typ, "public-sso": typ}),
                            "helm-helpers": {"type": "object"}}}
 

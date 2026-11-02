@@ -1,13 +1,16 @@
 {{/*
 Internal Ingress - Tailscale-based internal access
-Uses the Tailscale ingress class. The machine name (and so the URL
-https://<machine>.<tailnet>.ts.net) is `host`, or the app's name.
+Uses the Tailscale ingress class. The machine name is the first label of the
+hostname (see helm-helpers.ingressHost): subdomain or the app's name, plus
+"-<ingress.types.internal.suffix>". URL: https://<machine>.<tailnet>.ts.net.
 */}}
 {{- if .Values.ingresses }}
 {{- range $i, $ing := .Values.ingresses }}
 {{- with $ing }}
 {{- if eq .type "internal" }}
-{{- $machine := include "ingress.machineName" (dict "ingress" . "root" $ "index" $i) }}
+{{- $where := printf "ingress.ingresses[%d]" $i }}
+{{- $host := include "ingress.host" (dict "entry" . "where" $where "tailscale" true "root" $) }}
+{{- $machine := include "ingress.machineName" (dict "entry" . "where" $where "root" $) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -21,7 +24,7 @@ metadata:
     {{- if .tailscaleExpose | default false }}
     tailscale.com/serve: "true"
     {{- end }}
-    {{- with include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Internal" "root" $) }}
+    {{- with include "helm-helpers.homepageAnnotations" (dict "entry" . "host" $host "group" "Internal" "root" $) }}
     {{- . | nindent 4 }}
     {{- end }}
     {{- with .annotations }}

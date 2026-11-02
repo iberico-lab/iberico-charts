@@ -1,15 +1,18 @@
 {{- $name := include "helm-helpers.fullname" . -}}
 Ingresses and routes for {{ $name }} in namespace "{{ .Release.Namespace }}":
 {{- range $i, $ing := .Values.ingresses }}
+{{- $where := printf "ingress.ingresses[%d]" $i }}
 {{- if eq .type "internal" }}
-{{- $machine := include "ingress.machineName" (dict "ingress" $ing "root" $ "index" $i) }}
-  {{ $machine }}-internal   Tailscale only: https://{{ $machine }}.{{ $.Values.tailnetDomain | default "<your-tailnet>.ts.net" }}
+{{- $host := include "ingress.host" (dict "entry" $ing "where" $where "tailscale" true "root" $) }}
+  {{ include "ingress.machineName" (dict "entry" $ing "where" $where "root" $) }}-internal   Tailscale only: https://{{ $host }}{{ if not $.Values.tailnetDomain }}.<your-tailnet>.ts.net{{ end }}
 {{- else }}
-  {{ $name }}-{{ .type }}   https://{{ .host }}{{ if eq .type "public-sso" }}   (login required){{ end }}
+  {{ $name }}-{{ .type }}   https://{{ include "ingress.host" (dict "entry" $ing "where" $where "root" $) }}{{ if eq .type "public-sso" }}   (login required){{ end }}
 {{- end }}
 {{- end }}
 {{- range $i, $r := .Values.httpRoutes }}
-  HTTPRoute {{ include "ingress.routeName" (dict "route" $r "root" $) }}   https://{{ include "helm-helpers.routeHost" (dict "route" $r "index" $i "domain" $.Values.domain "name" $name) }}{{ if eq $r.type "public-sso" }}   (login required){{ else if eq $r.type "internal" }}   (private network only){{ end }}   (TLS is set on the Gateway)
+{{- $host := include "ingress.host" (dict "entry" $r "where" (printf "ingress.httpRoutes[%d]" $i) "root" $) }}
+{{- $note := get (dict "public-sso" "   (login required)" "internal" "   (private network only)") $r.type }}
+  HTTPRoute {{ include "ingress.routeName" (dict "route" $r "root" $) }}   https://{{ $host }}{{ $note }}   (TLS is set on the Gateway)
 {{- end }}
 
 Check them:

@@ -30,8 +30,7 @@ ingress:
   enabled: true
   tailnetDomain: "tail1234.ts.net"         # your tailnet, for the install message
   ingresses:
-    - type: "internal"                     # https://shop.tail1234.ts.net
-      host: "shop"                         # Tailscale machine name
+    - type: "internal"                     # https://shop.tail1234.ts.net (the app's name)
     - type: "public"                       # https://shop.example.com
       host: "shop.example.com"
       certManagerIssuer: "letsencrypt-prod"

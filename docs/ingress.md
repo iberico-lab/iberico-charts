@@ -3,15 +3,19 @@
 > **In one line:** ingress gives your app a **URL**. It can be private (Tailscale),
 > public, or public behind a login.
 
-Off by default.
+Off by default. Turning it on (`ingress.enabled: true`) creates nothing until
+you list `ingresses` or `httpRoutes`.
 
 ---
 
 ## Which type?
 
+Every URL picks one of three types, whether it's an Ingress or a Gateway API
+route:
+
 | Type | Who can open it | HTTPS | Login |
 |------|-----------------|-------|-------|
-| `internal` | Only devices on your **Tailscale** network | via Tailscale | No |
+| `internal` | Only devices on your **private network** (Tailscale) | via Tailscale, or your private Gateway | No |
 | `public` | **Anyone** on the internet | Let's Encrypt | No |
 | `public-sso` | Anyone, **after signing in** (SSO) | Let's Encrypt | Yes |
 
@@ -21,11 +25,13 @@ Not sure? Start with `internal`.
 
 ## Copy-paste recipes
 
-**Private (Tailscale only)**, no hostname needed:
+**Private (Tailscale only)**, no hostname needed. The URL is
+`https://<app name>.<your-tailnet>.ts.net`:
 
 ```yaml
 ingress:
   enabled: true
+  tailnetDomain: "tail1234.ts.net"   # optional: prints the full URL after install
   ingresses:
     - type: "internal"
 ```
@@ -53,26 +59,57 @@ ingress:
       certManagerIssuer: "letsencrypt-prod"
 ```
 
-**Private, with your own machine name.** The URL becomes
-`https://store.<your-tailnet>.ts.net`:
-
-```yaml
-ingress:
-  enabled: true
-  ingresses:
-    - type: "internal"
-      host: "store"          # the machine name only, not a full domain
-```
-
-**Want the full Tailscale URL in the install message?** Tell the chart your
-tailnet domain (find it in the Tailscale admin console under DNS):
-
-```yaml
-ingress:
-  tailnetDomain: "tail1234.ts.net"
-```
-
 You can list **several** ingresses to get, say, a private and a public URL at the same time.
+
+---
+
+## Hostnames
+
+One rule for every Ingress and route:
+
+- **`host` set:** used as written, e.g. `shop.example.com`.
+- **Otherwise:** `<label>.<domain>`, where
+  - the label is `subdomain` (default: the app's name), plus
+    `-<suffix>` when the environment sets `ingress.types.<type>.suffix`;
+  - the domain is `ingress.types.<type>.domain`, else `ingress.domain`.
+
+So an app can leave hostnames out entirely, and each environment supplies
+the domain:
+
+```yaml
+ingress:
+  domain: apps.example.com           # per environment
+  types:
+    public: { suffix: dev }          # per environment (optional)
+  ingresses:
+    - type: public                   # shop-dev.apps.example.com
+    - type: public-sso
+      subdomain: admin               # admin-dev.apps.example.com
+```
+
+**Tailscale (`internal` Ingresses) is the exception**, because Tailscale gives
+each machine exactly **one label**: `https://<label>.<tailnet>.ts.net`, with no
+subdomains. For these, the domain is always `ingress.tailnetDomain`, the label
+becomes the Tailscale machine name, and a `host` must look like
+`<label>.<tailnetDomain>`. To keep environments apart in one tailnet, set a
+suffix rather than dots:
+
+```yaml
+ingress:
+  tailnetDomain: tail1234.ts.net
+  types:
+    internal: { suffix: dev-apps }   # per environment
+  ingresses:
+    - type: internal                 # https://shop-dev-apps.tail1234.ts.net
+```
+
+Without a suffix, two environments in the same tailnet would both claim
+`shop`, and Tailscale would rename one to `shop-1`. If you want real
+subdomains for private URLs (`shop.internal.dev.example.com`), use an internal
+route: see [Private URLs on your own domain](#private-urls-on-your-own-domain).
+
+A hostname label must be up to 63 lowercase letters, numbers and `-`. An entry
+with no `host` and no domain to build one stops the render.
 
 ---
 
@@ -85,7 +122,8 @@ An app only picks a type. What the type does is set **once per environment**
 ingress:
   types:
     internal:
-      gateway: { name: private-gateway, namespace: traefik }  # HTTPRoutes only
+      domain: internal.dev.example.com                   # internal routes
+      gateway: { name: private-gateway, namespace: traefik }
     public:
       middlewares: [my-no-auth]          # e.g. plain forwarding, or nothing
     public-sso:
@@ -101,8 +139,10 @@ ingress:
   meant to need a login is never published without one.
 - `internal` Ingresses are served by the Tailscale operator, not Traefik, so
   they run no middlewares (an `internal` ingress entry with `middlewares` stops
-  the render). `types.internal.middlewares` applies to internal HTTPRoutes.
-- `gateway` applies to HTTPRoutes only: see below.
+  the render), and they ignore `types.internal.domain` (Tailscale decides the
+  domain). Those two settings apply to internal HTTPRoutes.
+- `domain` and `suffix`: see [Hostnames](#hostnames). `gateway` applies to
+  HTTPRoutes only: see below.
 - On Ingresses, a name with `@` (e.g. `auth@file`, or a Middleware in another
   namespace as `<namespace>-<name>@kubernetescrd`) is passed to Traefik as
   written.
@@ -113,13 +153,12 @@ ingress:
 
 [Gateway API](https://gateway-api.sigs.k8s.io/) is the successor to Ingress:
 the Ingress API gets no new features. If your cluster has a Gateway (Traefik
-can provide one), give the app routes to it. Each route has the same `type`
-as an ingress:
+can provide one), give the app routes to it. Routes use the same types and
+[hostname rule](#hostnames) as Ingresses:
 
 ```yaml
 ingress:
   enabled: true
-  ingresses: []                      # only routes, no Ingress (drop this line to keep both)
   gateway:                           # the Gateway routes attach to by default
     name: traefik-gateway
     namespace: traefik
@@ -149,68 +188,41 @@ ingress:
 - **Which Gateway:** the route's own `gateway`, else
   `ingress.types.<type>.gateway`, else `ingress.gateway`. An **`internal`
   route never uses `ingress.gateway`**, because that is usually the public one:
-  set `ingress.types.internal.gateway` to a Gateway only your private network
-  reaches (for example one exposed through Tailscale), or the render stops.
+  set `ingress.types.internal.gateway`, or the render stops.
 - **Order of filters:** the type's `middlewares` (the login), then the route's
-  own `middlewares`, then its raw `filters`.
+  own `middlewares`, then its raw `filters`. `filters` is an escape hatch for
+  plain Gateway API filters (header changes, redirects); for anything Traefik,
+  use `middlewares`.
 - **A Middleware is looked up in the route's own namespace.** It must exist
   where the HTTPRoute ends up. If something copies your routes to another
   namespace or cluster (a virtual cluster syncing to its host, for example),
   the Middleware has to be there, not where you wrote the values. For the same
   reason a route can't use `@` provider references.
 
-### Environment hostnames
+### Private URLs on your own domain
 
-Write the app's values once and let each environment supply the domain. A
-route without `host` gets `<app name>.<domain>`, or `<subdomain>.<domain>`:
+A Tailscale Ingress is always `<label>.<tailnet>.ts.net`. For private URLs like
+`shop.internal.dev.example.com`, use `internal` routes and a private Gateway:
+
+1. Run a Gateway whose Service only your tailnet reaches (for example Traefik
+   with a Service of `loadBalancerClass: tailscale`).
+2. Point `*.internal.dev.example.com` at that Gateway's tailnet address: a DNS
+   record, or Tailscale split DNS for the zone.
+3. Give the Gateway a certificate for `*.internal.dev.example.com` (cert-manager
+   with a DNS-01 issuer works without public access).
+4. Tell the chart, once per environment:
 
 ```yaml
 ingress:
-  domain: apps.example.com           # set per environment
+  types:
+    internal:
+      domain: internal.dev.example.com
+      gateway: { name: private-gateway, namespace: traefik }
   httpRoutes:
-    - type: public                   # shop.apps.example.com
-    - name: shop-admin
-      type: public-sso
-      subdomain: admin               # admin.apps.example.com
-    - name: shop-legacy
-      type: public
-      host: shop.example.org         # host is used as written
+    - type: internal                 # https://shop.internal.dev.example.com
 ```
 
-A route with no `host` and no `ingress.domain` stops the render with an error.
 Full example: [20 gateway routes](../examples/20-gateway-routes/README.md).
-
-### Route settings (`ingress.httpRoutes[]`)
-
-| Setting | Default | What it does |
-|---------|---------|--------------|
-| `ingress.httpRoutes[].type` | — (required) | `internal`, `public` or `public-sso` |
-| `ingress.httpRoutes[].host` | `<subdomain or app name>.<ingress.domain>` | The full hostname; wins over `subdomain` |
-| `ingress.httpRoutes[].subdomain` | the app's name | Hostname is `<subdomain>.<ingress.domain>` |
-| `ingress.httpRoutes[].name` | the app's name | HTTPRoute name; set it when you have more than one route |
-| `ingress.httpRoutes[].path` | `/` | Only requests under this path |
-| `ingress.httpRoutes[].serviceName` | the app's Service | Send traffic to a different Service |
-| `ingress.httpRoutes[].servicePort` | `80` | Service port to send traffic to |
-| `ingress.httpRoutes[].gateway` | the type's, else `ingress.gateway` | A different Gateway for this route (`name`, `namespace`, `sectionName`) |
-| `ingress.httpRoutes[].middlewares` | `[]` | Extra Traefik Middlewares, run after the type's |
-| `ingress.httpRoutes[].filters` | `[]` | Raw Gateway API filters (headers, redirects), copied as-is, run last |
-| `ingress.httpRoutes[].annotations` | `{}` | Extra annotations |
-| `ingress.httpRoutes[].homepage` | shown | Homepage tile, same keys as for ingresses (`enabled: false` hides it) |
-| `ingress.gateway.name` | `""` | Default Gateway for routes |
-| `ingress.gateway.namespace` | `""` | The Gateway's namespace; `""` = the app's |
-| `ingress.gateway.sectionName` | `""` | Listener name; `""` = every listener |
-| `ingress.domain` | `""` | Base domain for routes without a `host`, e.g. `apps.example.com` |
-
-### Type settings (`ingress.types`)
-
-| Setting | Default | What it does |
-|---------|---------|--------------|
-| `ingress.types.internal.middlewares` | `[]` | Middlewares for internal routes (internal Ingresses use Tailscale, no middlewares) |
-| `ingress.types.internal.gateway` | `{}` | The private Gateway for internal routes (required by them) |
-| `ingress.types.public.middlewares` | `[]` | Middlewares every `public` ingress and route runs first |
-| `ingress.types.public.gateway` | `{}` | Gateway for public routes; empty = `ingress.gateway` |
-| `ingress.types.public-sso.middlewares` | `[]` | The login middleware(s); required by `public-sso` entries |
-| `ingress.types.public-sso.gateway` | `{}` | Gateway for public-sso routes; empty = `ingress.gateway` |
 
 ---
 
@@ -223,8 +235,8 @@ HTTPRoutes too). Hide one with `homepage: { enabled: false }`. To change how it 
 ```yaml
       homepage:
         name: "My App"
-        description: "What it does"
-        group: "Applications"
+        description: "What it does"        # default: the hostname
+        group: "Applications"              # default: Internal, Public or Public SSO
         icon: "kubernetes"
 ```
 
@@ -235,39 +247,67 @@ HTTPRoutes too). Hide one with `homepage: { enabled: false }`. To change how it 
 - **Public HTTPS uses `letsencrypt-staging` by default.** Browsers will show a
   warning. For real use, set `certManagerIssuer` to your production issuer
   (often `letsencrypt-prod`).
-- `public` and `public-sso` **need a `host`**. Without one, the chart stops with an error.
-- If you set `ingress.enabled: true` but don't list any `ingresses`, you get
-  **one `internal` ingress** by default.
-- **For `internal`, `host` is the Tailscale machine name**, not a domain: `store`,
-  not `store.tail1234.ts.net`. It must be up to 63 lowercase letters, numbers and
-  `-`, otherwise the chart stops with an error. Empty = the app's name. If that
-  name is already taken in your tailnet, Tailscale adds a suffix (e.g. `store-1`).
+- `ingress.enabled: true` alone creates **no** URL. List what you want in
+  `ingresses` or `httpRoutes`.
 - `servicePort` must match your [Service](service.md) port (default `80`).
-- Public ingresses run the middlewares of their type (`ingress.types`), then
-  their own `middlewares`. `public-sso` without a login middleware stops the
-  render.
-- Only **one ingress of each type** per release. Two `public` entries would get
-  the same name, so the chart stops with an error.
+- Only **one Ingress of each type** per release (internal ones may differ by
+  `subdomain`). A second would get the same name, so the chart stops with an
+  error. Routes can have as many as you like, each with its own `name`.
 - `type` must be exactly `internal`, `public` or `public-sso`. Anything
   else stops the render with an error.
 
 ---
 
-## All settings (per ingress)
+## All settings
+
+### Per ingress (`ingress.ingresses[]`)
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
+| `type` | — (required) | `internal`, `public` or `public-sso` |
+| `subdomain` | the app's name | First label of the hostname (see [Hostnames](#hostnames)) |
+| `host` | built from `subdomain` | Full hostname. `internal`: must be `<label>.<tailnetDomain>` |
 | `serviceName` | the app's Service | Send traffic to a different Service |
-| `type` | `internal` | `internal`, `public` or `public-sso` |
-| `host` | — | Public types: the domain (required). `internal`: the Tailscale machine name (default: the app's name) |
 | `servicePort` | `80` | Service port to send traffic to |
 | `servicePortName` | — | Use a named port instead of a number (`internal` only) |
 | `certManagerIssuer` | `letsencrypt-staging` | TLS certificate issuer (public types) |
 | `tailscaleExpose` | `false` | Turn on Tailscale "serve" (`internal` only) |
 | `annotations` | `{}` | Extra annotations (`internal` only) |
 | `middlewares` | `[]` | Extra Traefik Middlewares, run after the type's (public types only) |
-| `tailnetDomain` (top level, not per ingress) | `""` | Your tailnet, e.g. `tail1234.ts.net`. Only used to print URLs |
-| `homepage` | — | `enabled` (default `true`), `name`, `description`, `group`, `icon` |
+| `homepage` | shown | `enabled` (default `true`), `name`, `description`, `group`, `icon` |
+
+### Per route (`ingress.httpRoutes[]`)
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| `ingress.httpRoutes[].type` | — (required) | `internal`, `public` or `public-sso` |
+| `ingress.httpRoutes[].subdomain` | the app's name | First label of the hostname |
+| `ingress.httpRoutes[].host` | built from `subdomain` | Full hostname, used as written |
+| `ingress.httpRoutes[].name` | the app's name | HTTPRoute name; set it when you have more than one route |
+| `ingress.httpRoutes[].path` | `/` | Only requests under this path |
+| `ingress.httpRoutes[].serviceName` | the app's Service | Send traffic to a different Service |
+| `ingress.httpRoutes[].servicePort` | `80` | Service port to send traffic to |
+| `ingress.httpRoutes[].gateway` | the type's, else `ingress.gateway` | A different Gateway for this route (`name`, `namespace`, `sectionName`) |
+| `ingress.httpRoutes[].middlewares` | `[]` | Extra Traefik Middlewares, run after the type's |
+| `ingress.httpRoutes[].filters` | `[]` | Raw Gateway API filters, copied as-is, run last |
+| `ingress.httpRoutes[].annotations` | `{}` | Extra annotations |
+| `ingress.httpRoutes[].homepage` | shown | Homepage tile, same keys as for ingresses |
+
+### Per environment
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| `ingress.domain` | `""` | Base domain for entries without a `host`, e.g. `apps.example.com` |
+| `ingress.tailnetDomain` | `""` | Your tailnet, e.g. `tail1234.ts.net`: the domain of internal Ingresses |
+| `ingress.gateway.name` | `""` | Default Gateway for routes |
+| `ingress.gateway.namespace` | `""` | The Gateway's namespace; `""` = the app's |
+| `ingress.gateway.sectionName` | `""` | Listener name; `""` = every listener |
+| `ingress.types.<type>.middlewares` | `[]` | Traefik Middlewares every entry of the type runs first. `public-sso`: required |
+| `ingress.types.<type>.domain` | `""` | Base domain for the type; `""` = `ingress.domain` (not used by Tailscale Ingresses) |
+| `ingress.types.<type>.suffix` | `""` | Added to the first label with `-`, e.g. `dev` gives `shop-dev.<domain>` |
+| `ingress.types.<type>.gateway` | `{}` | Gateway for the type's routes; empty = `ingress.gateway` (`internal`: required, never `ingress.gateway`) |
+
+`<type>` is `internal`, `public` or `public-sso`.
 
 ---
 

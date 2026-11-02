@@ -9,11 +9,14 @@ in the app's namespace; a name with "@" (e.g. "auth@file", or
 {{- $ns := include "helm-helpers.namespace" . }}
 {{- range $i, $ing := .Values.ingresses }}
 {{- if has $ing.type (list "public" "public-sso") }}
-{{- $host := required (printf "ingress.ingresses[%d]: type %q requires a host" $i $ing.type) $ing.host }}
+{{- $where := printf "ingress.ingresses[%d]" $i }}
+{{- $host := include "ingress.host" (dict "entry" $ing "where" $where "root" $) }}
+{{- /* Traefik references a Middleware CRD as <namespace>-<name>@kubernetescrd */}}
 {{- $refs := list }}
-{{- range include "ingress.middlewares" (dict "entry" $ing "where" (printf "ingress.ingresses[%d]" $i) "root" $) | fromYamlArray }}
+{{- range include "ingress.middlewares" (dict "entry" $ing "where" $where "root" $) | fromYamlArray }}
 {{- $refs = append $refs (ternary . (printf "%s-%s@kubernetescrd" $ns .) (contains "@" .)) }}
 {{- end }}
+{{- $group := include "ingress.homepageGroup" $ing.type }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -28,7 +31,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.middlewares: {{ join "," . }}
     {{- end }}
     cert-manager.io/cluster-issuer: {{ $ing.certManagerIssuer | default "letsencrypt-staging" }}
-    {{- with include "helm-helpers.homepageAnnotations" (dict "ingress" $ing "group" (include "ingress.homepageGroup" $ing.type) "root" $) }}
+    {{- with include "helm-helpers.homepageAnnotations" (dict "entry" $ing "host" $host "group" $group "root" $) }}
     {{- . | nindent 4 }}
     {{- end }}
 spec:

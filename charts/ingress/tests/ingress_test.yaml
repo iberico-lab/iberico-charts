@@ -3,37 +3,73 @@ release:
   name: shop
   namespace: web
 tests:
+  - it: creates nothing by default
+    templates: [templates/ingress-internal.yaml, templates/ingress-public.yaml, templates/httproute.yaml]
+    asserts:
+      - hasDocuments: { count: 0 }
+
   - it: names the Tailscale machine after the app by default (first tls host)
     templates: [templates/ingress-internal.yaml]
+    set: { ingresses: [{ type: internal }] }
     asserts:
       - equal: { path: 'spec.tls[0].hosts', value: [shop] }
       - equal: { path: metadata.name, value: shop-internal }
       - notExists: { path: 'metadata.annotations["tailscale.com/hostname"]' }
 
-  - it: uses host as the Tailscale machine name
+  - it: uses subdomain and the internal suffix for the Tailscale machine name
     templates: [templates/ingress-internal.yaml]
-    set: { ingresses: [{ type: internal, host: store }] }
+    set:
+      tailnetDomain: tail1234.ts.net
+      types: { internal: { suffix: dev-apps } }
+      ingresses: [{ type: internal, subdomain: admin }]
+    asserts:
+      - equal: { path: 'spec.tls[0].hosts', value: [admin-dev-apps] }
+      - equal: { path: metadata.name, value: admin-dev-apps-internal }
+      - equal: { path: 'metadata.annotations["gethomepage.dev/description"]', value: admin-dev-apps.tail1234.ts.net }
+
+  - it: accepts a full Tailscale host when it is <label>.<tailnet>
+    templates: [templates/ingress-internal.yaml]
+    set:
+      tailnetDomain: tail1234.ts.net
+      ingresses: [{ type: internal, host: store.tail1234.ts.net }]
     asserts:
       - equal: { path: 'spec.tls[0].hosts', value: [store] }
-      - equal: { path: metadata.name, value: store-internal }
 
-  - it: rejects a full domain as an internal host
+  - it: rejects a Tailscale host with subdomains
+    templates: [templates/validate.yaml]
+    set:
+      tailnetDomain: tail1234.ts.net
+      ingresses: [{ type: internal, host: store.dev.tail1234.ts.net }]
+    asserts:
+      - failedTemplate: { errorPattern: 'must be up to 63 lowercase letters, numbers and "-", with no dots' }
+
+  - it: rejects a Tailscale host outside the tailnet, or without tailnetDomain
     templates: [templates/validate.yaml]
     set: { ingresses: [{ type: internal, host: store.tail1234.ts.net }] }
     asserts:
-      - failedTemplate: { errorPattern: 'Tailscale machine name only' }
+      - failedTemplate: { errorPattern: 'Tailscale has no subdomains: use subdomain' }
 
-  - it: rejects an invalid machine name
+  - it: rejects an invalid hostname label
     templates: [templates/validate.yaml]
-    set: { ingresses: [{ type: internal, host: My_Store }] }
+    set: { ingresses: [{ type: internal, subdomain: My_Store }] }
     asserts:
-      - failedTemplate: { errorPattern: 'not a valid Tailscale machine name' }
+      - failedTemplate: { errorPattern: 'hostname label "My_Store"' }
 
-  - it: requires a host for public ingresses
+  - it: builds a public ingress's host from subdomain, suffix and ingress.domain
+    templates: [templates/ingress-public.yaml]
+    set:
+      domain: apps.example.com
+      types: { public: { suffix: dev } }
+      ingresses: [{ type: public, subdomain: www }]
+    asserts:
+      - equal: { path: 'spec.rules[0].host', value: www-dev.apps.example.com }
+      - equal: { path: 'spec.tls[0].hosts', value: [www-dev.apps.example.com] }
+
+  - it: requires a host or a domain for public ingresses
     templates: [templates/ingress-public.yaml]
     set: { ingresses: [{ type: public }] }
     asserts:
-      - failedTemplate: { errorPattern: 'type "public" requires a host' }
+      - failedTemplate: { errorPattern: 'ingress.ingresses\[0\] has no host' }
 
   - it: fails when two ingresses would get the same name
     templates: [templates/validate.yaml]
@@ -107,7 +143,7 @@ tests:
 
   - it: ignores types.internal.middlewares for internal ingresses (they are for routes)
     templates: [templates/ingress-internal.yaml]
-    set: { types: { internal: { middlewares: [lan-only] } } }
+    set: { types: { internal: { middlewares: [lan-only] } }, ingresses: [{ type: internal }] }
     asserts:
       - notExists: { path: 'metadata.annotations["traefik.ingress.kubernetes.io/router.middlewares"]' }
 
@@ -125,6 +161,7 @@ tests:
 
   - it: has no version label (it can't see the app's image tag, and doesn't run one)
     templates: [templates/ingress-internal.yaml]
+    set: { ingresses: [{ type: internal }] }
     asserts:
       - notExists: { path: 'metadata.labels["app.kubernetes.io/version"]' }
 
@@ -169,6 +206,15 @@ tests:
       httpRoutes: [{ type: public-sso, host: a.example.com }]
     asserts:
       - equal: { path: spec.parentRefs, value: [{ name: sso-gw, namespace: traefik }] }
+
+  - it: gives internal routes their own domain, e.g. a private zone that resolves to the tailnet
+    templates: [templates/httproute.yaml]
+    set:
+      domain: apps.example.com
+      types: { internal: { domain: internal.apps.dev.example.com, gateway: { name: private-gw } } }
+      httpRoutes: [{ type: internal }]
+    asserts:
+      - equal: { path: spec.hostnames, value: [shop.internal.apps.dev.example.com] }
 
   - it: attaches an internal route to the internal type's gateway, never ingress.gateway
     templates: [templates/httproute.yaml]

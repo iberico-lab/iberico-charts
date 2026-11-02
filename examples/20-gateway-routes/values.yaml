@@ -13,8 +13,7 @@ workload:
   applicationPort: 80
 
 ingress:
-  enabled: true
-  ingresses: []                         # only routes, no Ingress
+  enabled: true                          # no `ingresses`: only routes
 
   # --- per environment ---------------------------------------------------
   domain: "staging.example.com"          # routes become <name>.staging.example.com
@@ -24,8 +23,9 @@ ingress:
     sectionName: "websecure"
   types:
     internal:
-      gateway:                           # a Gateway only the private network reaches
-        name: "private-gateway"
+      domain: "internal.staging.example.com"  # your own zone, resolving to the
+      gateway:                                # private Gateway (e.g. exposed on
+        name: "private-gateway"               # your tailnet)
         namespace: "traefik"
     public:
       middlewares: []                    # plain forwarding
@@ -47,7 +47,7 @@ ingress:
       middlewares: ["shop-admin-headers"]
       homepage:
         enabled: false                   # keep it off the dashboard
-    # ops.staging.example.com, private network only
+    # ops.internal.staging.example.com, private network only
     - name: shop-ops
       type: internal
       subdomain: ops

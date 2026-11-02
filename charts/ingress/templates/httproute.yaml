@@ -1,28 +1,24 @@
 {{/*
 Gateway API HTTPRoutes: the successor to Ingress. Each route has a `type`
 (internal, public, public-sso) that the environment configures once in
-ingress.types: which Gateway it attaches to, and which Traefik Middlewares
-run (the login first, then the route's own `middlewares`, then its raw
-`filters`). TLS is set on the Gateway's listener, not here.
+ingress.types: its Gateway, hostname domain/suffix, and Traefik Middlewares.
+Filters run in order: the type's middlewares (e.g. the login), the route's
+own `middlewares`, then its raw `filters`. TLS is set on the Gateway.
 */}}
-{{- $appName := include "helm-helpers.fullname" . }}
 {{- range $i, $route := .Values.httpRoutes }}
 {{- $where := printf "ingress.httpRoutes[%d]" $i }}
-{{- $typeGw := (get ($.Values.types | default dict) $route.type | default dict).gateway | default dict }}
-{{- /* An internal route never falls back to ingress.gateway: that is usually the public one. */}}
-{{- $defaultGw := ternary dict ($.Values.gateway | default dict) (eq $route.type "internal") }}
-{{- $gw := merge (deepCopy ($route.gateway | default dict)) (deepCopy $typeGw) (deepCopy $defaultGw) }}
-{{- $gwName := required (ternary (printf "%s is type internal: set ingress.types.internal.gateway.name to the Gateway only your private network can reach (internal routes never use ingress.gateway)" $where) (printf "%s: set gateway.name (here, in ingress.types.%s.gateway, or in ingress.gateway) to the Gateway this route attaches to" $where $route.type) (eq $route.type "internal")) $gw.name }}
-{{- $host := include "helm-helpers.routeHost" (dict "route" $route "index" $i "domain" $.Values.domain "name" $appName) }}
+{{- $gw := include "ingress.routeGateway" (dict "route" $route "where" $where "root" $) | fromYaml }}
+{{- $host := include "ingress.host" (dict "entry" $route "where" $where "root" $) }}
 {{- $filters := list }}
 {{- range include "ingress.middlewares" (dict "entry" $route "where" $where "root" $) | fromYamlArray }}
 {{- if contains "@" . }}
-{{- fail (printf "%s: middleware %q is a Traefik provider reference; HTTPRoutes can only use a Middleware object in their own namespace, so give its plain name" $where .) }}
+{{- fail (printf "%s: middleware %q is a Traefik provider reference; an HTTPRoute can only use a Middleware in its own namespace, so give its plain name" $where .) }}
 {{- end }}
 {{- $filters = append $filters (dict "type" "ExtensionRef" "extensionRef" (dict "group" "traefik.io" "kind" "Middleware" "name" .)) }}
 {{- end }}
 {{- $filters = concat $filters ($route.filters | default list) }}
-{{- $homepage := include "helm-helpers.homepageAnnotations" (dict "ingress" (merge (dict "host" $host) (omit $route "host")) "group" (include "ingress.homepageGroup" $route.type) "root" $) }}
+{{- $group := include "ingress.homepageGroup" $route.type }}
+{{- $homepage := include "helm-helpers.homepageAnnotations" (dict "entry" $route "host" $host "group" $group "root" $) }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -43,7 +39,7 @@ metadata:
   {{- end }}
 spec:
   parentRefs:
-    - name: {{ $gwName }}
+    - name: {{ $gw.name }}
       {{- with $gw.namespace }}
       namespace: {{ . }}
       {{- end }}

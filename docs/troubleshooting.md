@@ -35,19 +35,18 @@ These come from the chart and stop **before** anything is created.
 | `minAvailable … must be lower than …` | The disruption budget would block every node drain | Lower `minAvailable` or add replicas |
 | `minReplicas … must not be greater than maxReplicas` | Autoscaling range is upside down | Swap the numbers |
 | `… needs workload.resources.requests.cpu` | Autoscaling has nothing to measure against | Set `workload.resources.requests.cpu` (and memory if you target it) |
-| `type "public" requires a host` | Public ingress without a hostname | Add `host: app.example.com` |
-| `… which entry … already creates` | Two ingresses of the same type | Keep one per type |
+| `ingress.ingresses[…] has no host` / `ingress.httpRoutes[…] has no host` | No `host`, and no domain to build one | Set `host`, or set `ingress.domain` (or `ingress.types.<type>.domain`) per environment |
+| `… which entry … already creates` | Two ingresses of the same type, or two routes with the same name | Keep one Ingress per type (internal ones may differ by `subdomain`); give each route a `name` |
 | `serviceMonitor.port "…" is not a Service port name` | Prometheus would scrape a port that doesn't exist | Use one of the names listed in the error |
 | `… is mapped more than once in onepassword.secrets` | Same env var or file name used twice | Rename one of them |
-| `… this is the Tailscale machine name only` | A full domain in an `internal` ingress `host` | `host: store`, and the tailnet in `ingress.tailnetDomain` |
-| `… is not a valid Tailscale machine name` | Uppercase, `_` or too long | Up to 63 lowercase letters, numbers and `-` |
+| `… a Tailscale URL is <one label>.<tailnet>` | An `internal` ingress `host` that isn't `<label>.<tailnetDomain>`, or `tailnetDomain` unset | Drop `host` and use `subdomain` (plus `ingress.types.internal.suffix` per environment) |
+| `hostname label "…" … must be up to 63 lowercase letters, numbers and "-", with no dots` | Uppercase, `_`, too long, or a Tailscale name with subdomains | Fix `subdomain` / `suffix`. For dotted private URLs use an internal route ([docs](ingress.md#private-urls-on-your-own-domain)) |
 | `workload.configFiles: … must be a full file path` / `invalid propertyName` | A config file path without a leading `/` | Write the full path: `/etc/app/config.yaml` |
 | `maxUnavailable and maxSurge can't both be 0` | No pod could ever be replaced | Set `workload.strategy.rollingUpdate.maxSurge: 1` |
 | `workload.shutdownDelaySeconds (…) must be lower than workload.terminationGracePeriodSeconds` | The pod would be killed while it waits | Lower the delay or raise the grace period |
 | `securityPreset restricted: … can't be …` / `may only contain NET_BIND_SERVICE` | A setting breaks the restricted standard | Remove that setting, or drop `securityPreset` |
 | `chart requires kubeVersion: >=1.30.0-0 which is incompatible with Kubernetes v1.2x` | The cluster is older than 1.30 | Upgrade the cluster. Older versions no longer get security fixes |
-| `ingress.httpRoutes[…]: set gateway.name` | A route doesn't say which Gateway to use | Set `ingress.gateway.name` (or `gateway` on the route) |
-| `ingress.httpRoutes[…] has no host` | A route has no `host`, and there is no `ingress.domain` to build one | Set `host`, or set `ingress.domain` (per environment) |
+| `ingress.httpRoutes[…]: set gateway.name` | A route doesn't say which Gateway to use | Set `ingress.gateway.name` (or the type's or route's `gateway`) |
 | `… is type public-sso, but ingress.types.public-sso.middlewares is empty` | A page needs a login, but no login Middleware is named | Set `ingress.types.public-sso.middlewares` to your SSO Middleware (per environment) |
 | `… is type internal: set ingress.types.internal.gateway.name` | An internal route has no private Gateway (it never uses `ingress.gateway`) | Set `ingress.types.internal.gateway` to a Gateway only your private network reaches |
 | `ingress.ingresses[…] is type internal, … can't run middlewares` | Middlewares on a Tailscale Ingress | Remove them, or use an internal `httpRoute` |

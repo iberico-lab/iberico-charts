@@ -44,7 +44,12 @@
             ]
           },
           "host": {
-            "type": "string"
+            "type": "string",
+            "description": "Full hostname; internal: <label>.<tailnetDomain>"
+          },
+          "subdomain": {
+            "type": "string",
+            "description": "First hostname label (default: the app's name)"
           },
           "servicePort": {
             "type": "integer",
@@ -127,7 +132,7 @@
           },
           "subdomain": {
             "type": "string",
-            "description": "Hostname is <subdomain>.<ingress.domain>"
+            "description": "First hostname label (default: the app's name)"
           },
           "path": {
             "type": "string"
@@ -230,7 +235,7 @@
     },
     "domain": {
       "type": "string",
-      "description": "Base domain for routes without a host, e.g. \"apps.example.com\""
+      "description": "Base domain for entries without a host, e.g. \"apps.example.com\""
     },
     "types": {
       "type": "object",
@@ -244,6 +249,14 @@
                 "type": "string"
               },
               "description": "Traefik Middlewares every entry of this type runs first"
+            },
+            "domain": {
+              "type": "string",
+              "description": "Base domain for this type; \"\" = ingress.domain"
+            },
+            "suffix": {
+              "type": "string",
+              "description": "Added to the first hostname label with \"-\", e.g. \"dev\""
             },
             "gateway": {
               "type": "object",
@@ -276,6 +289,14 @@
               },
               "description": "Traefik Middlewares every entry of this type runs first"
             },
+            "domain": {
+              "type": "string",
+              "description": "Base domain for this type; \"\" = ingress.domain"
+            },
+            "suffix": {
+              "type": "string",
+              "description": "Added to the first hostname label with \"-\", e.g. \"dev\""
+            },
             "gateway": {
               "type": "object",
               "properties": {
@@ -306,6 +327,14 @@
                 "type": "string"
               },
               "description": "Traefik Middlewares every entry of this type runs first"
+            },
+            "domain": {
+              "type": "string",
+              "description": "Base domain for this type; \"\" = ingress.domain"
+            },
+            "suffix": {
+              "type": "string",
+              "description": "Added to the first hostname label with \"-\", e.g. \"dev\""
             },
             "gateway": {
               "type": "object",

@@ -107,34 +107,73 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
 {{/*
-Render homepage annotations. Renders nothing when homepage.enabled is false.
-Usage: {{ include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Public" "root" $) }}
+Homepage (gethomepage.dev) annotations for an Ingress or HTTPRoute. Renders
+nothing when homepage.enabled is false. Each field falls back to a default:
+  name         the backend Service, else the entry's name, else the app's name
+  description  the entry's hostname
+  group        the type's group (Internal, Public, Public SSO)
+  icon         "kubernetes"
+Usage: include "helm-helpers.homepageAnnotations" (dict "entry" $e "host" $host "group" "Public" "root" $)
 */}}
 {{- define "helm-helpers.homepageAnnotations" -}}
-{{- $homepage := .ingress.homepage | default dict -}}
-{{- if or (not (hasKey $homepage "enabled")) $homepage.enabled -}}
+{{- $hp := .entry.homepage | default dict -}}
+{{- if or (not (hasKey $hp "enabled")) $hp.enabled -}}
+{{- $name := .entry.serviceName | default .entry.name | default (include "helm-helpers.appName" .root) -}}
 gethomepage.dev/enabled: "true"
-gethomepage.dev/name: {{ if and .ingress.homepage .ingress.homepage.name }}{{ .ingress.homepage.name | quote }}{{ else }}{{ .ingress.serviceName | default .ingress.name | default (include "helm-helpers.appName" .root) | quote }}{{ end }}
-gethomepage.dev/description: {{ if and .ingress.homepage .ingress.homepage.description }}{{ .ingress.homepage.description | quote }}{{ else }}{{ .ingress.host | default (printf "%s service" (include "helm-helpers.appName" .root)) | quote }}{{ end }}
-gethomepage.dev/group: {{ if and .ingress.homepage .ingress.homepage.group }}{{ .ingress.homepage.group | quote }}{{ else }}{{ .group | quote }}{{ end }}
-gethomepage.dev/icon: {{ if and .ingress.homepage .ingress.homepage.icon }}{{ .ingress.homepage.icon | quote }}{{ else }}"kubernetes"{{ end }}
+gethomepage.dev/name: {{ $hp.name | default $name | quote }}
+gethomepage.dev/description: {{ $hp.description | default .host | quote }}
+gethomepage.dev/group: {{ $hp.group | default .group | quote }}
+gethomepage.dev/icon: {{ $hp.icon | default "kubernetes" | quote }}
 {{- end -}}
 {{- end }}
 
 {{/*
-Hostname of an ingress chart HTTPRoute (shared so the app chart's install
-notes print the same URL), in order: `host` as written, else
-`<subdomain>.<domain>`, else `<app name>.<domain>`. Fails when there is no
-host and no domain to build one from.
-Usage: include "helm-helpers.routeHost" (dict "route" $r "index" $i "domain" $domain "name" $appName)
+Hostname of an ingress chart entry (Ingress or HTTPRoute). It lives here
+because both the ingress chart and the app chart's install notes need it.
+
+  host set   -> used as written
+  otherwise  -> <label>.<domain>
+    label  = subdomain (default: the app's name), then "-<suffix>" when
+             ingress.types.<type>.suffix is set (e.g. "shop-dev")
+    domain = ingress.types.<type>.domain, else ingress.domain
+
+Internal Ingresses are Tailscale machines, whose URL is always
+<one label>.<tailnet>: their domain is ingress.tailnetDomain, and a `host`
+must be <label>.<tailnetDomain>. Without a tailnetDomain the result is just
+the label (the machine name); Tailscale adds the tailnet.
+
+Usage: include "helm-helpers.ingressHost" (dict "entry" $e "where" "ingress.ingresses[0]" "tailscale" true "values" $ingressValues "name" $appName)
 */}}
-{{- define "helm-helpers.routeHost" -}}
-{{- $r := .route -}}
-{{- if $r.host -}}
-{{- $r.host -}}
-{{- else if not .domain -}}
-{{- fail (printf "ingress.httpRoutes[%v] has no host: set host (e.g. \"shop.example.com\"), or set ingress.domain (e.g. \"apps.example.com\") to build one from the app name or subdomain" .index) -}}
+{{- define "helm-helpers.ingressHost" -}}
+{{- $v := .values -}}
+{{- $type := get ($v.types | default dict) .entry.type | default dict -}}
+{{- $host := .entry.host | default "" -}}
+{{- if and $host (not .tailscale) -}}
+{{- $host -}}
 {{- else -}}
-{{- printf "%s.%s" ($r.subdomain | default .name) .domain -}}
+  {{- $label := .entry.subdomain | default .name -}}
+  {{- with $type.suffix }}{{ $label = printf "%s-%s" $label . }}{{ end -}}
+  {{- $domain := $type.domain | default $v.domain -}}
+  {{- if .tailscale -}}
+    {{- $domain = $v.tailnetDomain -}}
+    {{- if $host -}}
+      {{- $tail := printf ".%s" ($domain | default "<tailnet>") -}}
+      {{- if not (and $domain (hasSuffix $tail $host)) -}}
+        {{- fail (printf "%s.host %q: a Tailscale URL is <one label>.<tailnet>, e.g. \"shop.tail1234.ts.net\", and needs ingress.tailnetDomain set. Tailscale has no subdomains: use subdomain (and ingress.types.internal.suffix) instead of host, e.g. shop-dev.tail1234.ts.net" .where $host) -}}
+      {{- end -}}
+      {{- $label = trimSuffix $tail $host -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if not (regexMatch "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" $label) -}}
+    {{- $from := ternary "host: Tailscale gives each machine one label, so join the parts with \"-\" (e.g. shop-dev-apps), or use subdomain and ingress.types.internal.suffix" (printf "subdomain, the app's name and ingress.types.%s.suffix" .entry.type) (and .tailscale (ne $host "")) -}}
+    {{- fail (printf "%s: hostname label %q must be up to 63 lowercase letters, numbers and \"-\", with no dots (from %s)" .where $label $from) -}}
+  {{- end -}}
+  {{- if $domain -}}
+    {{- printf "%s.%s" $label $domain -}}
+  {{- else if .tailscale -}}
+    {{- $label -}}
+  {{- else -}}
+    {{- fail (printf "%s has no host: set host (e.g. \"shop.example.com\"), or set ingress.domain (or ingress.types.%s.domain) to build one from the app's name or subdomain" .where .entry.type) -}}
+  {{- end -}}
 {{- end -}}
 {{- end }}
