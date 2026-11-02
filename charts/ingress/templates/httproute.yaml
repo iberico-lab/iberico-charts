@@ -1,16 +1,18 @@
 {{/*
 Gateway API HTTPRoutes: the successor to Ingress. Each route has a `type`
 (internal, public, public-sso) that the environment configures once in
-ingress.types: its Gateway, hostname domain/suffix, and Traefik Middlewares.
-Filters run in order: the type's middlewares (e.g. the login), the route's
-own `middlewares`, then its raw `filters`. TLS is set on the Gateway.
+ingress.types: its Gateway, hostname domain, and Traefik Middlewares.
+Filters run in order: the type's middlewares, the route's own
+`middlewares`, then its raw `filters`. A public-sso route needs its own
+Gateway (ingress.types.public-sso.gateway); the login can be a middleware or
+the Gateway's entryPoint. TLS is set on the Gateway.
 */}}
 {{- range $i, $route := .Values.httpRoutes }}
 {{- $where := printf "ingress.httpRoutes[%d]" $i }}
 {{- $gw := include "ingress.routeGateway" (dict "route" $route "where" $where "root" $) | fromYaml }}
 {{- $host := include "ingress.host" (dict "entry" $route "where" $where "root" $) }}
 {{- $filters := list }}
-{{- range include "ingress.middlewares" (dict "entry" $route "where" $where "root" $) | fromYamlArray }}
+{{- range include "ingress.middlewares" (dict "entry" $route "where" $where "root" $ "route" true) | fromYamlArray }}
 {{- if contains "@" . }}
 {{- fail (printf "%s: middleware %q is a Traefik provider reference; an HTTPRoute can only use a Middleware in its own namespace, so give its plain name" $where .) }}
 {{- end }}

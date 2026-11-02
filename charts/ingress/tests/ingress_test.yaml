@@ -16,16 +16,15 @@ tests:
       - equal: { path: metadata.name, value: shop-internal }
       - notExists: { path: 'metadata.annotations["tailscale.com/hostname"]' }
 
-  - it: uses subdomain and the internal suffix for the Tailscale machine name
+  - it: uses subdomain for the Tailscale machine name
     templates: [templates/ingress-internal.yaml]
     set:
       tailnetDomain: tail1234.ts.net
-      types: { internal: { suffix: dev-apps } }
       ingresses: [{ type: internal, subdomain: admin }]
     asserts:
-      - equal: { path: 'spec.tls[0].hosts', value: [admin-dev-apps] }
-      - equal: { path: metadata.name, value: admin-dev-apps-internal }
-      - equal: { path: 'metadata.annotations["gethomepage.dev/description"]', value: admin-dev-apps.tail1234.ts.net }
+      - equal: { path: 'spec.tls[0].hosts', value: [admin] }
+      - equal: { path: metadata.name, value: admin-internal }
+      - equal: { path: 'metadata.annotations["gethomepage.dev/description"]', value: admin.tail1234.ts.net }
 
   - it: accepts a full Tailscale host when it is <label>.<tailnet>
     templates: [templates/ingress-internal.yaml]
@@ -55,15 +54,27 @@ tests:
     asserts:
       - failedTemplate: { errorPattern: 'hostname label "My_Store"' }
 
-  - it: builds a public ingress's host from subdomain, suffix and ingress.domain
+  - it: builds a public ingress's host from subdomain and ingress.domain
     templates: [templates/ingress-public.yaml]
     set:
-      domain: apps.example.com
-      types: { public: { suffix: dev } }
+      domain: dev.apps.example.com
       ingresses: [{ type: public, subdomain: www }]
     asserts:
-      - equal: { path: 'spec.rules[0].host', value: www-dev.apps.example.com }
-      - equal: { path: 'spec.tls[0].hosts', value: [www-dev.apps.example.com] }
+      - equal: { path: 'spec.rules[0].host', value: www.dev.apps.example.com }
+      - equal: { path: 'spec.tls[0].hosts', value: [www.dev.apps.example.com] }
+
+  - it: builds route hostnames from the environment domain only
+    templates: [templates/httproute.yaml]
+    set:
+      domain: dev.apps.example.com
+      gateway: { name: public-gw }
+      types: { internal: { gateway: { name: private-gw } } }
+      httpRoutes: [{ type: public }, { name: shop-ops, type: internal }]
+    asserts:
+      - equal: { path: spec.hostnames, value: [shop.dev.apps.example.com] }
+        documentIndex: 0
+      - equal: { path: spec.hostnames, value: [shop.internal.dev.apps.example.com] }
+        documentIndex: 1
 
   - it: requires a host or a domain for public ingresses
     templates: [templates/ingress-public.yaml]
@@ -202,10 +213,10 @@ tests:
     templates: [templates/httproute.yaml]
     set:
       gateway: { name: default-gw, namespace: traefik }
-      types: { public-sso: { middlewares: [my-sso], gateway: { name: sso-gw } } }
-      httpRoutes: [{ type: public-sso, host: a.example.com }]
+      types: { public: { gateway: { name: open-gw } } }
+      httpRoutes: [{ type: public, host: a.example.com }]
     asserts:
-      - equal: { path: spec.parentRefs, value: [{ name: sso-gw, namespace: traefik }] }
+      - equal: { path: spec.parentRefs, value: [{ name: open-gw, namespace: traefik }] }
 
   - it: puts internal routes under internal.<ingress.domain> by default
     templates: [templates/httproute.yaml]
@@ -296,8 +307,7 @@ tests:
   - it: runs the type's middlewares first, then the route's own, then its raw filters
     templates: [templates/httproute.yaml]
     set:
-      gateway: { name: gw }
-      types: { public-sso: { middlewares: [my-sso] } }
+      types: { public-sso: { middlewares: [my-sso], gateway: { name: sso-gw } } }
       httpRoutes:
         - type: public-sso
           host: admin.example.com
@@ -312,13 +322,24 @@ tests:
             - { type: RequestHeaderModifier, requestHeaderModifier: { set: [{ name: X-Env, value: prod }] } }
       - equal: { path: 'metadata.annotations["gethomepage.dev/group"]', value: Public SSO }
 
-  - it: fails for a public-sso route when no login middleware is set
+  - it: never attaches a public-sso route to ingress.gateway
     templates: [templates/httproute.yaml]
     set:
       gateway: { name: gw }
-      httpRoutes: [{ type: public-sso, host: admin.example.com, middlewares: [my-headers] }]
+      types: { public-sso: { middlewares: [my-sso] } }
+      httpRoutes: [{ type: public-sso, host: admin.example.com }]
     asserts:
-      - failedTemplate: { errorPattern: 'ingress.httpRoutes\[0\] is type public-sso, but ingress.types.public-sso.middlewares is empty' }
+      - failedTemplate: { errorPattern: 'ingress.httpRoutes\[0\] is type public-sso: set ingress.types.public-sso.gateway.name' }
+
+  - it: lets the public-sso Gateway do the login, with no middleware on the route
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      types: { public-sso: { gateway: { name: sso-gw } } }
+      httpRoutes: [{ type: public-sso, host: admin.example.com }]
+    asserts:
+      - equal: { path: spec.parentRefs, value: [{ name: sso-gw }] }
+      - notExists: { path: 'spec.rules[0].filters' }
 
   - it: rejects a Traefik provider reference on a route
     templates: [templates/httproute.yaml]
@@ -386,9 +407,8 @@ tests:
   - it: prints a route's built host and login in the notes
     templates: [templates/NOTES.txt]
     set:
-      gateway: { name: gw }
       domain: apps.example.com
-      types: { public-sso: { middlewares: [my-sso] } }
+      types: { public-sso: { gateway: { name: sso-gw } } }
       ingresses: []
       httpRoutes: [{ name: shop-admin, type: public-sso, subdomain: admin }]
     asserts:

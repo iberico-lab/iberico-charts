@@ -133,8 +133,7 @@ because both the ingress chart and the app chart's install notes need it.
 
   host set   -> used as written
   otherwise  -> <label>.<domain>
-    label  = subdomain (default: the app's name), then "-<suffix>" when
-             ingress.types.<type>.suffix is set (e.g. "shop-dev")
+    label  = subdomain (default: the app's name)
     domain = ingress.types.<type>.domain, else ingress.domain; internal
              routes default to "internal.<ingress.domain>", so one
              environment domain gives shop.<domain> and
@@ -155,7 +154,6 @@ Usage: include "helm-helpers.ingressHost" (dict "entry" $e "where" "ingress.ingr
 {{- $host -}}
 {{- else -}}
   {{- $label := .entry.subdomain | default .name -}}
-  {{- with $type.suffix }}{{ $label = printf "%s-%s" $label . }}{{ end -}}
   {{- $domain := $type.domain | default $v.domain -}}
   {{- if and (eq .entry.type "internal") (not $type.domain) $v.domain -}}
     {{- $domain = printf "internal.%s" $v.domain -}}
@@ -165,13 +163,13 @@ Usage: include "helm-helpers.ingressHost" (dict "entry" $e "where" "ingress.ingr
     {{- if $host -}}
       {{- $tail := printf ".%s" ($domain | default "<tailnet>") -}}
       {{- if not (and $domain (hasSuffix $tail $host)) -}}
-        {{- fail (printf "%s.host %q: a Tailscale URL is <one label>.<tailnet>, e.g. \"shop.tail1234.ts.net\", and needs ingress.tailnetDomain set. Tailscale has no subdomains: use subdomain (and ingress.types.internal.suffix) instead of host, e.g. shop-dev.tail1234.ts.net" .where $host) -}}
+        {{- fail (printf "%s.host %q: a Tailscale URL is <one label>.<tailnet>, e.g. \"shop.tail1234.ts.net\", and needs ingress.tailnetDomain set. Tailscale has no subdomains: use subdomain instead of host, e.g. shop-dev.tail1234.ts.net" .where $host) -}}
       {{- end -}}
       {{- $label = trimSuffix $tail $host -}}
     {{- end -}}
   {{- end -}}
   {{- if not (regexMatch "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" $label) -}}
-    {{- $from := ternary "host: Tailscale gives each machine one label, so join the parts with \"-\" (e.g. shop-dev-apps), or use subdomain and ingress.types.internal.suffix" (printf "subdomain, the app's name and ingress.types.%s.suffix" .entry.type) (and .tailscale (ne $host "")) -}}
+    {{- $from := ternary "host: Tailscale gives each machine one label, so join the parts with \"-\" (e.g. shop-dev-apps), or use subdomain" "subdomain or the app's name" (and .tailscale (ne $host "")) -}}
     {{- fail (printf "%s: hostname label %q must be up to 63 lowercase letters, numbers and \"-\", with no dots (from %s)" .where $label $from) -}}
   {{- end -}}
   {{- if $domain -}}

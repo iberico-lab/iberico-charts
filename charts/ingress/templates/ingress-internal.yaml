@@ -1,8 +1,7 @@
 {{/*
 Internal Ingress - Tailscale-based internal access
 Uses the Tailscale ingress class. The machine name is the first label of the
-hostname (see helm-helpers.ingressHost): subdomain or the app's name, plus
-"-<ingress.types.internal.suffix>". URL: https://<machine>.<tailnet>.ts.net.
+hostname (see helm-helpers.ingressHost): subdomain or the app's name. URL: https://<machine>.<tailnet>.ts.net.
 */}}
 {{- if .Values.ingresses }}
 {{- range $i, $ing := .Values.ingresses }}

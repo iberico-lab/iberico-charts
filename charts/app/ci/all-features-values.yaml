@@ -61,7 +61,7 @@ ingress:
   types:
     internal: {gateway: {name: private-gateway, namespace: traefik}}
     public: {middlewares: [no-auth]}
-    public-sso: {middlewares: [sso]}
+    public-sso: {middlewares: [sso], gateway: {name: sso-gateway, namespace: traefik}}
   httpRoutes:
     - {type: public, host: app.example.com}
     - {name: kitchen-sink-api, type: public, host: api.example.com, path: /v1, servicePort: 8080, middlewares: [rate-limit]}

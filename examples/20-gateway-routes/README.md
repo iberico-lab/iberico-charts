@@ -14,7 +14,7 @@ From the repository root:
 helm template demo charts/app -f examples/20-gateway-routes/values.yaml
 # the same app in production: only the environment part changes
 helm template demo charts/app -f examples/20-gateway-routes/values.yaml \
-  --set ingress.domain=prod.apps.example.com --set 'ingress.types.public-sso.middlewares={prod-sso}'
+  --set ingress.domain=prod.apps.example.com --set ingress.types.public-sso.gateway.name=prod-sso-gateway
 ```
 
 Open [`values.yaml`](values.yaml). The comments explain each line.
@@ -22,12 +22,12 @@ Open [`values.yaml`](values.yaml). The comments explain each line.
 ## What you get
 
 - `shop.dev.apps.example.com`: public, with a Homepage tile
-- `admin.dev.apps.example.com/admin`: the `my-sso` login runs first, then the app's own `shop-admin-headers`; hidden from Homepage
+- `admin.dev.apps.example.com/admin`: attached to `sso-gateway`, whose entryPoint asks for the login first; then the app's own `shop-admin-headers` runs; hidden from Homepage
 - `ops.internal.dev.apps.example.com`: attached to the private Gateway only
 
 ## Watch out
 
-- A `public-sso` URL with no `ingress.types.public-sso.middlewares` stops the render, so a page meant to need a login is never published without one
+- A `public-sso` route needs `ingress.types.public-sso.gateway`. It never falls back to `ingress.gateway`, so a page meant to need a login can't land on the open Gateway. See [Environments](../../docs/environments.md#logins-on-the-gateway)
 - Internal routes default to `internal.<ingress.domain>`, a separate DNS zone and certificate that only the tailnet reaches. A Tailscale Ingress instead is always `<one label>.<tailnet>.ts.net`. See [Ingress](../../docs/ingress.md#private-urls-on-your-own-domain)
 - An `internal` route needs `ingress.types.internal.gateway`. It never falls back to `ingress.gateway`, which is usually the public one
 - Middlewares must exist in the namespace the route lands in

@@ -128,7 +128,6 @@ def ingress():
                  "filters": LIST(), "annotations": STRMAP, "homepage": homepage}, req=("type",))
     typ = obj({"middlewares": LIST(S(), "Traefik Middlewares every entry of this type runs first"),
                "domain": S('Base domain for this type; "" = ingress.domain'),
-               "suffix": S('Added to the first hostname label with "-", e.g. "dev"'),
                "gateway": gw})
     return {"$schema": D, "title": "ingress chart values", "type": "object", "additionalProperties": False,
             "properties": {"global": GLOBAL, "enabled": B(), "tailnetDomain": S(), "ingresses": LIST(ing),

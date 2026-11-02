@@ -23,27 +23,21 @@ ingresses: []
 #                with "@" (e.g. "auth@file") is passed to Traefik as written.
 #   domain       base domain for this type's entries; "" = ingress.domain.
 #                Internal Ingresses always use tailnetDomain (Tailscale).
-#   suffix       added to the first hostname label with "-", e.g. "dev"
-#                gives shop-dev.<domain>. Keeps environments apart, notably
-#                in a shared tailnet, where names can't have dots.
 #   gateway      HTTPRoutes only: the Gateway this type attaches to
 #                (name, namespace, sectionName); empty = ingress.gateway.
 types:
   internal:          # private network only
     middlewares: []  # internal routes only (Tailscale Ingresses run none)
     domain: ""       # internal routes; "" = "internal.<ingress.domain>"
-    suffix: ""
     gateway: {}      # internal routes: required, a Gateway only your private
                      # network reaches. They never use ingress.gateway.
   public:            # anyone can open it
     middlewares: []  # e.g. ["my-no-auth"]
     domain: ""
-    suffix: ""
     gateway: {}
   public-sso:        # anyone, after signing in
     middlewares: []  # required: the login, e.g. ["my-sso"]
     domain: ""
-    suffix: ""
     gateway: {}
 
 # Gateway API routes (HTTPRoute), the successor to Ingress (docs/ingress.md).

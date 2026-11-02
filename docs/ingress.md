@@ -69,8 +69,7 @@ One rule for every Ingress and route:
 
 - **`host` set:** used as written, e.g. `shop.example.com`.
 - **Otherwise:** `<label>.<domain>`, where
-  - the label is `subdomain` (default: the app's name), plus
-    `-<suffix>` when the environment sets `ingress.types.<type>.suffix`;
+  - the label is `subdomain` (default: the app's name);
   - the domain is `ingress.types.<type>.domain`, else `ingress.domain`.
     **Internal routes** default to `internal.<ingress.domain>`.
 
@@ -98,20 +97,9 @@ certificates behind such a scheme (and pass the domain from Flux):
 each machine exactly **one label**: `https://<label>.<tailnet>.ts.net`, with no
 subdomains. For these, the domain is always `ingress.tailnetDomain`, the label
 becomes the Tailscale machine name, and a `host` must look like
-`<label>.<tailnetDomain>`. To keep environments apart in one tailnet, set a
-suffix rather than dots:
-
-```yaml
-ingress:
-  tailnetDomain: tail1234.ts.net
-  types:
-    internal: { suffix: dev-apps }   # per environment
-  ingresses:
-    - type: internal                 # https://shop-dev-apps.tail1234.ts.net
-```
-
-Without a suffix, two environments in the same tailnet would both claim
-`shop`, and Tailscale would rename one to `shop-1`. If you want real
+`<label>.<tailnetDomain>`. Two releases with the same name in one tailnet
+would both claim it, and Tailscale would rename one to `shop-1`: give them
+different names or `subdomain`s. If you want real
 subdomains for private URLs (`shop.internal.dev.example.com`), use an internal
 route: see [Private URLs on your own domain](#private-urls-on-your-own-domain).
 
@@ -129,26 +117,27 @@ An app only picks a type. What the type does is set **once per environment**
 ingress:
   types:
     internal:
-      domain: internal.dev.example.com                   # internal routes
-      gateway: { name: private-gateway, namespace: traefik }
-    public:
-      middlewares: [my-no-auth]          # e.g. plain forwarding, or nothing
+      gateway: { name: private-gateway, namespace: traefik }   # routes
     public-sso:
-      middlewares: [my-sso]              # the login (required)
+      gateway: { name: sso-gateway, namespace: traefik }       # routes: login on the Gateway
+      middlewares: [my-sso]              # Ingresses: the login (required)
 ```
 
 - `middlewares` are Traefik Middleware objects in the app's namespace. They
   **always run first**. An entry can add its own `middlewares`, which run
   after them, so an app can add (say) a header rewrite but can never run it
   before the login, or drop the login.
-- **`public-sso` needs a login middleware.** With
-  `ingress.types.public-sso.middlewares` empty, the render stops, so a page
-  meant to need a login is never published without one.
+- **`public-sso` always has a login.** A `public-sso` **route** must use
+  `ingress.types.public-sso.gateway` (never `ingress.gateway`): put the login
+  on that Gateway's Traefik entryPoint, so no route can skip it (see
+  [Logins on the Gateway](environments.md#logins-on-the-gateway)), or list it
+  in `middlewares`. A `public-sso` **Ingress** has no Gateway, so it needs
+  `ingress.types.public-sso.middlewares`. Either missing stops the render.
 - `internal` Ingresses are served by the Tailscale operator, not Traefik, so
   they run no middlewares (an `internal` ingress entry with `middlewares` stops
   the render), and they ignore `types.internal.domain` (Tailscale decides the
   domain). Those two settings apply to internal HTTPRoutes.
-- `domain` and `suffix`: see [Hostnames](#hostnames). `gateway` applies to
+- `domain`: see [Hostnames](#hostnames). `gateway` applies to
   HTTPRoutes only: see below.
 - On Ingresses, a name with `@` (e.g. `auth@file`, or a Middleware in another
   namespace as `<namespace>-<name>@kubernetescrd`) is passed to Traefik as
@@ -193,10 +182,10 @@ ingress:
   `no matches for kind "HTTPRoute"`. On Kubernetes 1.30, install Gateway API
   1.4: 1.5 and newer need Kubernetes 1.31+.
 - **Which Gateway:** the route's own `gateway`, else
-  `ingress.types.<type>.gateway`, else `ingress.gateway`. An **`internal`
-  route never uses `ingress.gateway`**, because that is usually the public one:
-  set `ingress.types.internal.gateway`, or the render stops.
-- **Order of filters:** the type's `middlewares` (the login), then the route's
+  `ingress.types.<type>.gateway`, else `ingress.gateway`. **`internal` and
+  `public-sso` routes never use `ingress.gateway`**, because that is usually
+  the open public one: set `ingress.types.<type>.gateway`, or the render stops.
+- **Order of filters:** the type's `middlewares`, then the route's
   own `middlewares`, then its raw `filters`. `filters` is an escape hatch for
   plain Gateway API filters (header changes, redirects); for anything Traefik,
   use `middlewares`.
@@ -292,10 +281,9 @@ HTTPRoutes too). Hide one with `homepage: { enabled: false }`. To change how it 
 | `ingress.gateway.name` | `""` | Default Gateway for routes |
 | `ingress.gateway.namespace` | `""` | The Gateway's namespace; `""` = the app's |
 | `ingress.gateway.sectionName` | `""` | Listener name; `""` = every listener |
-| `ingress.types.<type>.middlewares` | `[]` | Traefik Middlewares every entry of the type runs first. `public-sso`: required |
+| `ingress.types.<type>.middlewares` | `[]` | Traefik Middlewares every entry of the type runs first. `public-sso` Ingresses: required |
 | `ingress.types.<type>.domain` | `""` | Base domain for the type; `""` = `ingress.domain` (internal routes: `internal.<ingress.domain>`; not used by Tailscale Ingresses) |
-| `ingress.types.<type>.suffix` | `""` | Added to the first label with `-`, e.g. `dev` gives `shop-dev.<domain>` |
-| `ingress.types.<type>.gateway` | `{}` | Gateway for the type's routes; empty = `ingress.gateway` (`internal`: required, never `ingress.gateway`) |
+| `ingress.types.<type>.gateway` | `{}` | Gateway for the type's routes; empty = `ingress.gateway` (`internal`, `public-sso`: required, never `ingress.gateway`) |
 
 `<type>` is `internal`, `public` or `public-sso`.
 

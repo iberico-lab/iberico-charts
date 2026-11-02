@@ -146,20 +146,22 @@ workload:
   or `httpRoutes` (Gateway API). Both take the same `type`: `internal`
   (private, Tailscale), `public`, `public-sso` (login).
 - Hostname, same rule everywhere: `host` as written, else
-  `<subdomain or app name>[-<types.<type>.suffix>].<types.<type>.domain or ingress.domain>`;
+  `<subdomain or app name>.<types.<type>.domain or ingress.domain>`;
   internal routes default to `internal.<ingress.domain>`. App values usually
   set neither: the environment sets `ingress.domain` (e.g. `dev.apps.example.com`),
   usually through a Flux `valuesFrom` ConfigMap (`docs/environments.md`).
 - Tailscale Ingresses (`internal` in `ingresses`) are always
-  `<one label>.<tailnetDomain>`: no dots in the label. Use `subdomain` and a
-  `types.internal.suffix` (e.g. `shop-dev`), never a dotted name. For dotted
+  `<one label>.<tailnetDomain>`: no dots in the label. Use `subdomain`, never
+  a dotted name. For dotted
   private URLs use `internal` routes with `types.internal.domain`.
 - What a type runs is environment config in `ingress.types.<type>`:
   `middlewares` (Traefik, run first, e.g. the login) and, for routes,
   `gateway`. An entry's own `middlewares` run after. Never hard-code a login
-  middleware or `ExtensionRef` in app values. `public-sso` without
-  `types.public-sso.middlewares` fails; `internal` routes need
-  `types.internal.gateway` and never use `ingress.gateway`.
+  middleware or `ExtensionRef` in app values. `internal` and `public-sso`
+  routes need `types.<type>.gateway` and never use `ingress.gateway` (the
+  login can live on the SSO Gateway's Traefik entryPoint,
+  `docs/environments.md`); a `public-sso` Ingress needs
+  `types.public-sso.middlewares`.
 - Public HTTPS defaults to `letsencrypt-staging` (browser warning); set
   `certManagerIssuer: letsencrypt-prod` for real use.
 - One Ingress per type per release; routes need a unique `name` each.

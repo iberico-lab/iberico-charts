@@ -25,19 +25,22 @@ Usage: include "ingress.machineName" (dict "entry" $e "where" "ingress.ingresses
 {{/*
 Gateway an HTTPRoute attaches to, as YAML: the route's own `gateway`, else
 ingress.types.<type>.gateway, else ingress.gateway (field by field).
-An internal route skips ingress.gateway: that is usually the public one, so
-an internal route must name its private Gateway explicitly.
+Internal and public-sso routes skip ingress.gateway: it is usually the open
+public one, so they must name their own Gateway (the private one, or the one
+whose entryPoint asks for a login).
 Usage: include "ingress.routeGateway" (dict "route" $r "where" "ingress.httpRoutes[0]" "root" $) | fromYaml
 */}}
 {{- define "ingress.routeGateway" -}}
 {{- $internal := eq .route.type "internal" -}}
 {{- $fromType := (get (.root.Values.types | default dict) .route.type | default dict).gateway | default dict -}}
 {{- $default := .root.Values.gateway | default dict -}}
-{{- if $internal }}{{ $default = dict }}{{ end -}}
+{{- if or $internal (eq .route.type "public-sso") }}{{ $default = dict }}{{ end -}}
 {{- $gw := merge (deepCopy (.route.gateway | default dict)) (deepCopy $fromType) (deepCopy $default) -}}
 {{- if not $gw.name -}}
   {{- if $internal -}}
     {{- fail (printf "%s is type internal: set ingress.types.internal.gateway.name to a Gateway only your private network reaches (internal routes never use ingress.gateway)" .where) -}}
+  {{- else if eq .route.type "public-sso" -}}
+    {{- fail (printf "%s is type public-sso: set ingress.types.public-sso.gateway.name to the Gateway that asks for a login (public-sso routes never use ingress.gateway)" .where) -}}
   {{- else -}}
     {{- fail (printf "%s: set gateway.name (on the route, in ingress.types.%s.gateway, or in ingress.gateway) to the Gateway this route attaches to" .where .route.type) -}}
   {{- end -}}
@@ -49,15 +52,16 @@ Usage: include "ingress.routeGateway" (dict "route" $r "where" "ingress.httpRout
 Traefik Middlewares an ingress or route runs, in order: its type's
 (ingress.types.<type>.middlewares, e.g. the login), then the entry's own
 `middlewares`. The type's come first, so an entry can add middlewares but
-never run them before the login, or drop it. A public-sso entry whose type
+never run them before the login, or drop it. A public-sso Ingress whose type
 has no middlewares fails, so a page meant to need a login is never published
-without one.
-Usage: include "ingress.middlewares" (dict "entry" . "where" "ingress.ingresses[0]" "root" $) | fromYamlArray
+without one. Routes ("route" true) don't need them: their public-sso Gateway
+can ask for the login itself (see ingress.routeGateway).
+Usage: include "ingress.middlewares" (dict "entry" . "where" "ingress.ingresses[0]" "root" $ "route" false) | fromYamlArray
 */}}
 {{- define "ingress.middlewares" -}}
 {{- $type := .entry.type -}}
 {{- $fromType := (get (.root.Values.types | default dict) $type | default dict).middlewares | default list -}}
-{{- if and (eq $type "public-sso") (not $fromType) -}}
+{{- if and (eq $type "public-sso") (not $fromType) (not .route) -}}
 {{- fail (printf "%s is type public-sso, but ingress.types.public-sso.middlewares is empty: list the Traefik Middleware that asks for a login, or the page would be public" .where) -}}
 {{- end -}}
 {{- toYaml (concat $fromType (.entry.middlewares | default list)) -}}

@@ -22,17 +22,19 @@ First release. The charts are built to be installed from scratch: read
   `public-sso`), as Ingresses or Gateway API `httpRoutes` with the same three types.
   Nothing is created until you list one.
 - One hostname rule for every type: `host` as written, else
-  `<subdomain or app name>[-<suffix>].<domain>`, with `domain` and `suffix` set per
-  environment (`ingress.domain`, `ingress.types.<type>.domain` / `.suffix`), so app
-  values don't need hostnames. Internal routes default to `internal.<domain>`, so one
+  `<subdomain or app name>.<domain>`, with the domain set per environment
+  (`ingress.domain`, `ingress.types.<type>.domain`), so app values don't need
+  hostnames. Internal routes default to `internal.<domain>`, so one
   domain per environment gives `shop.<domain>` and `shop.internal.<domain>`.
   Tailscale Ingresses use the one-label `<label>.<tailnetDomain>` form.
 - `docs/environments.md`: the Gateways, DNS (including Tailscale split DNS),
   certificates and Flux wiring behind one domain per environment.
 - What each type runs is set once per environment in `ingress.types`: its Traefik
   middlewares (always run first, so an entry's own `middlewares` can't skip the
-  login) and, for routes, its Gateway. `public-sso` without a login middleware, and
-  an `internal` route without a private Gateway, stop the render. HTTPRoutes carry
+  login) and, for routes, its Gateway. `internal` and `public-sso` routes never use
+  the default `ingress.gateway`, so the login can live on the SSO Gateway's Traefik
+  entryPoint, where no route can skip it. A route of either type without its own
+  Gateway, and a `public-sso` Ingress without a login middleware, stop the render. HTTPRoutes carry
   Homepage annotations like ingresses (`homepage.enabled: false` hides one).
 - `external-secrets`: one switch (`external-secrets.enabled`) to turn 1Password items
   into env vars and files for the pod.

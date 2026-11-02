@@ -254,10 +254,6 @@
               "type": "string",
               "description": "Base domain for this type; \"\" = ingress.domain"
             },
-            "suffix": {
-              "type": "string",
-              "description": "Added to the first hostname label with \"-\", e.g. \"dev\""
-            },
             "gateway": {
               "type": "object",
               "properties": {
@@ -293,10 +289,6 @@
               "type": "string",
               "description": "Base domain for this type; \"\" = ingress.domain"
             },
-            "suffix": {
-              "type": "string",
-              "description": "Added to the first hostname label with \"-\", e.g. \"dev\""
-            },
             "gateway": {
               "type": "object",
               "properties": {
@@ -331,10 +323,6 @@
             "domain": {
               "type": "string",
               "description": "Base domain for this type; \"\" = ingress.domain"
-            },
-            "suffix": {
-              "type": "string",
-              "description": "Added to the first hostname label with \"-\", e.g. \"dev\""
             },
             "gateway": {
               "type": "object",

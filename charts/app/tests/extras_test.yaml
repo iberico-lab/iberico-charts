@@ -50,7 +50,7 @@ tests:
         ingresses: []
         domain: apps.example.com
         gateway: { name: gw }
-        types: { public-sso: { middlewares: [my-sso] } }
+        types: { public-sso: { gateway: { name: sso-gw } } }
         httpRoutes: [{ type: public }, { name: shop-admin, type: public-sso, subdomain: admin }]
     asserts:
       - matchRegexRaw: { pattern: 'Gateway route:    https://shop\.apps\.example\.com   \(HTTPRoute' }

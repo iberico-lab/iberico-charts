@@ -18,7 +18,7 @@ ingress:
   # --- per environment ---------------------------------------------------
   domain: "dev.apps.example.com"         # public:   <name>.dev.apps.example.com
                                          # internal: <name>.internal.dev.apps.example.com
-  gateway:                               # default Gateway (the public one)
+  gateway:                               # default Gateway (the open public one)
     name: "traefik-gateway"
     namespace: "traefik"
     sectionName: "websecure"
@@ -27,10 +27,10 @@ ingress:
       gateway:                           # a Gateway only the tailnet reaches
         name: "private-gateway"
         namespace: "traefik-private"
-    public:
-      middlewares: []                    # plain forwarding
     public-sso:
-      middlewares: ["my-sso"]            # the login, always run first
+      gateway:                           # a Gateway whose Traefik entryPoint
+        name: "sso-gateway"              # runs the login for every route on it
+        namespace: "traefik"
 
   # --- per app -----------------------------------------------------------
   httpRoutes:
@@ -39,7 +39,7 @@ ingress:
       homepage:
         name: "Shop"
         icon: "kubernetes"
-    # admin.dev.apps.example.com/admin: login first, then the app's own middleware
+    # admin.dev.apps.example.com/admin: the Gateway's login first, then the app's own middleware
     - name: shop-admin
       type: public-sso
       subdomain: admin
