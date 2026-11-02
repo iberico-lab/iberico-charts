@@ -100,3 +100,16 @@ together in `charts/`.
 | `make clean` | Delete downloaded chart files |
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
+
+---
+
+## Using an AI agent on this repo
+
+Point your agent at **[AGENTS.md](AGENTS.md)** — it is the entry point for
+Claude Code, OpenCode, Cursor, Copilot and anything else that reads `AGENTS.md`
+or `CLAUDE.md`. It routes to the full `helm-app-chart` skill
+(`.agents/skills/helm-app-chart/SKILL.md`), which carries the workflow, the rules
+that make a render fail, and the feature → example map, so the agent writes valid
+values files instead of guessing at settings.
+
+Hand the agent the values file and the app it should run; the skill covers the rest.
