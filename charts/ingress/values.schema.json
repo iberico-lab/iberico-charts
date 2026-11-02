@@ -44,7 +44,7 @@
             "enum": [
               "internal",
               "public",
-              "public-protected"
+              "public-sso"
             ]
           },
           "host": {
@@ -196,9 +196,9 @@
           "type": "string",
           "description": "Traefik middleware for type \"public\"; \"\" = none"
         },
-        "publicProtected": {
+        "publicSso": {
           "type": "string",
-          "description": "Traefik middleware for type \"public-protected\"; \"\" = none"
+          "description": "Traefik middleware for type \"public-sso\"; \"\" = none"
         }
       },
       "additionalProperties": false

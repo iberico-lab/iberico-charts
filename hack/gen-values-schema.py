@@ -112,7 +112,7 @@ def app():
 def ingress():
     ing = obj({"serviceName": S("Backend Service name (default: the app's Service)"),
                "name": S("Removed: use serviceName"),
-               "type": {"enum": ["internal", "public", "public-protected"]},
+               "type": {"enum": ["internal", "public", "public-sso"]},
                "host": S(), "servicePort": PORT, "servicePortName": S(),
                "certManagerIssuer": S(), "tailscaleExpose": B(), "annotations": STRMAP,
                "middlewares": S('Traefik middleware name; "" = none'),
@@ -127,7 +127,7 @@ def ingress():
             "properties": {"global": GLOBAL, "enabled": B(), "tailnetDomain": S(), "ingresses": LIST(ing),
                            "httpRoutes": LIST(route), "gateway": gw,
                            "middlewares": obj({"public": S('Traefik middleware for type "public"; "" = none'),
-                                               "publicProtected": S('Traefik middleware for type "public-protected"; "" = none')}),
+                                               "publicSso": S('Traefik middleware for type "public-sso"; "" = none')}),
                            "helm-helpers": {"type": "object"}}}
 
 def external_secrets():

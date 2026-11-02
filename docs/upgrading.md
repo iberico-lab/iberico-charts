@@ -96,6 +96,38 @@ Each entry in `ingress.ingresses` used `name` for the Service to send traffic
 to. It's now `serviceName`, which says what it is. Rename the key; the chart
 stops with a message if it finds the old one.
 
+### Ingress type `public-protected` is now `public-sso`
+
+The type was named after the implementation, not what it gives you. Rename it
+in your values; the schema rejects the old value.
+
+```yaml
+ingress:
+  ingresses:
+    - type: "public-sso"   # was "public-protected"
+      host: admin.example.com
+```
+
+### Traefik middleware names are settings
+
+`public` and `public-sso` ingresses used to attach a fixed middleware
+name. You now name it yourself, and an empty name attaches none:
+
+```yaml
+ingress:
+  middlewares:
+    public: "my-no-auth"   # was hardcoded
+    publicSso: "my-sso"    # was hardcoded
+```
+
+**Do you need to do anything?**
+
+- **You use only `internal` ingresses:** no.
+- **You use `public` / `public-sso`:** yes. Set the two values above to
+  the middleware names in your cluster. Until you do, no middleware is attached,
+  so a `public-sso` ingress will not ask for a login.
+- One ingress can override its own with `middlewares:`.
+
 ### Smaller default resources
 
 If you never set `workload.resources`, your pods now ask for less:

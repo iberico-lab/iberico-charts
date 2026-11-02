@@ -13,7 +13,7 @@ Off by default.
 |------|-----------------|-------|-------|
 | `internal` | Only devices on your **Tailscale** network | via Tailscale | No |
 | `public` | **Anyone** on the internet | Let's Encrypt | No |
-| `public-protected` | Anyone, **after signing in** (SSO) | Let's Encrypt | Yes |
+| `public-sso` | Anyone, **after signing in** (SSO) | Let's Encrypt | Yes |
 
 Not sure? Start with `internal`.
 
@@ -47,7 +47,7 @@ ingress:
 ingress:
   enabled: true
   ingresses:
-    - type: "public-protected"
+    - type: "public-sso"
       host: "admin.example.com"
       certManagerIssuer: "letsencrypt-prod"
 ```
@@ -151,7 +151,7 @@ automatically. Hide one with `homepage: { enabled: false }`. To change how it lo
 - **Public HTTPS uses `letsencrypt-staging` by default.** Browsers will show a
   warning. For real use, set `certManagerIssuer` to your production issuer
   (often `letsencrypt-prod`).
-- `public` and `public-protected` **need a `host`**. Without one, the chart stops with an error.
+- `public` and `public-sso` **need a `host`**. Without one, the chart stops with an error.
 - If you set `ingress.enabled: true` but don't list any `ingresses`, you get
   **one `internal` ingress** by default.
 - **For `internal`, `host` is the Tailscale machine name**, not a domain: `store`,
@@ -161,12 +161,12 @@ automatically. Hide one with `homepage: { enabled: false }`. To change how it lo
 - `servicePort` must match your [Service](service.md) port (default `80`).
 - Public ingresses attach a Traefik middleware that you name, in the app's
   namespace: `ingress.middlewares.public` for `public` (plain forwarding) and
-  `ingress.middlewares.publicProtected` for `public-protected` (your SSO). Set
+  `ingress.middlewares.publicSso` for `public-sso` (your SSO). Set
   either to `""` (the default) to attach none. One ingress can override its own
   with `middlewares`.
 - Only **one ingress of each type** per release. Two `public` entries would get
   the same name, so the chart stops with an error.
-- `type` must be exactly `internal`, `public` or `public-protected`. Anything
+- `type` must be exactly `internal`, `public` or `public-sso`. Anything
   else stops the render with an error.
 
 ---
@@ -176,7 +176,7 @@ automatically. Hide one with `homepage: { enabled: false }`. To change how it lo
 | Setting | Default | What it does |
 |---------|---------|--------------|
 | `serviceName` | the app's Service | Send traffic to a different Service |
-| `type` | `internal` | `internal`, `public` or `public-protected` |
+| `type` | `internal` | `internal`, `public` or `public-sso` |
 | `host` | — | Public types: the domain (required). `internal`: the Tailscale machine name (default: the app's name) |
 | `servicePort` | `80` | Service port to send traffic to |
 | `servicePortName` | — | Use a named port instead of a number (`internal` only) |

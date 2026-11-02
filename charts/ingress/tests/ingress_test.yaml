@@ -81,11 +81,11 @@ tests:
           path: 'metadata.annotations["traefik.ingress.kubernetes.io/router.middlewares"]'
           value: from-ingress@kubernetescrd
 
-  - it: attaches the SSO middleware named in middlewares.publicProtected
-    templates: [templates/ingress-public-protected.yaml]
+  - it: attaches the SSO middleware named in middlewares.publicSso
+    templates: [templates/ingress-public-sso.yaml]
     set:
-      middlewares: { publicProtected: my-sso }
-      ingresses: [{ type: public-protected, host: a.example.com }]
+      middlewares: { publicSso: my-sso }
+      ingresses: [{ type: public-sso, host: a.example.com }]
     asserts:
       - equal:
           path: 'metadata.annotations["traefik.ingress.kubernetes.io/router.middlewares"]'

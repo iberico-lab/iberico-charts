@@ -17,6 +17,9 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
   message saying where they went.
 - `service.targetPort` defaults to `workload.applicationPort` (was `80`).
 - `ingresses[].name` renamed to `ingresses[].serviceName`; the old key fails with a message.
+- Ingress type `public-protected` renamed to `public-sso`, which says what it does. The
+  Traefik middleware it attaches is no longer hardcoded: name it in `ingress.middlewares.publicSso`
+  (and `ingress.middlewares.public` for `public`). Empty attaches none.
 - Smaller default resources: requests `100m`/`128Mi`, memory limit `512Mi`, no CPU limit
   (was `300m`/`512Mi` and `1000m`/`800Mi`).
 - Unknown or mistyped values are rejected by `values.schema.json`.

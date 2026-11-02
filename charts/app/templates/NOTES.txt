@@ -67,8 +67,8 @@ FROM OUTSIDE THE CLUSTER
   Tailscale only:   https://{{ .host | default $name }}.{{ $tailnet | default "<your-tailnet>.ts.net" }}
 {{- else if eq .type "public" }}
   Public:           https://{{ .host }}
-{{- else if eq .type "public-protected" }}
-  Public + login:   https://{{ .host }}   (SSO via the ingress.middlewares.publicProtected Traefik middleware)
+{{- else if eq .type "public-sso" }}
+  Public + login:   https://{{ .host }}   (SSO via the ingress.middlewares.publicSso Traefik middleware)
 {{- end }}
 {{- if and (ne .type "internal") (eq (.certManagerIssuer | default "letsencrypt-staging") "letsencrypt-staging") }}
                     ! uses the letsencrypt-staging issuer: browsers will show a

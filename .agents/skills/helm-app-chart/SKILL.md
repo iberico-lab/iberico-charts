@@ -144,7 +144,7 @@ workload:
 - `type: internal` = Tailscale only. `host` is the **machine name** (`store`), not a
   domain; empty = the app's name. URL: `https://<host>.<tailnet>.ts.net`. Set
   `ingress.tailnetDomain` so the install notes print it.
-- `type: public` / `public-protected` (SSO) need `host: app.example.com`. The
+- `type: public` / `public-sso` (SSO) need `host: app.example.com`. The
   issuer defaults to `letsencrypt-staging` (browser warning); set
   `certManagerIssuer: letsencrypt-prod` for real use.
 - One ingress per type per release. `serviceName` picks a different backend Service.

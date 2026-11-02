@@ -7,7 +7,7 @@ the same repo, all released together with the same version:
 |-------|------|--------------|
 | `charts/helm-helpers` | Library: names, labels, selectors, namespace, version label | always |
 | `charts/external-secrets` | 1Password → ExternalSecrets for env vars and files | `external-secrets.enabled` |
-| `charts/ingress` | Tailscale (`internal`) and Traefik (`public`, `public-protected`) Ingresses | `ingress.enabled` |
+| `charts/ingress` | Tailscale (`internal`) and Traefik (`public`, `public-sso`) Ingresses | `ingress.enabled` |
 
 `charts/app/Chart.yaml` lists them with `repository: "file://../<name>"` and a
 `condition`. Fetch them with `make deps` (it runs `helm dependency update`; the

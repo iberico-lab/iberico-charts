@@ -96,7 +96,7 @@ kubectl describe externalsecret <name>    # the reason if it isn't
 | Browser shows a certificate warning | The ingress uses `letsencrypt-staging` by default. Set `certManagerIssuer` to your production issuer |
 | Public URL gives 404 | DNS for `host` must point at your Traefik load balancer |
 | Tailscale URL doesn't resolve | Check the device is on the tailnet, and the ingress exists: `kubectl get ingress` |
-| Login loop on `public-protected` | The middleware named in `ingress.middlewares.publicProtected` must exist in the app's namespace and work |
+| Login loop on `public-sso` | The middleware named in `ingress.middlewares.publicSso` must exist in the app's namespace and work |
 
 ---
 

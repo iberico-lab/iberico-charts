@@ -15,11 +15,11 @@ gethomepage.dev/icon: {{ if and .ingress.homepage .ingress.homepage.icon }}{{ .i
 
 {{/*
 Validate ingress entries before anything renders:
-- type must be internal, public or public-protected (unknown types used to be
+- type must be internal, public or public-sso (unknown types used to be
   silently skipped)
 - no two entries may produce the same Ingress name (they used to overwrite
   each other). Names: internal => <host|fullname>-internal,
-  public / public-protected => <fullname>-<type>.
+  public / public-sso => <fullname>-<type>.
 Usage: include "ingress.validate" .
 */}}
 {{- define "ingress.routeName" -}}
@@ -41,8 +41,8 @@ Usage: include "ingress.validate" .
 {{- fail (printf "ingress.ingresses[%d].name was renamed to serviceName in 0.3.0 (same meaning: the backend Service). See docs/upgrading.md" $i) -}}
 {{- end -}}
 {{- $type := $ing.type | default "" -}}
-{{- if not (has $type (list "internal" "public" "public-protected")) -}}
-{{- fail (printf "ingress.ingresses[%d].type must be internal, public or public-protected (got %q)" $i $type) -}}
+{{- if not (has $type (list "internal" "public" "public-sso")) -}}
+{{- fail (printf "ingress.ingresses[%d].type must be internal, public or public-sso (got %q)" $i $type) -}}
 {{- end -}}
 {{- $name := printf "%s-%s" (include "helm-helpers.fullname" $) $type -}}
 {{- if eq $type "internal" -}}
