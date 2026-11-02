@@ -16,17 +16,17 @@ ingress:
   enabled: true                          # no `ingresses`: only routes
 
   # --- per environment ---------------------------------------------------
-  domain: "staging.example.com"          # routes become <name>.staging.example.com
+  domain: "dev.apps.example.com"         # public:   <name>.dev.apps.example.com
+                                         # internal: <name>.internal.dev.apps.example.com
   gateway:                               # default Gateway (the public one)
     name: "traefik-gateway"
     namespace: "traefik"
     sectionName: "websecure"
   types:
     internal:
-      domain: "internal.staging.example.com"  # your own zone, resolving to the
-      gateway:                                # private Gateway (e.g. exposed on
-        name: "private-gateway"               # your tailnet)
-        namespace: "traefik"
+      gateway:                           # a Gateway only the tailnet reaches
+        name: "private-gateway"
+        namespace: "traefik-private"
     public:
       middlewares: []                    # plain forwarding
     public-sso:
@@ -34,12 +34,12 @@ ingress:
 
   # --- per app -----------------------------------------------------------
   httpRoutes:
-    # shop.staging.example.com, anyone can open it
+    # shop.dev.apps.example.com, anyone can open it
     - type: public
       homepage:
         name: "Shop"
         icon: "kubernetes"
-    # admin.staging.example.com/admin: login first, then the app's own middleware
+    # admin.dev.apps.example.com/admin: login first, then the app's own middleware
     - name: shop-admin
       type: public-sso
       subdomain: admin
@@ -47,7 +47,7 @@ ingress:
       middlewares: ["shop-admin-headers"]
       homepage:
         enabled: false                   # keep it off the dashboard
-    # ops.internal.staging.example.com, private network only
+    # ops.internal.dev.apps.example.com, tailnet only
     - name: shop-ops
       type: internal
       subdomain: ops

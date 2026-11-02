@@ -207,6 +207,30 @@ tests:
     asserts:
       - equal: { path: spec.parentRefs, value: [{ name: sso-gw, namespace: traefik }] }
 
+  - it: puts internal routes under internal.<ingress.domain> by default
+    templates: [templates/httproute.yaml]
+    set:
+      domain: dev.apps.example.com
+      gateway: { name: public-gw }
+      types: { internal: { gateway: { name: private-gw } } }
+      httpRoutes: [{ type: public }, { name: shop-internal, type: internal }]
+    asserts:
+      - equal: { path: spec.hostnames, value: [shop.dev.apps.example.com] }
+        documentIndex: 0
+      - equal: { path: spec.hostnames, value: [shop.internal.dev.apps.example.com] }
+        documentIndex: 1
+      - equal: { path: 'spec.parentRefs[0].name', value: private-gw }
+        documentIndex: 1
+
+  - it: does not apply the internal. prefix to Tailscale Ingresses
+    templates: [templates/ingress-internal.yaml]
+    set:
+      domain: dev.apps.example.com
+      tailnetDomain: tail1234.ts.net
+      ingresses: [{ type: internal }]
+    asserts:
+      - equal: { path: 'metadata.annotations["gethomepage.dev/description"]', value: shop.tail1234.ts.net }
+
   - it: gives internal routes their own domain, e.g. a private zone that resolves to the tailnet
     templates: [templates/httproute.yaml]
     set:

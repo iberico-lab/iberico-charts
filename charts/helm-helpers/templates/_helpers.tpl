@@ -135,7 +135,10 @@ because both the ingress chart and the app chart's install notes need it.
   otherwise  -> <label>.<domain>
     label  = subdomain (default: the app's name), then "-<suffix>" when
              ingress.types.<type>.suffix is set (e.g. "shop-dev")
-    domain = ingress.types.<type>.domain, else ingress.domain
+    domain = ingress.types.<type>.domain, else ingress.domain; internal
+             routes default to "internal.<ingress.domain>", so one
+             environment domain gives shop.<domain> and
+             shop.internal.<domain> (separate DNS zone and certificate)
 
 Internal Ingresses are Tailscale machines, whose URL is always
 <one label>.<tailnet>: their domain is ingress.tailnetDomain, and a `host`
@@ -154,6 +157,9 @@ Usage: include "helm-helpers.ingressHost" (dict "entry" $e "where" "ingress.ingr
   {{- $label := .entry.subdomain | default .name -}}
   {{- with $type.suffix }}{{ $label = printf "%s-%s" $label . }}{{ end -}}
   {{- $domain := $type.domain | default $v.domain -}}
+  {{- if and (eq .entry.type "internal") (not $type.domain) $v.domain -}}
+    {{- $domain = printf "internal.%s" $v.domain -}}
+  {{- end -}}
   {{- if .tailscale -}}
     {{- $domain = $v.tailnetDomain -}}
     {{- if $host -}}

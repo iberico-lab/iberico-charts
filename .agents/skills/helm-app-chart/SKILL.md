@@ -146,8 +146,10 @@ workload:
   or `httpRoutes` (Gateway API). Both take the same `type`: `internal`
   (private, Tailscale), `public`, `public-sso` (login).
 - Hostname, same rule everywhere: `host` as written, else
-  `<subdomain or app name>[-<types.<type>.suffix>].<types.<type>.domain or ingress.domain>`.
-  App values usually set neither; the environment sets `domain`/`suffix`.
+  `<subdomain or app name>[-<types.<type>.suffix>].<types.<type>.domain or ingress.domain>`;
+  internal routes default to `internal.<ingress.domain>`. App values usually
+  set neither: the environment sets `ingress.domain` (e.g. `dev.apps.example.com`),
+  usually through a Flux `valuesFrom` ConfigMap (`docs/environments.md`).
 - Tailscale Ingresses (`internal` in `ingresses`) are always
   `<one label>.<tailnetDomain>`: no dots in the label. Use `subdomain` and a
   `types.internal.suffix` (e.g. `shop-dev`), never a dotted name. For dotted

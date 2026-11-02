@@ -24,8 +24,11 @@ First release. The charts are built to be installed from scratch: read
 - One hostname rule for every type: `host` as written, else
   `<subdomain or app name>[-<suffix>].<domain>`, with `domain` and `suffix` set per
   environment (`ingress.domain`, `ingress.types.<type>.domain` / `.suffix`), so app
-  values don't need hostnames. Tailscale Ingresses use the one-label
-  `<label>.<tailnetDomain>` form; internal routes can use a private zone of your own.
+  values don't need hostnames. Internal routes default to `internal.<domain>`, so one
+  domain per environment gives `shop.<domain>` and `shop.internal.<domain>`.
+  Tailscale Ingresses use the one-label `<label>.<tailnetDomain>` form.
+- `docs/environments.md`: the Gateways, DNS (including Tailscale split DNS),
+  certificates and Flux wiring behind one domain per environment.
 - What each type runs is set once per environment in `ingress.types`: its Traefik
   middlewares (always run first, so an entry's own `middlewares` can't skip the
   login) and, for routes, its Gateway. `public-sso` without a login middleware, and

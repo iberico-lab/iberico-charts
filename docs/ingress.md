@@ -72,20 +72,27 @@ One rule for every Ingress and route:
   - the label is `subdomain` (default: the app's name), plus
     `-<suffix>` when the environment sets `ingress.types.<type>.suffix`;
   - the domain is `ingress.types.<type>.domain`, else `ingress.domain`.
+    **Internal routes** default to `internal.<ingress.domain>`.
 
-So an app can leave hostnames out entirely, and each environment supplies
-the domain:
+So an app leaves hostnames out entirely, and each environment supplies one
+domain:
 
 ```yaml
 ingress:
-  domain: apps.example.com           # per environment
-  types:
-    public: { suffix: dev }          # per environment (optional)
-  ingresses:
-    - type: public                   # shop-dev.apps.example.com
-    - type: public-sso
-      subdomain: admin               # admin-dev.apps.example.com
+  domain: dev.apps.example.com       # per environment
+  httpRoutes:
+    - type: public                   # shop.dev.apps.example.com
+    - name: shop-admin
+      type: public-sso
+      subdomain: admin               # admin.dev.apps.example.com
+    - name: shop-ops
+      type: internal                 # shop.internal.dev.apps.example.com
 ```
+
+Override a single URL with `host`, or a whole type with
+`ingress.types.<type>.domain`. How to set up the Gateways, DNS and
+certificates behind such a scheme (and pass the domain from Flux):
+[Environments](environments.md).
 
 **Tailscale (`internal` Ingresses) is the exception**, because Tailscale gives
 each machine exactly **one label**: `https://<label>.<tailnet>.ts.net`, with no
@@ -201,28 +208,11 @@ ingress:
 
 ### Private URLs on your own domain
 
-A Tailscale Ingress is always `<label>.<tailnet>.ts.net`. For private URLs like
-`shop.internal.dev.example.com`, use `internal` routes and a private Gateway:
-
-1. Run a Gateway whose Service only your tailnet reaches (for example Traefik
-   with a Service of `loadBalancerClass: tailscale`).
-2. Point `*.internal.dev.example.com` at that Gateway's tailnet address: a DNS
-   record, or Tailscale split DNS for the zone.
-3. Give the Gateway a certificate for `*.internal.dev.example.com` (cert-manager
-   with a DNS-01 issuer works without public access).
-4. Tell the chart, once per environment:
-
-```yaml
-ingress:
-  types:
-    internal:
-      domain: internal.dev.example.com
-      gateway: { name: private-gateway, namespace: traefik }
-  httpRoutes:
-    - type: internal                 # https://shop.internal.dev.example.com
-```
-
-Full example: [20 gateway routes](../examples/20-gateway-routes/README.md).
+A Tailscale Ingress is always `<label>.<tailnet>.ts.net`. Internal **routes**
+can use your own domain instead (by default `<name>.internal.<ingress.domain>`):
+they attach to a private Gateway that only your tailnet reaches. The cluster
+side (private Gateway, split DNS, certificate) is in
+[Environments](environments.md#internal-urls).
 
 ---
 
@@ -303,7 +293,7 @@ HTTPRoutes too). Hide one with `homepage: { enabled: false }`. To change how it 
 | `ingress.gateway.namespace` | `""` | The Gateway's namespace; `""` = the app's |
 | `ingress.gateway.sectionName` | `""` | Listener name; `""` = every listener |
 | `ingress.types.<type>.middlewares` | `[]` | Traefik Middlewares every entry of the type runs first. `public-sso`: required |
-| `ingress.types.<type>.domain` | `""` | Base domain for the type; `""` = `ingress.domain` (not used by Tailscale Ingresses) |
+| `ingress.types.<type>.domain` | `""` | Base domain for the type; `""` = `ingress.domain` (internal routes: `internal.<ingress.domain>`; not used by Tailscale Ingresses) |
 | `ingress.types.<type>.suffix` | `""` | Added to the first label with `-`, e.g. `dev` gives `shop-dev.<domain>` |
 | `ingress.types.<type>.gateway` | `{}` | Gateway for the type's routes; empty = `ingress.gateway` (`internal`: required, never `ingress.gateway`) |
 
@@ -313,4 +303,5 @@ HTTPRoutes too). Hide one with `homepage: { enabled: false }`. To change how it 
 
 ## Next
 
+- [Environments](environments.md): Gateways, DNS, certificates and Flux for one domain per environment
 - Examples: [12 ingress](../examples/12-ingress/README.md) · [20 gateway routes](../examples/20-gateway-routes/README.md) · [Service](service.md)

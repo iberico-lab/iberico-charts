@@ -31,7 +31,7 @@ ingresses: []
 types:
   internal:          # private network only
     middlewares: []  # internal routes only (Tailscale Ingresses run none)
-    domain: ""       # internal routes, e.g. "internal.apps.example.com"
+    domain: ""       # internal routes; "" = "internal.<ingress.domain>"
     suffix: ""
     gateway: {}      # internal routes: required, a Gateway only your private
                      # network reaches. They never use ingress.gateway.
