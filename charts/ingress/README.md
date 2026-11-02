@@ -1,6 +1,6 @@
 # ingress
 
-Ingress subchart used by the [`app`](https://github.com/alexbaeza/iberico-charts/blob/main/charts/app) chart. It creates
+Ingress subchart used by the [`app`](https://github.com/iberico-lab/iberico-charts/blob/main/charts/app) chart. It creates
 Tailscale (`internal`), Traefik public (`public`) and Traefik + SSO
 (`public-protected`) Ingresses, with Homepage annotations.
 
@@ -17,4 +17,4 @@ ingress:
       certManagerIssuer: letsencrypt-prod
 ```
 
-Docs: [Ingress](https://github.com/alexbaeza/iberico-charts/blob/main/docs/ingress.md)
+Docs: [Ingress](https://github.com/iberico-lab/iberico-charts/blob/main/docs/ingress.md)

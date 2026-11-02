@@ -25,10 +25,12 @@ You get:
 - A Deployment running 2 copies of your app
 - A Service on port 80, reachable inside the cluster
 
-**From the registry instead of a checkout** (released versions, see [Versions](docs/versioning.md)):
+**From the chart repository instead of a checkout** (released versions, see [Versions](docs/versioning.md)):
 
 ```bash
-helm install my-app oci://ghcr.io/alexbaeza/charts/app --version 0.3.0 -f values-my-app.yaml
+helm repo add iberico https://iberico-lab.github.io/iberico-charts
+helm repo update
+helm install my-app iberico/app --version 0.3.0 -f values-my-app.yaml
 ```
 
 After installing, Helm prints how to reach the app: in-cluster address, URLs and
@@ -75,7 +77,7 @@ docs/                # Guides, one per feature. Start at docs/index.md
 examples/            # Working values files, numbered 01-19
 .github/
   configs/           # ct.yaml, lintconf.yaml
-  workflows/         # Lint/test + release (to ghcr.io) pipelines
+  workflows/         # Lint/test + release (GitHub Pages chart repo) pipelines
 Makefile             # Shortcuts, see below
 ```
 

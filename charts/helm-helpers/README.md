@@ -1,9 +1,9 @@
 # helm-helpers
 
 Library chart with the naming, label and version helpers shared by the
-[`app`](https://github.com/alexbaeza/iberico-charts/blob/main/charts/app), `ingress` and `external-secrets` charts. It renders
+[`app`](https://github.com/iberico-lab/iberico-charts/blob/main/charts/app), `ingress` and `external-secrets` charts. It renders
 nothing on its own.
 
 Shared values (under `global:`): `name`, `fullnameOverride`,
 `nameOverride`. The `app.kubernetes.io/version` label comes from
-`workload.image.tag`. See [Architecture](https://github.com/alexbaeza/iberico-charts/blob/main/docs/architecture.md).
+`workload.image.tag`. See [Architecture](https://github.com/iberico-lab/iberico-charts/blob/main/docs/architecture.md).
