@@ -110,7 +110,7 @@ ingress:
   `no matches for kind "HTTPRoute"`. On Kubernetes 1.30, install Gateway API
   1.4: 1.5 and newer need Kubernetes 1.31+.
 - Login (SSO) and other Traefik middlewares: add them as `filters`, e.g.
-  `{type: ExtensionRef, extensionRef: {group: traefik.io, kind: Middleware, name: network-sso}}`.
+  `{type: ExtensionRef, extensionRef: {group: traefik.io, kind: Middleware, name: my-sso}}`.
   The Middleware must be in the app's namespace.
 
 ### Route settings (`ingress.httpRoutes[]`)
@@ -159,8 +159,11 @@ automatically. Hide one with `homepage: { enabled: false }`. To change how it lo
   `-`, otherwise the chart stops with an error. Empty = the app's name. If that
   name is already taken in your tailnet, Tailscale adds a suffix (e.g. `store-1`).
 - `servicePort` must match your [Service](service.md) port (default `80`).
-- Traefik middlewares must exist in the cluster: `network-no-auth` for `public`,
-  `network-sso` for `public-protected`.
+- Public ingresses attach a Traefik middleware that you name, in the app's
+  namespace: `ingress.middlewares.public` for `public` (plain forwarding) and
+  `ingress.middlewares.publicProtected` for `public-protected` (your SSO). Set
+  either to `""` (the default) to attach none. One ingress can override its own
+  with `middlewares`.
 - Only **one ingress of each type** per release. Two `public` entries would get
   the same name, so the chart stops with an error.
 - `type` must be exactly `internal`, `public` or `public-protected`. Anything

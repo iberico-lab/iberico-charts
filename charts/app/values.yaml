@@ -250,8 +250,8 @@ securityContext:
 networkPolicy:
   enabled: false
   allowSameNamespace: true   # any pod in the app's namespace may connect
-  # Namespaces whose pods may connect, e.g. your ingress controller, Tailscale
-  # operator and Prometheus: [traefik, tailscale, monitoring]
+  # Namespaces whose pods may connect, e.g. your ingress controller, the
+  # Tailscale operator and Prometheus: [ingress-nginx, tailscale, monitoring]
   allowNamespaces: []
   extraIngress: []           # raw NetworkPolicy ingress rules, copied as-is
 

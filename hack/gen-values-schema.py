@@ -115,6 +115,7 @@ def ingress():
                "type": {"enum": ["internal", "public", "public-protected"]},
                "host": S(), "servicePort": PORT, "servicePortName": S(),
                "certManagerIssuer": S(), "tailscaleExpose": B(), "annotations": STRMAP,
+               "middlewares": S('Traefik middleware name; "" = none'),
                "homepage": obj({"enabled": B(), "name": S(), "description": S(), "group": S(), "icon": S()})},
               req=("type",))
     gw = obj({"name": S("Gateway name"), "namespace": S('"" = the app\'s namespace'),
@@ -125,6 +126,8 @@ def ingress():
     return {"$schema": D, "title": "ingress chart values", "type": "object", "additionalProperties": False,
             "properties": {"global": GLOBAL, "enabled": B(), "tailnetDomain": S(), "ingresses": LIST(ing),
                            "httpRoutes": LIST(route), "gateway": gw,
+                           "middlewares": obj({"public": S('Traefik middleware for type "public"; "" = none'),
+                                               "publicProtected": S('Traefik middleware for type "public-protected"; "" = none')}),
                            "helm-helpers": {"type": "object"}}}
 
 def external_secrets():

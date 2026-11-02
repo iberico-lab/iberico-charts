@@ -14,6 +14,14 @@ ingresses:
     servicePort: 80
     # servicePortName: "https"  # Uncomment for HTTPS backend
 
+# Traefik middlewares attached to public ingresses (traefik.io Middleware
+# objects, in the app's namespace). Set to "" for none.
+#   public           -> no login, plain forwarding
+#   public-protected -> a forward-auth style middleware that adds SSO
+middlewares:
+  public: ""            # e.g. "my-no-auth"
+  publicProtected: ""   # e.g. "my-sso"
+
 # Gateway API routes (HTTPRoute), the successor to Ingress (docs/ingress.md).
 # Each entry: host (required), plus name, path, serviceName, servicePort,
 # gateway, filters, annotations.

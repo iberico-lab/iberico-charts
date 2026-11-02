@@ -27,7 +27,7 @@ For explanations and examples, follow the  link in each section.
 | `securityContext` | `allowPrivilegeEscalation: false` | Security settings for the main container ([docs](security.md)) |
 | `networkPolicy.enabled` | `false` | Only let chosen pods connect ([docs](security.md#who-can-connect-networkpolicy-opt-in)) |
 | `networkPolicy.allowSameNamespace` | `true` | Pods in the app's namespace may connect |
-| `networkPolicy.allowNamespaces` | `[]` | Namespaces whose pods may connect (e.g. `traefik`, `tailscale`, `monitoring`) |
+| `networkPolicy.allowNamespaces` | `[]` | Namespaces whose pods may connect (e.g. `ingress-nginx`, `tailscale`, `monitoring`) |
 | `networkPolicy.extraIngress` | `[]` | Raw NetworkPolicy ingress rules, copied as-is |
 | `topologySpread` | `{enabled: true, topologyKey: kubernetes.io/hostname, maxSkew: 1, whenUnsatisfiable: ScheduleAnyway}` | Spread pods across nodes/zones ([docs](availability.md)) |
 | `topologySpreadConstraints` | `[]` | Raw spread rules, copied as-is |

@@ -1,6 +1,6 @@
 {{/*
 Public Ingress - No authentication required
-Uses Traefik with network-no-auth middleware
+Attaches the ingress.middlewares.public Traefik middleware, if one is set.
 */}}
 {{- if .Values.ingresses }}
 {{- range .Values.ingresses }}
@@ -16,7 +16,9 @@ metadata:
     {{- include "helm-helpers.labels" $ | nindent 4 }}
     app.kubernetes.io/component: ingress
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: network-no-auth@kubernetescrd
+    {{- with .middlewares | default $.Values.middlewares.public }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ . }}@kubernetescrd
+    {{- end }}
     cert-manager.io/cluster-issuer: {{ .certManagerIssuer | default "letsencrypt-staging" }}
     {{- with include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Public" "root" $) }}
     {{- . | nindent 4 }}

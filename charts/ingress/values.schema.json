@@ -74,6 +74,10 @@
               ]
             }
           },
+          "middlewares": {
+            "type": "string",
+            "description": "Traefik middleware name; \"\" = none"
+          },
           "homepage": {
             "type": "object",
             "properties": {
@@ -181,6 +185,20 @@
         "sectionName": {
           "type": "string",
           "description": "Listener name; \"\" = every listener"
+        }
+      },
+      "additionalProperties": false
+    },
+    "middlewares": {
+      "type": "object",
+      "properties": {
+        "public": {
+          "type": "string",
+          "description": "Traefik middleware for type \"public\"; \"\" = none"
+        },
+        "publicProtected": {
+          "type": "string",
+          "description": "Traefik middleware for type \"public-protected\"; \"\" = none"
         }
       },
       "additionalProperties": false

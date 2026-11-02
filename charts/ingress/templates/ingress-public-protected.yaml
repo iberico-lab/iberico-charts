@@ -1,6 +1,7 @@
 {{/*
 Public Protected Ingress - SSO authentication required
-Uses Traefik with network-sso middleware
+Attaches the ingress.middlewares.publicProtected Traefik middleware. The
+middleware must add the login; this chart only wires it up.
 */}}
 {{- if .Values.ingresses }}
 {{- range .Values.ingresses }}
@@ -16,7 +17,9 @@ metadata:
     {{- include "helm-helpers.labels" $ | nindent 4 }}
     app.kubernetes.io/component: ingress
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: network-sso@kubernetescrd
+    {{- with .middlewares | default $.Values.middlewares.publicProtected }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ . }}@kubernetescrd
+    {{- end }}
     {{- with include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Public Protected" "root" $) }}
     {{- . | nindent 4 }}
     {{- end }}

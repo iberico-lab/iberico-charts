@@ -55,6 +55,42 @@ tests:
     asserts:
       - equal: { path: 'spec.rules[0].http.paths[0].backend.service.name', value: shop }
 
+  - it: attaches no middleware when none is configured
+    templates: [templates/ingress-public.yaml]
+    set: { ingresses: [{ type: public, host: a.example.com }] }
+    asserts:
+      - notExists: { path: 'metadata.annotations["traefik.ingress.kubernetes.io/router.middlewares"]' }
+
+  - it: attaches the middleware named in middlewares.public
+    templates: [templates/ingress-public.yaml]
+    set:
+      middlewares: { public: my-no-auth }
+      ingresses: [{ type: public, host: a.example.com }]
+    asserts:
+      - equal:
+          path: 'metadata.annotations["traefik.ingress.kubernetes.io/router.middlewares"]'
+          value: my-no-auth@kubernetescrd
+
+  - it: lets one ingress override the middleware
+    templates: [templates/ingress-public.yaml]
+    set:
+      middlewares: { public: from-default }
+      ingresses: [{ type: public, host: a.example.com, middlewares: from-ingress }]
+    asserts:
+      - equal:
+          path: 'metadata.annotations["traefik.ingress.kubernetes.io/router.middlewares"]'
+          value: from-ingress@kubernetescrd
+
+  - it: attaches the SSO middleware named in middlewares.publicProtected
+    templates: [templates/ingress-public-protected.yaml]
+    set:
+      middlewares: { publicProtected: my-sso }
+      ingresses: [{ type: public-protected, host: a.example.com }]
+    asserts:
+      - equal:
+          path: 'metadata.annotations["traefik.ingress.kubernetes.io/router.middlewares"]'
+          value: my-sso@kubernetescrd
+
   - it: sends traffic to serviceName
     templates: [templates/ingress-public.yaml, templates/ingress-internal.yaml]
     set:

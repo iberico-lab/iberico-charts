@@ -14,7 +14,3 @@ Chart.lock
 !__snapshot__/*_test.yaml.snap
 
 tests/e2e/charts
-
-# Local tooling / scratch
-.codegraph
-other

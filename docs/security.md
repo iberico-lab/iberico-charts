@@ -64,7 +64,7 @@ networkPolicy:
   enabled: true
   allowSameNamespace: true           # pods in the app's own namespace (the default)
   allowNamespaces:                   # plus everything in these namespaces:
-    - traefik                        #   public ingress
+    - ingress-nginx                  #   public ingress controller
     - tailscale                      #   Tailscale ingress proxies
     - monitoring                     #   Prometheus, if you turned on metrics
 ```
