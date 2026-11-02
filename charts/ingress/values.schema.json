@@ -112,7 +112,19 @@
             "description": "HTTPRoute name; \"\" = the app's name"
           },
           "host": {
-            "type": "string"
+            "type": "string",
+            "description": "Full hostname; \"\" = <subdomain or app name>.<ingress.domain>"
+          },
+          "subdomain": {
+            "type": "string",
+            "description": "Hostname is <subdomain>.<ingress.domain>"
+          },
+          "access": {
+            "enum": [
+              "public",
+              "sso"
+            ],
+            "description": "Access profile (ingress.accessProfiles)"
           },
           "path": {
             "type": "string"
@@ -159,12 +171,30 @@
                 "boolean"
               ]
             }
+          },
+          "homepage": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "icon": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
           }
         },
-        "additionalProperties": false,
-        "required": [
-          "host"
-        ]
+        "additionalProperties": false
       }
     },
     "gateway": {
@@ -181,6 +211,36 @@
         "sectionName": {
           "type": "string",
           "description": "Listener name; \"\" = every listener"
+        }
+      },
+      "additionalProperties": false
+    },
+    "domain": {
+      "type": "string",
+      "description": "Base domain for routes without a host, e.g. \"apps.example.com\""
+    },
+    "accessProfiles": {
+      "type": "object",
+      "properties": {
+        "public": {
+          "type": "object",
+          "properties": {
+            "middleware": {
+              "type": "string",
+              "description": "Traefik Middleware name; \"\" = none"
+            }
+          },
+          "additionalProperties": false
+        },
+        "sso": {
+          "type": "object",
+          "properties": {
+            "middleware": {
+              "type": "string",
+              "description": "Traefik Middleware name; \"\" = none"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

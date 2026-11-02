@@ -75,8 +75,8 @@ FROM OUTSIDE THE CLUSTER
                       certificate warning. Set certManagerIssuer for real use.
 {{- end }}
 {{- end }}
-{{- range .Values.ingress.httpRoutes }}
-  Gateway route:    https://{{ .host }}   (HTTPRoute; TLS is set on the Gateway)
+{{- range $i, $r := .Values.ingress.httpRoutes }}
+  Gateway route:    https://{{ include "ingress.routeHost" (dict "route" $r "index" $i "domain" $.Values.ingress.domain "name" $name) }}{{ if eq ($r.access | default "") "sso" }}   (login required){{ end }}   (HTTPRoute; TLS is set on the Gateway)
 {{- end }}
 {{- if not $tailnet }}
 {{- range .Values.ingress.ingresses }}{{ if eq .type "internal" }}

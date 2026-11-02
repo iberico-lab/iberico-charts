@@ -116,12 +116,20 @@ def ingress():
               req=("type",))
     gw = obj({"name": S("Gateway name"), "namespace": S('"" = the app\'s namespace'),
               "sectionName": S("Listener name; \"\" = every listener")})
-    route = obj({"name": S('HTTPRoute name; "" = the app\'s name'), "host": S(), "path": S(),
+    homepage = obj({"enabled": B(), "name": S(), "description": S(), "group": S(), "icon": S()})
+    route = obj({"name": S('HTTPRoute name; "" = the app\'s name'),
+                 "host": S('Full hostname; "" = <subdomain or app name>.<ingress.domain>'),
+                 "subdomain": S("Hostname is <subdomain>.<ingress.domain>"),
+                 "access": {"enum": ["public", "sso"], "description": "Access profile (ingress.accessProfiles)"},
+                 "path": S(),
                  "serviceName": S("Backend Service name (default: the app's Service)"), "servicePort": PORT,
-                 "gateway": gw, "filters": LIST(), "annotations": STRMAP}, req=("host",))
+                 "gateway": gw, "filters": LIST(), "annotations": STRMAP, "homepage": homepage})
+    profile = obj({"middleware": S('Traefik Middleware name; "" = none')})
     return {"$schema": D, "title": "ingress chart values", "type": "object", "additionalProperties": False,
             "properties": {"global": GLOBAL, "enabled": B(), "tailnetDomain": S(), "ingresses": LIST(ing),
                            "httpRoutes": LIST(route), "gateway": gw,
+                           "domain": S('Base domain for routes without a host, e.g. "apps.example.com"'),
+                           "accessProfiles": obj({"public": profile, "sso": profile}),
                            "middlewares": obj({"public": S('Traefik middleware for type "public"; "" = none'),
                                                "publicSso": S('Traefik middleware for type "public-sso"; "" = none')}),
                            "helm-helpers": {"type": "object"}}}

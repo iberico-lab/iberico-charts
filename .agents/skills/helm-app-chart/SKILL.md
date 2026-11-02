@@ -79,6 +79,7 @@ workload:
 | reads a config file | `15-config-files` | `volumes.md` |
 | needs passwords | `16-secrets-and-urls` | `external-secrets.md` |
 | needs a URL (Tailscale and/or public) | `12-ingress`, `16-secrets-and-urls` | `ingress.md` |
+| needs Gateway API routes, the same values in several environments | `20-gateway-routes` | `ingress.md` |
 | is a database / needs a disk per pod | `13-statefulset` | `statefulset.md`, `persistence.md` |
 | needs a disk that survives restarts (one pod) | `09-persistence` | `persistence.md` |
 | isn't HTTP (TCP, gRPC) or has odd health checks | `08-probes-custom` | `probes.md` |
@@ -148,6 +149,11 @@ workload:
   issuer defaults to `letsencrypt-staging` (browser warning); set
   `certManagerIssuer: letsencrypt-prod` for real use.
 - One ingress per type per release. `serviceName` picks a different backend Service.
+- Gateway API (`ingress.httpRoutes`): need `ingress.gateway.name`. A route
+  without `host` becomes `<subdomain or app name>.<ingress.domain>`. For login,
+  write `access: sso` (or `public`) and let the environment name the Middleware
+  in `ingress.accessProfiles`; never hard-code a Traefik `ExtensionRef` in app
+  values. `access: sso` without `accessProfiles.sso.middleware` fails.
 
 **Availability, scaling, metrics**
 - `autoscaling.enabled` ignores `workload.replicas` and needs

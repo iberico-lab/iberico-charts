@@ -40,3 +40,18 @@ tests:
         httpRoutes: [{ host: new.example.com }]
     asserts:
       - matchRegexRaw: { pattern: 'Gateway route:    https://new\.example\.com' }
+
+  - it: prints a route's host built from ingress.domain, and its login, in NOTES
+    templates: [templates/NOTES.txt]
+    set:
+      global: { name: shop }
+      ingress:
+        enabled: true
+        ingresses: []
+        domain: apps.example.com
+        gateway: { name: gw }
+        accessProfiles: { sso: { middleware: my-sso } }
+        httpRoutes: [{}, { name: shop-admin, subdomain: admin, access: sso }]
+    asserts:
+      - matchRegexRaw: { pattern: 'Gateway route:    https://shop\.apps\.example\.com   \(HTTPRoute' }
+      - matchRegexRaw: { pattern: 'Gateway route:    https://admin\.apps\.example\.com   \(login required\)' }

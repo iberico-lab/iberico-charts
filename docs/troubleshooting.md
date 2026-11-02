@@ -47,6 +47,9 @@ These come from the chart and stop **before** anything is created.
 | `securityPreset restricted: … can't be …` / `may only contain NET_BIND_SERVICE` | A setting breaks the restricted standard | Remove that setting, or drop `securityPreset` |
 | `chart requires kubeVersion: >=1.30.0-0 which is incompatible with Kubernetes v1.2x` | The cluster is older than 1.30 | Upgrade the cluster. Older versions no longer get security fixes |
 | `ingress.httpRoutes[…]: set gateway.name` | A route doesn't say which Gateway to use | Set `ingress.gateway.name` (or `gateway` on the route) |
+| `ingress.httpRoutes[…] has no host` | A route has no `host`, and there is no `ingress.domain` to build one | Set `host`, or set `ingress.domain` (per environment) |
+| `ingress.httpRoutes[…].access is sso, but ingress.accessProfiles.sso.middleware is empty` | The route needs a login, but no login Middleware is named | Set `ingress.accessProfiles.sso.middleware` to your SSO Middleware |
+| `ingress.httpRoutes[…].access must be public or sso` / `value must be one of 'public', 'sso'` | A typo in `access` | Use `public`, `sso`, or leave it out |
 | `no matches for kind "HTTPRoute"` | The cluster has no Gateway API CRDs | Install them, or use `ingresses` instead |
 | `field is immutable` (on upgrade) | A locked field changed | The chart never puts version or chart labels in selectors or disk templates, so this points at a hand-edited object. `kubectl get <kind> <name> -o yaml` and compare |
 

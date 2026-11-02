@@ -139,6 +139,119 @@ tests:
       - equal: { path: 'spec.rules[0].backendRefs', value: [{ name: api, port: 8080 }] }
       - equal: { path: 'spec.rules[0].filters[0].type', value: RequestHeaderModifier }
 
+  - it: builds a route's host from the app name and ingress.domain
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      domain: apps.example.com
+      httpRoutes: [{}]
+    asserts:
+      - equal: { path: spec.hostnames, value: [shop.apps.example.com] }
+
+  - it: builds a route's host from its subdomain and ingress.domain
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      domain: apps.example.com
+      httpRoutes: [{ subdomain: shop-admin }]
+    asserts:
+      - equal: { path: spec.hostnames, value: [shop-admin.apps.example.com] }
+
+  - it: uses host as written, even when a domain and subdomain are set
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      domain: apps.example.com
+      httpRoutes: [{ host: shop.example.org, subdomain: ignored }]
+    asserts:
+      - equal: { path: spec.hostnames, value: [shop.example.org] }
+
+  - it: fails when a route has no host and there is no domain
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      httpRoutes: [{ subdomain: shop-admin }]
+    asserts:
+      - failedTemplate: { errorPattern: 'httpRoutes\[0\] has no host' }
+
+  - it: renders no filters when a route sets no access
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      accessProfiles: { public: { middleware: my-no-auth }, sso: { middleware: my-sso } }
+      httpRoutes: [{ host: shop.example.com }]
+    asserts:
+      - notExists: { path: 'spec.rules[0].filters' }
+
+  - it: puts the public access profile's middleware first, before the route's own filters
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      accessProfiles: { public: { middleware: my-no-auth } }
+      httpRoutes:
+        - host: shop.example.com
+          access: public
+          filters: [{ type: RequestHeaderModifier, requestHeaderModifier: { set: [{ name: X-Env, value: prod }] } }]
+    asserts:
+      - equal:
+          path: 'spec.rules[0].filters[0]'
+          value: { type: ExtensionRef, extensionRef: { group: traefik.io, kind: Middleware, name: my-no-auth } }
+      - equal: { path: 'spec.rules[0].filters[1].type', value: RequestHeaderModifier }
+
+  - it: renders no filter for access public when the profile has no middleware
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      httpRoutes: [{ host: shop.example.com, access: public }]
+    asserts:
+      - notExists: { path: 'spec.rules[0].filters' }
+
+  - it: renders the sso access profile's middleware
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      accessProfiles: { sso: { middleware: my-sso } }
+      httpRoutes: [{ host: admin.example.com, access: sso }]
+    asserts:
+      - equal: { path: 'spec.rules[0].filters[0].extensionRef.name', value: my-sso }
+      - equal: { path: 'metadata.annotations["gethomepage.dev/group"]', value: Public SSO }
+
+  - it: fails when access is sso but no sso middleware is set
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      httpRoutes: [{ host: admin.example.com, access: sso }]
+    asserts:
+      - failedTemplate: { errorPattern: 'accessProfiles.sso.middleware is empty' }
+
+  - it: rejects an unknown access value
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      httpRoutes: [{ host: shop.example.com, access: private }]
+    asserts:
+      - failedTemplate: {}
+
+  - it: adds Homepage annotations to routes, next to the route's own
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      httpRoutes: [{ host: shop.example.com, annotations: { team: web } }]
+    asserts:
+      - equal: { path: 'metadata.annotations["gethomepage.dev/enabled"]', value: "true" }
+      - equal: { path: 'metadata.annotations["gethomepage.dev/name"]', value: shop }
+      - equal: { path: 'metadata.annotations["gethomepage.dev/description"]', value: shop.example.com }
+      - equal: { path: 'metadata.annotations["gethomepage.dev/group"]', value: Public }
+      - equal: { path: metadata.annotations.team, value: web }
+
+  - it: hides a route from Homepage with homepage.enabled false
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: gw }
+      httpRoutes: [{ host: shop.example.com, homepage: { enabled: false } }]
+    asserts:
+      - notExists: { path: metadata.annotations }
+
   - it: fails without a gateway
     templates: [templates/httproute.yaml]
     set: { httpRoutes: [{ host: shop.example.com }] }
@@ -165,3 +278,14 @@ tests:
       - matchRegexRaw: { pattern: 'shop-public   https://shop\.example\.com' }
       - matchRegexRaw: { pattern: 'HTTPRoute shop   https://new\.example\.com' }
       - notMatchRegexRaw: { pattern: 'no value' }
+
+  - it: prints a route's built host and login in the notes
+    templates: [templates/NOTES.txt]
+    set:
+      gateway: { name: gw }
+      domain: apps.example.com
+      accessProfiles: { sso: { middleware: my-sso } }
+      ingresses: []
+      httpRoutes: [{ name: shop-admin, subdomain: admin, access: sso }]
+    asserts:
+      - matchRegexRaw: { pattern: 'HTTPRoute shop-admin   https://admin\.apps\.example\.com   \(login required\)' }

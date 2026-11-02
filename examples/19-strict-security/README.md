@@ -30,4 +30,4 @@ Open [`values.yaml`](values.yaml). The comments explain each line.
 
 ---
 
-Learn more: [Security](../../docs/security.md)
+Learn more: [Security](../../docs/security.md) · Next: [20 · Gateway routes for several environments](../20-gateway-routes/README.md)

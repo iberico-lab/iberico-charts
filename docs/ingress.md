@@ -109,15 +109,67 @@ ingress:
   the stable `v1` HTTPRoute). Without them, the install fails with
   `no matches for kind "HTTPRoute"`. On Kubernetes 1.30, install Gateway API
   1.4: 1.5 and newer need Kubernetes 1.31+.
-- Login (SSO) and other Traefik middlewares: add them as `filters`, e.g.
-  `{type: ExtensionRef, extensionRef: {group: traefik.io, kind: Middleware, name: my-sso}}`.
-  The Middleware must be in the app's namespace.
+- Login (SSO): use `access: sso` (see below) rather than writing the
+  Middleware by hand. Other Traefik middlewares still go in `filters`, e.g.
+  `{type: ExtensionRef, extensionRef: {group: traefik.io, kind: Middleware, name: my-headers}}`.
+- **A Middleware is looked up in the route's own namespace.** It must exist
+  where the HTTPRoute ends up. If something copies your routes to another
+  namespace or cluster (a virtual cluster syncing to its host, for example),
+  the Middleware has to be there, not where you wrote the values.
+
+### Environment hostnames
+
+Write the app's values once and let each environment supply the domain. A
+route without `host` gets `<app name>.<domain>`, or `<subdomain>.<domain>`:
+
+```yaml
+ingress:
+  domain: apps.example.com           # set per environment
+  httpRoutes:
+    - {}                             # shop.apps.example.com
+    - name: shop-api
+      subdomain: api                 # api.apps.example.com
+    - name: shop-legacy
+      host: shop.example.org         # host is used as written
+```
+
+A route with no `host` and no `ingress.domain` stops the render with an error.
+
+### Access profiles (login or not)
+
+The app says **whether** a route needs a login. The environment says **how**,
+by naming the Traefik Middleware behind each profile. App values never name
+a Middleware:
+
+```yaml
+ingress:
+  accessProfiles:                    # set per environment
+    public: { middleware: "" }       # "" = no filter
+    sso:    { middleware: my-sso }   # a Middleware that asks for a login
+  httpRoutes:
+    - access: public
+    - name: shop-admin
+      subdomain: admin
+      access: sso
+```
+
+| `access` | What the route gets |
+|----------|---------------------|
+| not set | Nothing added; only your own `filters` |
+| `public` | `accessProfiles.public.middleware`, if it's set |
+| `sso` | `accessProfiles.sso.middleware`. If it's empty, the render stops, so a page meant to need a login is never published without one |
+
+The profile's Middleware is the first filter; your own `filters` follow it.
+Full example: [20 gateway routes](../examples/20-gateway-routes/README.md).
 
 ### Route settings (`ingress.httpRoutes[]`)
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `ingress.httpRoutes[].host` | — (required) | The domain |
+| `ingress.httpRoutes[].host` | `<subdomain or app name>.<ingress.domain>` | The full hostname; wins over `subdomain` |
+| `ingress.httpRoutes[].subdomain` | the app's name | Hostname is `<subdomain>.<ingress.domain>` |
+| `ingress.httpRoutes[].access` | not set | `public` or `sso`: adds that access profile's Middleware |
+| `ingress.httpRoutes[].homepage` | shown | Homepage tile, same keys as for ingresses (`enabled: false` hides it) |
 | `ingress.httpRoutes[].name` | the app's name | HTTPRoute name; set it when you have more than one route |
 | `ingress.httpRoutes[].path` | `/` | Only requests under this path |
 | `ingress.httpRoutes[].serviceName` | the app's Service | Send traffic to a different Service |
@@ -128,13 +180,17 @@ ingress:
 | `ingress.gateway.name` | `""` | Gateway the routes attach to (required when you have routes) |
 | `ingress.gateway.namespace` | `""` | The Gateway's namespace; `""` = the app's |
 | `ingress.gateway.sectionName` | `""` | Listener name; `""` = every listener |
+| `ingress.domain` | `""` | Base domain for routes without a `host`, e.g. `apps.example.com` |
+| `ingress.accessProfiles.public.middleware` | `""` | Traefik Middleware for `access: public`; `""` = none |
+| `ingress.accessProfiles.sso.middleware` | `""` | Traefik Middleware for `access: sso` (required by such routes) |
 
 ---
 
 ## Homepage dashboard
 
-Every ingress is added to your [Homepage](https://gethomepage.dev) dashboard
-automatically. Hide one with `homepage: { enabled: false }`. To change how it looks:
+Every ingress and HTTPRoute is added to your [Homepage](https://gethomepage.dev)
+dashboard automatically (for routes, Homepage must be set to discover
+HTTPRoutes too). Hide one with `homepage: { enabled: false }`. To change how it looks:
 
 ```yaml
       homepage:
@@ -190,4 +246,4 @@ automatically. Hide one with `homepage: { enabled: false }`. To change how it lo
 
 ## Next
 
-- Example: [12 ingress](../examples/12-ingress/README.md) · [Service](service.md)
+- Examples: [12 ingress](../examples/12-ingress/README.md) · [20 gateway routes](../examples/20-gateway-routes/README.md) · [Service](service.md)

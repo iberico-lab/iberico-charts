@@ -23,9 +23,19 @@ middlewares:
   publicSso: ""    # e.g. "my-sso"
 
 # Gateway API routes (HTTPRoute), the successor to Ingress (docs/ingress.md).
-# Each entry: host (required), plus name, path, serviceName, servicePort,
-# gateway, filters, annotations.
+# Each entry: host or subdomain (or neither, with domain set), plus name,
+# access, path, serviceName, servicePort, gateway, filters, annotations, homepage.
 httpRoutes: []
+# Base domain for routes without a host, usually set per environment
+# (e.g. "apps.example.com"): a route gets "<subdomain or app name>.<domain>".
+domain: ""
+# The Traefik Middleware behind each route `access` value (in the namespace
+# the routes land in). A route with `access: sso` needs sso.middleware set.
+accessProfiles:
+  public:
+    middleware: ""   # e.g. "my-no-auth"; "" = no filter
+  sso:
+    middleware: ""   # e.g. "my-sso"
 # The Gateway every route attaches to, unless a route sets its own `gateway`.
 gateway:
   name: ""          # e.g. "traefik-gateway"

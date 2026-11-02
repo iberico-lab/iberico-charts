@@ -3,10 +3,13 @@ Gateway API HTTPRoutes: the successor to Ingress. Each route attaches to a
 Gateway (yours, e.g. Traefik's) and sends one host to the app's Service. TLS
 is set on the Gateway's listener, not here.
 */}}
+{{- $appName := include "helm-helpers.fullname" . }}
 {{- range $i, $route := .Values.httpRoutes }}
 {{- $gw := merge (deepCopy ($route.gateway | default dict)) (deepCopy ($.Values.gateway | default dict)) }}
 {{- $gwName := required (printf "ingress.httpRoutes[%d]: set gateway.name (here or in ingress.gateway) to the Gateway this route attaches to" $i) $gw.name }}
-{{- $host := required (printf "ingress.httpRoutes[%d] requires a host" $i) $route.host }}
+{{- $host := include "ingress.routeHost" (dict "route" $route "index" $i "domain" $.Values.domain "name" $appName) }}
+{{- $filters := include "ingress.routeFilters" (dict "route" $route "index" $i "profiles" $.Values.accessProfiles) | fromYamlArray }}
+{{- $homepage := include "helm-helpers.homepageAnnotations" (dict "ingress" (merge (dict "host" $host) (omit $route "host")) "group" (ternary "Public SSO" "Public" (eq ($route.access | default "") "sso")) "root" $) }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -16,9 +19,14 @@ metadata:
   labels:
     {{- include "helm-helpers.labels" $ | nindent 4 }}
     app.kubernetes.io/component: httproute
-  {{- with $route.annotations }}
+  {{- if or $homepage $route.annotations }}
   annotations:
+    {{- with $homepage }}
+    {{- . | nindent 4 }}
+    {{- end }}
+    {{- with $route.annotations }}
     {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- end }}
 spec:
   parentRefs:
@@ -36,7 +44,7 @@ spec:
         - path:
             type: PathPrefix
             value: {{ $route.path | default "/" }}
-      {{- with $route.filters }}
+      {{- with $filters }}
       filters:
         {{- toYaml . | nindent 8 }}
       {{- end }}

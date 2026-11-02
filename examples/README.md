@@ -39,6 +39,7 @@ New here? Go through them **in order**. Each one adds one idea.
 | [17](17-high-availability/README.md) | High availability | Keep the app up during node drains and upgrades, and **add pods when it gets busy**. |
 | [18](18-metrics/README.md) | Metrics (Prometheus) | Let **Prometheus** collect your app's metrics from a second port. |
 | [19](19-strict-security/README.md) | Strict security | Lock the container down: **not root**, **read-only** filesystem, no extra Linux powers. |
+| [20](20-gateway-routes/README.md) | Gateway routes for several environments | One values file for every environment: the **domain** and the **login** come from the environment. |
 
 ## Ship a new version of your app
 

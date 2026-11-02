@@ -26,6 +26,46 @@ Usage: include "ingress.validate" .
 {{- .route.name | default (include "helm-helpers.fullname" .root) -}}
 {{- end }}
 
+{{/*
+Hostname of an HTTPRoute, in order: `host` as written, else
+`<subdomain>.<domain>`, else `<app name>.<domain>`. Fails when there is no
+host and no domain to build one from.
+Usage: include "ingress.routeHost" (dict "route" $r "index" $i "domain" $domain "name" $appName)
+*/}}
+{{- define "ingress.routeHost" -}}
+{{- $r := .route -}}
+{{- if $r.host -}}
+{{- $r.host -}}
+{{- else if not .domain -}}
+{{- fail (printf "ingress.httpRoutes[%v] has no host: set host (e.g. \"shop.example.com\"), or set ingress.domain (e.g. \"apps.example.com\") to build one from the app name or subdomain" .index) -}}
+{{- else -}}
+{{- printf "%s.%s" ($r.subdomain | default .name) .domain -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Filters of an HTTPRoute: the access profile's Middleware (if any), then the
+route's own `filters`. `access: sso` without a middleware fails, so a route
+meant to need a login is never published without one.
+Usage: include "ingress.routeFilters" (dict "route" $r "index" $i "profiles" $.Values.accessProfiles) | fromYamlArray
+*/}}
+{{- define "ingress.routeFilters" -}}
+{{- $r := .route -}}
+{{- $filters := list -}}
+{{- with $r.access -}}
+{{- if not (has . (list "public" "sso")) -}}
+{{- fail (printf "ingress.httpRoutes[%v].access must be public or sso (got %q)" $.index .) -}}
+{{- end -}}
+{{- $profile := get ($.profiles | default dict) . | default dict -}}
+{{- if $profile.middleware -}}
+{{- $filters = append $filters (dict "type" "ExtensionRef" "extensionRef" (dict "group" "traefik.io" "kind" "Middleware" "name" $profile.middleware)) -}}
+{{- else if eq . "sso" -}}
+{{- fail (printf "ingress.httpRoutes[%v].access is sso, but ingress.accessProfiles.sso.middleware is empty: set it to the Traefik Middleware that asks for a login, or the route would be public" $.index) -}}
+{{- end -}}
+{{- end -}}
+{{- toYaml (concat $filters ($r.filters | default list)) -}}
+{{- end }}
+
 {{- define "ingress.validate" -}}
 {{- $routes := dict -}}
 {{- range $i, $r := .Values.httpRoutes -}}

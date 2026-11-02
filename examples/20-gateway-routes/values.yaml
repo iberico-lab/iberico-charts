@@ -1,0 +1,44 @@
+# 20 - Gateway API routes, one values file for every environment
+# The app never hard-codes a hostname or a Traefik Middleware: the domain and
+# the access profiles come from the environment (here, set inline so the
+# example renders on its own; in practice, pass them in a second values file
+# per environment, e.g. `-f values.yaml -f env/staging.yaml`).
+global:
+  name: "shop"
+
+workload:
+  image:
+    repository: nginx
+    tag: "1.25"
+  applicationPort: 80
+
+ingress:
+  enabled: true
+  ingresses: []                         # only routes, no Ingress
+
+  # --- per environment ---------------------------------------------------
+  domain: "staging.example.com"          # routes become <name>.staging.example.com
+  gateway:
+    name: "traefik-gateway"
+    namespace: "traefik"
+    sectionName: "websecure"
+  accessProfiles:
+    public:
+      middleware: ""                     # no filter: plain forwarding
+    sso:
+      middleware: "my-sso"               # the Middleware that asks for a login
+
+  # --- per app -----------------------------------------------------------
+  httpRoutes:
+    # shop.staging.example.com, anyone can open it
+    - access: public
+      homepage:
+        name: "Shop"
+        icon: "kubernetes"
+    # admin.staging.example.com, login required
+    - name: shop-admin
+      subdomain: admin
+      path: /admin
+      access: sso
+      homepage:
+        enabled: false                   # keep it off the dashboard

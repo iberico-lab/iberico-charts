@@ -8,8 +8,8 @@ Ingresses and routes for {{ $name }} in namespace "{{ .Release.Namespace }}":
   {{ $name }}-{{ .type }}   https://{{ .host }}{{ if eq .type "public-sso" }}   (login via the ingress.middlewares.publicSso Traefik middleware){{ end }}
 {{- end }}
 {{- end }}
-{{- range .Values.httpRoutes }}
-  HTTPRoute {{ include "ingress.routeName" (dict "route" . "root" $) }}   https://{{ .host }}   (TLS is set on the Gateway)
+{{- range $i, $r := .Values.httpRoutes }}
+  HTTPRoute {{ include "ingress.routeName" (dict "route" $r "root" $) }}   https://{{ include "ingress.routeHost" (dict "route" $r "index" $i "domain" $.Values.domain "name" $name) }}{{ if eq ($r.access | default "") "sso" }}   (login required){{ end }}   (TLS is set on the Gateway)
 {{- end }}
 
 Check them:
