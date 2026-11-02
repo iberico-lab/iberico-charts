@@ -29,3 +29,14 @@ tests:
       - matchRegexRaw: { pattern: 'https://shop\.example\.com' }
       - matchRegexRaw: { pattern: 'letsencrypt-staging' }
       - matchRegexRaw: { pattern: 'kubectl port-forward -n web svc/shop 8080:80' }
+
+  - it: prints Gateway API routes in NOTES
+    templates: [templates/NOTES.txt]
+    set:
+      ingress:
+        enabled: true
+        ingresses: []
+        gateway: { name: gw }
+        httpRoutes: [{ host: new.example.com }]
+    asserts:
+      - matchRegexRaw: { pattern: 'Gateway route:    https://new\.example\.com' }

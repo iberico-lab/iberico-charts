@@ -1,0 +1,56 @@
+suite: security preset
+templates:
+  - templates/workload.yaml
+release:
+  name: shop
+tests:
+  - it: keeps only the safe defaults without a preset
+    asserts:
+      - equal: { path: spec.template.spec.securityContext, value: { seccompProfile: { type: RuntimeDefault } } }
+      - equal: { path: "spec.template.spec.containers[0].securityContext", value: { allowPrivilegeEscalation: false } }
+
+  - it: applies the restricted standard to the pod and the main container
+    set: { securityPreset: restricted }
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
+
+  - it: keeps the user's own settings on top of the preset
+    set:
+      securityPreset: restricted
+      podSecurityContext: { runAsUser: 101, fsGroup: 101 }
+      securityContext: { readOnlyRootFilesystem: true }
+    asserts:
+      - equal: { path: spec.template.spec.securityContext.runAsUser, value: 101 }
+      - equal: { path: spec.template.spec.securityContext.runAsNonRoot, value: true }
+      - equal: { path: "spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem", value: true }
+      - equal: { path: "spec.template.spec.containers[0].securityContext.capabilities.drop", value: [ALL] }
+
+  - it: gives sidecars and init containers without a securityContext the preset
+    set:
+      securityPreset: restricted
+      workload.extraContainers: [{ name: side, image: busybox }]
+      workload.extraInitContainers: [{ name: init, image: busybox, securityContext: { runAsUser: 5 } }]
+    asserts:
+      - equal: { path: "spec.template.spec.containers[1].securityContext.capabilities.drop", value: [ALL] }
+      - equal: { path: "spec.template.spec.initContainers[0].securityContext", value: { runAsUser: 5 } }
+
+  - it: leaves sidecars alone without a preset
+    set:
+      workload.extraContainers: [{ name: side, image: busybox }]
+    asserts:
+      - notExists: { path: "spec.template.spec.containers[1].securityContext" }
+
+  - it: fails on settings the restricted standard forbids
+    set: { securityPreset: restricted, podSecurityContext: { runAsUser: 0 } }
+    asserts:
+      - failedTemplate: { errorPattern: "podSecurityContext.runAsUser can't be 0" }
+
+  - it: allows only NET_BIND_SERVICE to be added
+    set: { securityPreset: restricted, securityContext: { capabilities: { add: [NET_ADMIN] } } }
+    asserts:
+      - failedTemplate: { errorPattern: "may only contain NET_BIND_SERVICE, not NET_ADMIN" }

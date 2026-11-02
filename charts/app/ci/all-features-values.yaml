@@ -2,7 +2,6 @@
 # `make validate` to check the rendered manifests against Kubernetes schemas.
 global:
   name: kitchen-sink
-  version: "1.2.3"
 workload:
   image: {repository: ghcr.io/example/app, tag: "1.2.3"}
   replicas: 3
@@ -39,6 +38,7 @@ service:
     - {name: metrics, port: 9102, targetPort: 9102}
 serviceAccount: {create: true}
 podDisruptionBudget: {enabled: true}
+networkPolicy: {enabled: true, allowNamespaces: [traefik, monitoring]}
 autoscaling: {enabled: true, minReplicas: 2, maxReplicas: 6}
 topologySpread: {enabled: true}
 metrics:
@@ -56,6 +56,10 @@ ingress:
     - {type: internal}
     - {type: public, host: app.example.com, certManagerIssuer: letsencrypt-prod}
     - {type: public-protected, host: admin.example.com, certManagerIssuer: letsencrypt-prod}
+  gateway: {name: traefik-gateway, namespace: traefik, sectionName: websecure}
+  httpRoutes:
+    - {host: app.example.com}
+    - {name: kitchen-sink-api, host: api.example.com, path: /v1, servicePort: 8080}
 extraManifests:
   - apiVersion: v1
     kind: ConfigMap

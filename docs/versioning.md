@@ -48,6 +48,25 @@ see [Workload](workload.md).
 
 ---
 
+## Where to get the charts
+
+Released versions are in GitHub Container Registry:
+
+```bash
+helm show chart oci://ghcr.io/alexbaeza/charts/app --version 0.3.0
+```
+
+- **The repository is private**, so the packages are too. Log in once with a
+  GitHub token that has `read:packages`:
+  `echo $TOKEN | helm registry login ghcr.io -u <github-user> --password-stdin`
+- **Checking a signature** (only once the repo is public; private repos aren't
+  signed, because signing writes the repo name to a public log):
+  ```bash
+  cosign verify ghcr.io/alexbaeza/charts/app:0.3.0 \
+    --certificate-identity-regexp '^https://github.com/alexbaeza/iberico-charts/\.github/workflows/release\.yml@refs/tags/v' \
+    --certificate-oidc-issuer https://token.actions.githubusercontent.com
+  ```
+
 ## Which chart version am I on?
 
 ```bash
@@ -61,13 +80,14 @@ your app's version is the image tag, not something baked into the chart.
 
 1. Read [CHANGELOG.md](../CHANGELOG.md) for what changed, and
    [Upgrading](upgrading.md) for any step you must do by hand.
-2. Get the new charts (`git pull`, or check out the release tag), then `make deps`.
-3. Preview, then upgrade:
+2. Preview, then upgrade, with the new `--version`:
    ```bash
-   helm template shop ./charts/app -f values-shop.yaml   # does it still render?
-   helm upgrade shop ./charts/app -f values-shop.yaml
+   helm template shop oci://ghcr.io/alexbaeza/charts/app --version 0.4.0 -f values-shop.yaml   # does it still render?
+   helm upgrade shop oci://ghcr.io/alexbaeza/charts/app --version 0.4.0 -f values-shop.yaml
    helm test shop
    ```
+   Working from a checkout instead? `git pull` (or check out the tag `v0.4.0`),
+   `make deps`, and use `./charts/app` in place of the `oci://` address.
 
 If a setting was renamed or removed, the render stops and names the new
 setting, so step 3 catches it before anything changes in the cluster.
@@ -88,7 +108,7 @@ appVersion: "2.5.0"     # optional, for `helm list`; keep it equal to the image 
 dependencies:
   - name: app
     version: "0.3.0"    # the iberico-charts version you build on
-    repository: "file://../iberico-charts/charts/app"
+    repository: "oci://ghcr.io/alexbaeza/charts"   # then: helm dependency update
 ```
 
 - Your values go **under `app:`** (the dependency's name), except `global:`,
@@ -128,8 +148,31 @@ setting → minor, fix → patch.
 2. In [CHANGELOG.md](../CHANGELOG.md), the notes sit under `## [x.y.z] - unreleased`.
    Replace `unreleased` with today's date.
 3. Breaking change? Make sure [Upgrading](upgrading.md) has a section for it.
-4. Merge to `main`. Once the release workflow (`.github/workflows/release.yml`)
-   is turned on, this publishes the charts.
+   Raised the minimum Kubernetes? Change `kubeVersion` in every `Chart.yaml`
+   and `MIN_KUBE_VERSION` plus the oldest matrix entry in `.github/workflows/lint.yml`.
+4. Merge to `main`, then tag the merge and push the tag:
+   ```bash
+   git checkout main && git pull
+   git tag v0.4.0 && git push origin v0.4.0
+   ```
+   The release workflow (`.github/workflows/release.yml`) checks the tag matches
+   the chart version and the CHANGELOG is dated, pushes all four charts to
+   `oci://ghcr.io/alexbaeza/charts`, signs them (public repos only), and creates a
+   GitHub Release with the CHANGELOG notes. A version that is already published
+   is never overwritten: bump instead.
+
+### Keeping dependencies up to date
+
+[Renovate](https://docs.renovatebot.com/) (`renovate.json`) opens a PR every
+Monday morning when something newer exists: image tags in examples and test
+scenarios, the chart's default image, GitHub Actions, Helm, kind, kubeconform,
+helm-unittest, and the add-ons the e2e test installs. CI runs on each PR, so a
+green one is safe to merge.
+
+- It needs the [Renovate GitHub app](https://github.com/apps/renovate) installed
+  on the repository (once).
+- Kubernetes versions in the e2e matrix only get patch updates. Moving to a new
+  minor is a decision: see the release checklist above.
 
 ### Why the charts have no `appVersion`
 

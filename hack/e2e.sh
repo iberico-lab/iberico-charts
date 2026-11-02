@@ -18,6 +18,10 @@ NS=${E2E_NAMESPACE:-iberico-e2e}
 ADDONS_NS="$NS-addons"
 ESO_VERSION=2.14.0             # https://charts.external-secrets.io
 PROM_CRDS_VERSION=32.0.2       # prometheus-community/prometheus-operator-crds
+GATEWAY_API_VERSION=v1.7.0     # https://github.com/kubernetes-sigs/gateway-api/releases
+# Gateway API 1.5+ CRDs use CEL's isIP(), which Kubernetes adds in 1.31.
+GATEWAY_API_VERSION_K8S_1_30=v1.4.1
+INSTALLED_GATEWAY_API=false
 CTX_ARGS=()
 [ -n "${KUBE_CONTEXT:-}" ] && CTX_ARGS=(--kube-context "$KUBE_CONTEXT")
 KCTX_ARGS=()
@@ -26,19 +30,25 @@ KCTX_ARGS=()
 helm() { command helm "${CTX_ARGS[@]}" "$@"; }
 kubectl() { command kubectl "${KCTX_ARGS[@]}" "$@"; }
 
+KUBE_MINOR=$(kubectl version -o json | sed -n 's/.*"minor": *"\([0-9]*\).*/\1/p' | tail -n1)
+[ "${KUBE_MINOR:-99}" -lt 31 ] && GATEWAY_API_VERSION=$GATEWAY_API_VERSION_K8S_1_30
+GATEWAY_API_URL="https://github.com/kubernetes-sigs/gateway-api/releases/download/$GATEWAY_API_VERSION/standard-install.yaml"
+
 cleanup() {
   echo "==> cleaning up namespaces $NS and $ADDONS_NS"
   for f in hack/e2e/*.yaml; do helm uninstall "$(basename "$f" .yaml)" -n "$NS" --wait >/dev/null 2>&1 || true; done
   kubectl delete clustersecretstore e2e-fake --ignore-not-found >/dev/null 2>&1 || true
   helm uninstall external-secrets -n "$ADDONS_NS" >/dev/null 2>&1 || true
   helm uninstall prometheus-operator-crds -n "$ADDONS_NS" >/dev/null 2>&1 || true
+  # only remove the Gateway API CRDs if this run added them
+  if [ "$INSTALLED_GATEWAY_API" = true ]; then kubectl delete -f "$GATEWAY_API_URL" --ignore-not-found >/dev/null 2>&1 || true; fi
   kubectl delete namespace "$NS" "$ADDONS_NS" --wait=false >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
 dump() {
   echo "!! $1 failed; cluster state:"
-  kubectl get all,pvc,ingress,externalsecrets,events -n "$NS" || true
+  kubectl get all,pvc,ingress,httproute,externalsecrets,events -n "$NS" || true
 }
 
 check() {  # run hack/e2e/<name>.check.sh if there is one
@@ -49,7 +59,12 @@ check() {  # run hack/e2e/<name>.check.sh if there is one
 }
 
 # Charts are fetched by URL, so your own `helm repo` list is left alone.
-echo "==> add-ons: External Secrets Operator $ESO_VERSION, Prometheus Operator CRDs $PROM_CRDS_VERSION"
+echo "==> add-ons: External Secrets Operator $ESO_VERSION, Prometheus Operator CRDs $PROM_CRDS_VERSION, Gateway API $GATEWAY_API_VERSION"
+# Never touch Gateway API CRDs a cluster already has: other apps' routes depend on them.
+if ! kubectl get crd httproutes.gateway.networking.k8s.io >/dev/null 2>&1; then
+  kubectl apply --server-side -f "$GATEWAY_API_URL" >/dev/null
+  INSTALLED_GATEWAY_API=true
+fi
 HELM_REPOSITORY_CONFIG=/dev/null helm upgrade --install prometheus-operator-crds prometheus-operator-crds \
   --repo https://prometheus-community.github.io/helm-charts --version "$PROM_CRDS_VERSION" \
   -n "$ADDONS_NS" --create-namespace --wait --timeout 5m

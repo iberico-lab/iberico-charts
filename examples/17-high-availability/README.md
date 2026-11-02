@@ -18,15 +18,16 @@ Open [`values.yaml`](values.yaml). The comments explain each line.
 
 ## What you get
 
-- 2 to 6 pods, scaled on CPU (HorizontalPodAutoscaler)
-- At least 1 pod always running during maintenance (PodDisruptionBudget)
-- Pods spread across nodes
+- 3 to 6 pods, scaled on CPU (HorizontalPodAutoscaler)
+- At least 2 pods always running during maintenance (PodDisruptionBudget)
+- Never two pods on the same node, so a node dying takes at most one
 - 10 seconds for in-flight requests to finish before a pod stops
 
 ## Watch out
 
 - Autoscaling needs metrics-server in the cluster
-- Spreading only helps if you have more than one node
+- Needs at least 3 nodes: with fewer, the extra pods stay Pending (strict spread).
+  On a smaller cluster, delete `whenUnsatisfiable` to make spreading a preference
 
 ---
 

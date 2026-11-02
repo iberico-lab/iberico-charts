@@ -26,12 +26,13 @@ spec:
   {{- end }}
   serviceAccountName: {{ include "app.serviceAccountName" . }}
   automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+  enableServiceLinks: {{ .Values.workload.enableServiceLinks }}
   {{- with .Values.workload.terminationGracePeriodSeconds }}
   terminationGracePeriodSeconds: {{ . }}
   {{- end }}
-  {{- with .Values.podSecurityContext }}
+  {{- with include "app.podSecurityContext" . }}
   securityContext:
-    {{- toYaml . | nindent 4 }}
+    {{- . | nindent 4 }}
   {{- end }}
   {{- if .Values.workload.extraInitContainers }}
   initContainers:

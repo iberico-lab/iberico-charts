@@ -15,10 +15,20 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.workload.replicas }}
   {{- end }}
-  {{- with .Values.workload.strategy }}
+  {{- $strategy := .Values.workload.strategy | default dict }}
+  {{- $type := $strategy.type | default (ternary "Recreate" "RollingUpdate" (eq (include "app.hasSingleWriterDisk" .) "true")) }}
   strategy:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    type: {{ $type }}
+    {{- if eq $type "RollingUpdate" }}
+    {{- $ru := $strategy.rollingUpdate | default dict }}
+    {{- if and (eq (toString $ru.maxUnavailable) "0") (eq (toString $ru.maxSurge) "0") }}
+    {{- fail "workload.strategy.rollingUpdate: maxUnavailable and maxSurge can't both be 0, or no pod could ever be replaced. Set maxSurge: 1" }}
+    {{- end }}
+    {{- with $ru }}
+    rollingUpdate:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- end }}
   selector:
     matchLabels:
       {{- include "helm-helpers.selectorLabels" . | nindent 6 }}

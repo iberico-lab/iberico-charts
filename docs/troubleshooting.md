@@ -43,6 +43,12 @@ These come from the chart and stop **before** anything is created.
 | `… this is the Tailscale machine name only` | A full domain in an `internal` ingress `host` | `host: store`, and the tailnet in `ingress.tailnetDomain` |
 | `… is not a valid Tailscale machine name` | Uppercase, `_` or too long | Up to 63 lowercase letters, numbers and `-` |
 | `workload.configFiles: … must be a full file path` / `invalid propertyName` | A config file path without a leading `/` | Write the full path: `/etc/app/config.yaml` |
+| `maxUnavailable and maxSurge can't both be 0` | No pod could ever be replaced | Set `workload.strategy.rollingUpdate.maxSurge: 1` |
+| `workload.shutdownDelaySeconds (…) must be lower than workload.terminationGracePeriodSeconds` | The pod would be killed while it waits | Lower the delay or raise the grace period |
+| `securityPreset restricted: … can't be …` / `may only contain NET_BIND_SERVICE` | A setting breaks the restricted standard | Remove that setting, or drop `securityPreset` |
+| `chart requires kubeVersion: >=1.30.0-0 which is incompatible with Kubernetes v1.2x` | The cluster is older than 1.30 | Upgrade the cluster. Older versions no longer get security fixes |
+| `ingress.httpRoutes[…]: set gateway.name` | A route doesn't say which Gateway to use | Set `ingress.gateway.name` (or `gateway` on the route) |
+| `no matches for kind "HTTPRoute"` | The cluster has no Gateway API CRDs | Install them, or use `ingresses` instead |
 | `field is immutable` (on upgrade) | A locked field changed | See [Upgrading](upgrading.md) |
 | `updates to statefulset spec for fields other than ... are forbidden` | StatefulSet installed with 0.2.x and has disks | One-time `--cascade=orphan` step in [Upgrading](upgrading.md#statefulsets-with-disks-one-time-step) |
 
@@ -91,6 +97,13 @@ kubectl describe externalsecret <name>    # the reason if it isn't
 | Public URL gives 404 | DNS for `host` must point at your Traefik load balancer |
 | Tailscale URL doesn't resolve | Check the device is on the tailnet, and the ingress exists: `kubectl get ingress` |
 | Login loop on `public-protected` | The `network-sso` Traefik middleware must exist and work |
+
+---
+
+## Ingress gives 502/504, or Prometheus can't scrape
+
+With `networkPolicy.enabled: true`, only the listed namespaces get in. Add the
+ingress controller's (or Prometheus's) namespace to `networkPolicy.allowNamespaces`.
 
 ---
 

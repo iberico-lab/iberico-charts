@@ -14,6 +14,25 @@
 {{- else -}}
 workload.enabled is false: no pods or Services were created for {{ $name }}.
 {{- end }}
+{{- if .Values.workload.enabled }}
+{{- $count := int (ternary (.Values.autoscaling.minReplicas | default 1) .Values.workload.replicas .Values.autoscaling.enabled) }}
+{{- $what := ternary "autoscaling.minReplicas" "workload.replicas" .Values.autoscaling.enabled }}
+{{- $spread := or .Values.topologySpread.enabled .Values.topologySpreadConstraints (dig "podAntiAffinity" "" (.Values.affinity | default dict)) }}
+{{- if lt $count 2 }}
+
+WARNING: {{ $what }} is {{ $count }}. The app is down whenever its pod restarts,
+  is moved, or its node fails. Use at least 2; 3 for high availability.
+{{- else if lt $count 3 }}
+
+NOTE: {{ $what }} is 2: the app stays up if one pod or node goes down.
+  For high availability use 3, so one pod can fail while another is updating.
+{{- end }}
+{{- if and (ge $count 2) (not $spread) }}
+
+WARNING: topologySpread is off, so all pods can land on the same node, and
+  that one node failing takes the app down. Set topologySpread.enabled: true.
+{{- end }}
+{{- end }}
 {{- if and .Values.workload.enabled .Values.service.enabled }}
 
 INSIDE THE CLUSTER (other apps, ingress controllers)
@@ -55,6 +74,9 @@ FROM OUTSIDE THE CLUSTER
                     ! uses the letsencrypt-staging issuer: browsers will show a
                       certificate warning. Set certManagerIssuer for real use.
 {{- end }}
+{{- end }}
+{{- range .Values.ingress.httpRoutes }}
+  Gateway route:    https://{{ .host }}   (HTTPRoute; TLS is set on the Gateway)
 {{- end }}
 {{- if not $tailnet }}
 {{- range .Values.ingress.ingresses }}{{ if eq .type "internal" }}

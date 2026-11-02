@@ -22,6 +22,8 @@ expect "Tailscale machine name (first tls host)" "integrations" \
   "$(kubectl get ingress integrations-internal -n "$NS" -o jsonpath='{.spec.tls[0].hosts[0]}')"
 expect "public ingress host" "e2e.example.com" \
   "$(kubectl get ingress integrations-public -n "$NS" -o jsonpath='{.spec.rules[0].host}')"
+expect "HTTPRoute accepted by the API" "route.example.com" \
+  "$(kubectl get httproute integrations -n "$NS" -o jsonpath='{.spec.hostnames[0]}')"
 expect "ServiceMonitor accepted by the API" "integrations" \
   "$(kubectl get servicemonitor integrations -n "$NS" -o jsonpath='{.metadata.name}')"
 

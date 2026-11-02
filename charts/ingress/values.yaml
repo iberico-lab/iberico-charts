@@ -13,3 +13,13 @@ ingresses:
     host: ""  # Leave empty for defaultBackend approach
     servicePort: 80
     # servicePortName: "https"  # Uncomment for HTTPS backend
+
+# Gateway API routes (HTTPRoute), the successor to Ingress (docs/ingress.md).
+# Each entry: host (required), plus name, path, serviceName, servicePort,
+# gateway, filters, annotations.
+httpRoutes: []
+# The Gateway every route attaches to, unless a route sets its own `gateway`.
+gateway:
+  name: ""          # e.g. "traefik-gateway"
+  namespace: ""     # "" = the app's namespace
+  sectionName: ""   # listener name, e.g. "websecure"; "" = every listener

@@ -22,9 +22,14 @@ For explanations and examples, follow the  link in each section.
 | `metrics.serviceMonitor` | `{enabled: false, path: /metrics, interval: 30s}` | Prometheus scraping ([docs](metrics.md)) |
 | `autoscaling` | `{enabled: false, minReplicas: 2, maxReplicas: 5, targetCPUUtilizationPercentage: 80}` | Scale with CPU/memory ([docs](availability.md)) |
 | `podDisruptionBudget` | `{enabled: false, minAvailable: null, maxUnavailable: 1}` | Pods allowed down during maintenance ([docs](availability.md)) |
+| `securityPreset` | `""` | `restricted`: non-root, no privilege escalation, no capabilities, seccomp ([docs](security.md)) |
 | `podSecurityContext` | `seccompProfile: RuntimeDefault` | Security settings for the pod ([docs](security.md)) |
 | `securityContext` | `allowPrivilegeEscalation: false` | Security settings for the main container ([docs](security.md)) |
-| `topologySpread` | `{enabled: false, topologyKey: kubernetes.io/hostname, maxSkew: 1, whenUnsatisfiable: ScheduleAnyway}` | Spread pods across nodes/zones ([docs](availability.md)) |
+| `networkPolicy.enabled` | `false` | Only let chosen pods connect ([docs](security.md#who-can-connect-networkpolicy-opt-in)) |
+| `networkPolicy.allowSameNamespace` | `true` | Pods in the app's namespace may connect |
+| `networkPolicy.allowNamespaces` | `[]` | Namespaces whose pods may connect (e.g. `traefik`, `tailscale`, `monitoring`) |
+| `networkPolicy.extraIngress` | `[]` | Raw NetworkPolicy ingress rules, copied as-is |
+| `topologySpread` | `{enabled: true, topologyKey: kubernetes.io/hostname, maxSkew: 1, whenUnsatisfiable: ScheduleAnyway}` | Spread pods across nodes/zones ([docs](availability.md)) |
 | `topologySpreadConstraints` | `[]` | Raw spread rules, copied as-is |
 | `priorityClassName` | `""` | PriorityClass for the pods |
 | `nodeSelector` | `{}` | Only run on nodes with these labels |
@@ -70,8 +75,10 @@ For explanations and examples, follow the  link in each section.
 | `workload.reloadOnSecretChange` | `false` | Restart pods when 1Password secrets change (needs Reloader) |
 | `workload.pod.annotations` | `{}` | Annotations on each pod |
 | `workload.pod.labels` | `{}` | Extra labels on each pod |
-| `workload.strategy` | `RollingUpdate`, `maxUnavailable: 1`, `maxSurge: 1` | Deployment update style |
+| `workload.strategy` | `type: ""` (automatic), `maxUnavailable: 0`, `maxSurge: 1` | Deployment update style ([docs](workload.md)) |
 | `workload.terminationGracePeriodSeconds` | `30` | Seconds the app gets to shut down cleanly |
+| `workload.shutdownDelaySeconds` | `5` | Keep serving this long before the stop signal (`0` = off) |
+| `workload.enableServiceLinks` | `false` | Service env vars (`MY_DB_PORT=...`) for every Service in the namespace |
 
 ### StatefulSet only ([docs](statefulset.md))
 

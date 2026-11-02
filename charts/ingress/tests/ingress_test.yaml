@@ -77,3 +77,61 @@ tests:
     templates: [templates/ingress-internal.yaml]
     asserts:
       - notExists: { path: 'metadata.labels["app.kubernetes.io/version"]' }
+
+  - it: renders a Gateway API route attached to the default gateway
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: traefik-gateway, namespace: traefik, sectionName: websecure }
+      httpRoutes: [{ host: shop.example.com }]
+    asserts:
+      - equal: { path: metadata.name, value: shop }
+      - equal: { path: spec.parentRefs, value: [{ name: traefik-gateway, namespace: traefik, sectionName: websecure }] }
+      - equal: { path: spec.hostnames, value: [shop.example.com] }
+      - equal: { path: 'spec.rules[0].matches[0].path', value: { type: PathPrefix, value: / } }
+      - equal: { path: 'spec.rules[0].backendRefs', value: [{ name: shop, port: 80 }] }
+
+  - it: lets a route pick its own gateway, path, backend and filters
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: traefik-gateway, namespace: traefik }
+      httpRoutes:
+        - name: shop-api
+          host: api.example.com
+          path: /v1
+          serviceName: api
+          servicePort: 8080
+          gateway: { name: internal-gw, sectionName: https }
+          filters: [{ type: RequestHeaderModifier, requestHeaderModifier: { set: [{ name: X-Env, value: prod }] } }]
+    asserts:
+      - equal: { path: metadata.name, value: shop-api }
+      - equal: { path: spec.parentRefs, value: [{ name: internal-gw, namespace: traefik, sectionName: https }] }
+      - equal: { path: 'spec.rules[0].matches[0].path.value', value: /v1 }
+      - equal: { path: 'spec.rules[0].backendRefs', value: [{ name: api, port: 8080 }] }
+      - equal: { path: 'spec.rules[0].filters[0].type', value: RequestHeaderModifier }
+
+  - it: fails without a gateway
+    templates: [templates/httproute.yaml]
+    set: { httpRoutes: [{ host: shop.example.com }] }
+    asserts:
+      - failedTemplate: { errorPattern: 'set gateway.name' }
+
+  - it: fails when two routes would share a name
+    templates: [templates/validate.yaml]
+    set:
+      gateway: { name: gw }
+      httpRoutes: [{ host: a.example.com }, { host: b.example.com }]
+    asserts:
+      - failedTemplate: { errorPattern: 'Give each route its own name' }
+
+  - it: lists ingresses and routes in the notes with their real names
+    templates: [templates/NOTES.txt]
+    set:
+      tailnetDomain: tail1234.ts.net
+      gateway: { name: gw }
+      ingresses: [{ type: internal }, { type: public, host: shop.example.com }]
+      httpRoutes: [{ host: new.example.com }]
+    asserts:
+      - matchRegexRaw: { pattern: 'shop-internal   Tailscale only: https://shop\.tail1234\.ts\.net' }
+      - matchRegexRaw: { pattern: 'shop-public   https://shop\.example\.com' }
+      - matchRegexRaw: { pattern: 'HTTPRoute shop   https://new\.example\.com' }
+      - notMatchRegexRaw: { pattern: 'no value' }

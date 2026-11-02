@@ -154,7 +154,10 @@ workload:
   `workload.resources.requests.cpu` (and memory if you target memory).
 - `podDisruptionBudget`: `minAvailable` wins over `maxUnavailable` and must be
   lower than the replica count.
-- `topologySpread.enabled: true` spreads pods across nodes (the selector is filled in).
+- Replicas: 2 is the minimum for anything people rely on, 3 for high availability.
+  The install notes warn below 2.
+- `topologySpread` is on by default (`ScheduleAnyway` across nodes; the selector is
+  filled in). `whenUnsatisfiable: DoNotSchedule` makes it strict.
 - `metrics.serviceMonitor.port` is a Service port **name**; needs the Prometheus Operator CRDs.
 
 **Resources and security**
@@ -162,7 +165,14 @@ workload:
   limit. Raise them for heavy apps. `OOMKilled` means the memory limit is too low.
 - Defaults: seccomp `RuntimeDefault`, `allowPrivilegeEscalation: false`, no API
   token mounted (`serviceAccount.automount: true` if the app calls the API).
-  Stricter settings: `docs/security.md` and example 19.
+  Stricter: `securityPreset: restricted` (non-root image needed; set
+  `podSecurityContext.runAsUser` if the image's USER isn't numeric). See
+  `docs/security.md` and example 19.
+- `networkPolicy.enabled` limits who can connect; list the ingress controller,
+  Tailscale and Prometheus namespaces in `networkPolicy.allowNamespaces`.
+- Rollouts: `maxUnavailable: 0` by default, `Recreate` automatically with a
+  ReadWriteOnce `persistence` disk; `shutdownDelaySeconds: 5` drains traffic
+  (a custom `preStop` replaces it); `enableServiceLinks: false`.
 
 **Removed in 0.3.0** (they fail with a message naming the replacement):
 `workload.service` → `service.headless`, `workload.serviceName` →

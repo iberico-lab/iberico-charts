@@ -20,16 +20,33 @@ Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every
 - Smaller default resources: requests `100m`/`128Mi`, memory limit `512Mi`, no CPU limit
   (was `300m`/`512Mi` and `1000m`/`800Mi`).
 - Unknown or mistyped values are rejected by `values.schema.json`.
+- Needs Kubernetes 1.30 or newer (`kubeVersion` in every chart). CI installs on 1.30, 1.34 and 1.37,
+  with Helm 3 and 4.
+- Rolling updates start new pods before stopping old ones (`maxUnavailable: 0`); Deployments with a
+  ReadWriteOnce disk use `Recreate` (`workload.strategy.type: ""` = automatic).
+- `enableServiceLinks: false`: no `<SERVICE>_PORT`-style env vars (`workload.enableServiceLinks`).
 
 ### Added
 
+- Releases: tag `vX.Y.Z` to publish all four charts to `oci://ghcr.io/alexbaeza/charts` (signed with
+  cosign once the repo is public) with a GitHub Release.
 - `values.schema.json` for the app, ingress and external-secrets charts.
 - Install notes that print in-cluster DNS, Tailscale/public URLs and a port-forward command; `ingress.tailnetDomain`.
-- `podDisruptionBudget`, `autoscaling` (HPA), `topologySpread` preset, `topologySpreadConstraints`, `priorityClassName`.
+- `podDisruptionBudget`, `autoscaling` (HPA), `topologySpread` preset (on by default: pods prefer
+  different nodes), `topologySpreadConstraints`, `priorityClassName`.
+- Install notes warn when fewer than 2 replicas run, note that 3 is needed for high availability,
+  and warn when nothing spreads the pods across nodes.
 - `metrics.serviceMonitor` (Prometheus Operator).
+- `securityPreset: restricted`: everything the restricted Pod Security Standard requires, also on
+  sidecars; forbidden settings fail the render.
+- Gateway API: `ingress.httpRoutes` and `ingress.gateway` create HTTPRoutes next to (or instead of)
+  Ingresses.
+- `networkPolicy` (opt-in): only the app's namespace and listed namespaces may connect.
 - `workload.extraEnv`, `workload.extraEnvFrom`, `workload.pod.labels`, `workload.lifecycle`,
   `workload.podManagementPolicy`, `workload.reloadOnSecretChange` (Stakater Reloader).
 - `extraManifests` for shipping extra objects with the release.
+- `workload.shutdownDelaySeconds` (default 5): stopping pods keep serving briefly, so updates don't
+  drop requests.
 - `workload.image.digest` to pin the exact image (`repo:tag@sha256:...`).
 - `workload.configFiles`: write config files in your values (`/path: contents`); pods restart
   when a file changes.

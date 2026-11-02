@@ -12,7 +12,9 @@ permissions:
   contents: read
 
 env:
-  HELM_VERSION: v3.16.4
+  HELM_VERSION: v3.22.1
+  # Oldest Kubernetes the charts support; keep in step with kubeVersion in charts/*/Chart.yaml.
+  MIN_KUBE_VERSION: 1.30.9
 
 jobs:
   lint:
@@ -66,14 +68,28 @@ jobs:
       - name: Validate rendered manifests against Kubernetes schemas
         run: make validate
 
+      - name: Validate against the oldest supported Kubernetes
+        run: make validate KUBE_VERSION=${{ env.MIN_KUBE_VERSION }}
+
       # Every example must keep rendering against the app chart.
       - name: Render all examples
         run: make examples
 
   e2e:
-    # Install the charts on a real (throwaway) cluster and run `helm test`.
+    # Install the charts on a real (throwaway) cluster and run `helm test`:
+    # the oldest supported Kubernetes, a middle one and the newest, with Helm 3,
+    # plus the newest with Helm 4.
+    name: e2e (Kubernetes ${{ matrix.kube }}, Helm ${{ matrix.helm }})
     runs-on: ubuntu-latest
     needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { kube: v1.30.13, helm: v3.22.1 }
+          - { kube: v1.34.11, helm: v3.22.1 }
+          - { kube: v1.37.0, helm: v3.22.1 }
+          - { kube: v1.37.0, helm: v4.3.1 }
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -81,10 +97,13 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
-          version: ${{ env.HELM_VERSION }}
+          version: ${{ matrix.helm }}
 
       - name: Create kind cluster
         uses: helm/kind-action@v1
+        with:
+          version: v0.33.0
+          node_image: kindest/node:${{ matrix.kube }}
 
       - name: Install, test, upgrade and uninstall every scenario
         run: make e2e

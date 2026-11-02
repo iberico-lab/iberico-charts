@@ -60,8 +60,13 @@ def app():
         "extraInitContainers": LIST(obj({"name": S()}, req=("name",), extra=True)),
         "resources": ANYMAP,
         "livenessProbe": probe, "readinessProbe": probe, "startupProbe": probe,
-        "strategy": ANYMAP, "podManagementPolicy": {"enum": ["", "OrderedReady", "Parallel"]},
+        "strategy": obj({"type": {"enum": ["", "RollingUpdate", "Recreate"],
+                                  "description": '"" = Recreate with a ReadWriteOnce disk, else RollingUpdate'},
+                         "rollingUpdate": obj({"maxUnavailable": {"type": ["integer", "string"]},
+                                               "maxSurge": {"type": ["integer", "string"]}})}), "podManagementPolicy": {"enum": ["", "OrderedReady", "Parallel"]},
         "updateStrategy": ANYMAP, "terminationGracePeriodSeconds": I(mn=0),
+        "shutdownDelaySeconds": I("Seconds a stopping pod keeps serving before the stop signal; 0 = off", mn=0),
+        "enableServiceLinks": B("Add env vars for every Service in the namespace"),
         # removed in 0.3.0; accepted only so the chart can say where they moved
         "service": {"description": "Removed: use service.headless"},
         "serviceName": {"description": "Removed: use service.headless.name"},
@@ -80,7 +85,8 @@ def app():
             "properties": {
                 "global": GLOBAL, "workload": workload, "service": service, "persistence": persistence,
                 "serviceAccount": obj({"create": B(), "automount": B(), "name": S(), "annotations": STRMAP}),
-                "podSecurityContext": {"type": ["object", "null"]}, "securityContext": {"type": ["object", "null"]},
+                "podSecurityContext": {"type": ["object", "null"]},
+                "securityPreset": {"enum": ["", "restricted"]}, "securityContext": {"type": ["object", "null"]},
                 "metrics": obj({"serviceMonitor": obj({"enabled": B(), "port": S(), "path": S(),
                                                        "interval": S(), "scrapeTimeout": S(), "labels": STRMAP})}),
                 "autoscaling": obj({"enabled": B(), "minReplicas": I(mn=1), "maxReplicas": I(mn=1),
@@ -92,6 +98,8 @@ def app():
                                             "maxUnavailable": {"type": ["integer", "string", "null"]}}),
                 "topologySpread": obj({"enabled": B(), "topologyKey": S(), "maxSkew": I(mn=1),
                                        "whenUnsatisfiable": {"enum": ["ScheduleAnyway", "DoNotSchedule"]}}),
+                "networkPolicy": obj({"enabled": B(), "allowSameNamespace": B(),
+                                      "allowNamespaces": LIST({"type": "string"}), "extraIngress": LIST()}),
                 "topologySpreadConstraints": LIST(), "priorityClassName": S(),
                 "nodeSelector": STRMAP, "affinity": ANYMAP, "tolerations": LIST(), "imagePullSecrets": LIST(),
                 "extraManifests": LIST({"type": ["object", "string"]}),
@@ -109,8 +117,14 @@ def ingress():
                "certManagerIssuer": S(), "tailscaleExpose": B(), "annotations": STRMAP,
                "homepage": obj({"enabled": B(), "name": S(), "description": S(), "group": S(), "icon": S()})},
               req=("type",))
+    gw = obj({"name": S("Gateway name"), "namespace": S('"" = the app\'s namespace'),
+              "sectionName": S("Listener name; \"\" = every listener")})
+    route = obj({"name": S('HTTPRoute name; "" = the app\'s name'), "host": S(), "path": S(),
+                 "serviceName": S("Backend Service name (default: the app's Service)"), "servicePort": PORT,
+                 "gateway": gw, "filters": LIST(), "annotations": STRMAP}, req=("host",))
     return {"$schema": D, "title": "ingress chart values", "type": "object", "additionalProperties": False,
             "properties": {"global": GLOBAL, "enabled": B(), "tailnetDomain": S(), "ingresses": LIST(ing),
+                           "httpRoutes": LIST(route), "gateway": gw,
                            "helm-helpers": {"type": "object"}}}
 
 def external_secrets():

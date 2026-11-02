@@ -1,4 +1,4 @@
-# The strict opt-in block from docs/security.md, with an image that supports it.
+# securityPreset: restricted plus a read-only filesystem, with an image that supports it.
 workload:
   replicas: 1
   image: {repository: nginxinc/nginx-unprivileged, tag: "1.27-alpine"}
@@ -8,12 +8,9 @@ workload:
   resources:
     requests: {cpu: 10m, memory: 32Mi}
     limits: {cpu: 200m, memory: 128Mi}
+securityPreset: restricted
 podSecurityContext:
-  runAsNonRoot: true
   runAsUser: 101
   fsGroup: 101
-  seccompProfile: {type: RuntimeDefault}
 securityContext:
-  allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
-  capabilities: {drop: ["ALL"]}

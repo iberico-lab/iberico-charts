@@ -1,0 +1,39 @@
+suite: networkpolicy
+templates:
+  - templates/networkpolicy.yaml
+release:
+  name: shop
+tests:
+  - it: renders nothing by default
+    asserts:
+      - hasDocuments: { count: 0 }
+
+  - it: selects the app's pods and lets the namespace and the app itself in
+    set: { networkPolicy.enabled: true }
+    asserts:
+      - equal: { path: spec.podSelector.matchLabels, value: { app.kubernetes.io/name: shop, app.kubernetes.io/instance: shop } }
+      - equal: { path: spec.policyTypes, value: [Ingress] }
+      - equal:
+          path: spec.ingress[0].from
+          value:
+            - podSelector: { matchLabels: { app.kubernetes.io/name: shop, app.kubernetes.io/instance: shop } }
+            - podSelector: {}
+
+  - it: allows listed namespaces and keeps helm test working without the namespace
+    set:
+      networkPolicy: { enabled: true, allowSameNamespace: false, allowNamespaces: [traefik] }
+    asserts:
+      - equal:
+          path: spec.ingress[0].from
+          value:
+            - podSelector: { matchLabels: { app.kubernetes.io/name: shop, app.kubernetes.io/instance: shop } }
+            - podSelector: { matchLabels: { app.kubernetes.io/instance: shop, app.kubernetes.io/component: test } }
+            - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+
+  - it: appends raw rules
+    set:
+      networkPolicy:
+        enabled: true
+        extraIngress: [{ from: [{ ipBlock: { cidr: 10.0.0.0/8 } }], ports: [{ port: 9090 }] }]
+    asserts:
+      - equal: { path: "spec.ingress[1].from[0].ipBlock.cidr", value: 10.0.0.0/8 }

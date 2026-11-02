@@ -1,6 +1,6 @@
-# Secrets, config files, ingress and metrics together. hack/e2e.sh installs
-# the External Secrets Operator (with a fake store) and the Prometheus CRDs
-# first; integrations.check.sh then checks the values reached the pod.
+# Secrets, config files, ingress, Gateway API routes and metrics together.
+# hack/e2e.sh installs the External Secrets Operator (with a fake store), the
+# Prometheus CRDs and the Gateway API CRDs first; integrations.check.sh then checks the values reached the pod.
 workload:
   image:
     repository: nginx
@@ -26,5 +26,8 @@ ingress:
   ingresses:
     - {type: internal}
     - {type: public, host: e2e.example.com}
+  gateway: {name: e2e-gateway}
+  httpRoutes:
+    - {host: route.example.com}
 metrics:
   serviceMonitor: {enabled: true}

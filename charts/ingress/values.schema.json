@@ -102,6 +102,89 @@
         ]
       }
     },
+    "httpRoutes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "HTTPRoute name; \"\" = the app's name"
+          },
+          "host": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "serviceName": {
+            "type": "string",
+            "description": "Backend Service name (default: the app's Service)"
+          },
+          "servicePort": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "gateway": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Gateway name"
+              },
+              "namespace": {
+                "type": "string",
+                "description": "\"\" = the app's namespace"
+              },
+              "sectionName": {
+                "type": "string",
+                "description": "Listener name; \"\" = every listener"
+              }
+            },
+            "additionalProperties": false
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "annotations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "host"
+        ]
+      }
+    },
+    "gateway": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Gateway name"
+        },
+        "namespace": {
+          "type": "string",
+          "description": "\"\" = the app's namespace"
+        },
+        "sectionName": {
+          "type": "string",
+          "description": "Listener name; \"\" = every listener"
+        }
+      },
+      "additionalProperties": false
+    },
     "helm-helpers": {
       "type": "object"
     }

@@ -491,7 +491,36 @@
           "additionalProperties": false
         },
         "strategy": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "",
+                "RollingUpdate",
+                "Recreate"
+              ],
+              "description": "\"\" = Recreate with a ReadWriteOnce disk, else RollingUpdate"
+            },
+            "rollingUpdate": {
+              "type": "object",
+              "properties": {
+                "maxUnavailable": {
+                  "type": [
+                    "integer",
+                    "string"
+                  ]
+                },
+                "maxSurge": {
+                  "type": [
+                    "integer",
+                    "string"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
         },
         "podManagementPolicy": {
           "enum": [
@@ -506,6 +535,15 @@
         "terminationGracePeriodSeconds": {
           "type": "integer",
           "minimum": 0
+        },
+        "shutdownDelaySeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Seconds a stopping pod keeps serving before the stop signal; 0 = off"
+        },
+        "enableServiceLinks": {
+          "type": "boolean",
+          "description": "Add env vars for every Service in the namespace"
         },
         "service": {
           "description": "Removed: use service.headless"
@@ -763,6 +801,12 @@
         "null"
       ]
     },
+    "securityPreset": {
+      "enum": [
+        "",
+        "restricted"
+      ]
+    },
     "securityContext": {
       "type": [
         "object",
@@ -881,6 +925,30 @@
             "ScheduleAnyway",
             "DoNotSchedule"
           ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "allowSameNamespace": {
+          "type": "boolean"
+        },
+        "allowNamespaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extraIngress": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         }
       },
       "additionalProperties": false
