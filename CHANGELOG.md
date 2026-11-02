@@ -3,7 +3,7 @@
 All notable changes to these charts. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions apply to all four charts, which are released together.
 
-## [0.1.0] - 2026-11-02
+## [0.4.0] - 2026-11-02
 
 First release. The charts are built to be installed from scratch: read
 [docs/getting-started.md](docs/getting-started.md), or copy `examples/`.
@@ -22,6 +22,12 @@ First release. The charts are built to be installed from scratch: read
   `public-sso`), with Gateway API `httpRoutes` and `gateway` as an alternative.
   The Traefik middleware each public ingress attaches is named in
   `ingress.middlewares`; empty attaches none.
+- Gateway API routes that work across environments: a route without `host` is
+  named from `ingress.domain` (`<app name>.<domain>`, or `<subdomain>.<domain>`), and
+  `access: public | sso` attaches the Middleware the environment names in
+  `ingress.accessProfiles`, so app values never reference Traefik directly.
+  `access: sso` without an SSO middleware stops the render. HTTPRoutes carry
+  Homepage annotations like ingresses (`homepage.enabled: false` hides one).
 - `external-secrets`: one switch (`external-secrets.enabled`) to turn 1Password items
   into env vars and files for the pod.
 - Availability and scaling: `autoscaling` (HPA), `podDisruptionBudget`, a
@@ -35,7 +41,7 @@ First release. The charts are built to be installed from scratch: read
 - `values.schema.json` for the app, ingress and external-secrets charts: unknown or
   mistyped settings are rejected instead of silently ignored, and cross-field mistakes
   stop the render with a message naming the fix.
-- Docs for every feature, 19 working examples, and per-chart READMEs.
+- Docs for every feature, 20 working examples, and per-chart READMEs.
 - CI: helm-unittest suites, schema freshness, documentation coverage, kubeconform
   validation against Kubernetes 1.30 and current, every example rendered, and an
   end-to-end install, `helm test` and upgrade on kind clusters (Kubernetes 1.30, 1.34,
