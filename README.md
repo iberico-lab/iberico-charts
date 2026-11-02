@@ -115,3 +115,10 @@ that make a render fail, and the feature → example map, so the agent writes va
 values files instead of guessing at settings.
 
 Hand the agent the values file and the app it should run; the skill covers the rest.
+
+---
+
+## License
+
+MIT. See [LICENSE](LICENSE). Each chart ships the same license as `LICENSE`
+inside its package.
