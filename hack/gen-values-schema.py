@@ -107,31 +107,30 @@ def app():
             }}
 
 def ingress():
+    homepage = obj({"enabled": B(), "name": S(), "description": S(), "group": S(), "icon": S()})
     ing = obj({"serviceName": S("Backend Service name (default: the app's Service)"),
                "type": {"enum": ["internal", "public", "public-sso"]},
                "host": S(), "servicePort": PORT, "servicePortName": S(),
                "certManagerIssuer": S(), "tailscaleExpose": B(), "annotations": STRMAP,
-               "middlewares": S('Traefik middleware name; "" = none'),
-               "homepage": obj({"enabled": B(), "name": S(), "description": S(), "group": S(), "icon": S()})},
-              req=("type",))
+               "middlewares": LIST(S(), "Extra Traefik Middlewares, run after the type's"),
+               "homepage": homepage}, req=("type",))
     gw = obj({"name": S("Gateway name"), "namespace": S('"" = the app\'s namespace'),
               "sectionName": S("Listener name; \"\" = every listener")})
-    homepage = obj({"enabled": B(), "name": S(), "description": S(), "group": S(), "icon": S()})
-    route = obj({"name": S('HTTPRoute name; "" = the app\'s name'),
+    route = obj({"type": {"enum": ["internal", "public", "public-sso"]},
+                 "name": S('HTTPRoute name; "" = the app\'s name'),
                  "host": S('Full hostname; "" = <subdomain or app name>.<ingress.domain>'),
                  "subdomain": S("Hostname is <subdomain>.<ingress.domain>"),
-                 "access": {"enum": ["public", "sso"], "description": "Access profile (ingress.accessProfiles)"},
                  "path": S(),
                  "serviceName": S("Backend Service name (default: the app's Service)"), "servicePort": PORT,
-                 "gateway": gw, "filters": LIST(), "annotations": STRMAP, "homepage": homepage})
-    profile = obj({"middleware": S('Traefik Middleware name; "" = none')})
+                 "gateway": gw, "middlewares": LIST(S(), "Extra Traefik Middlewares, run after the type's"),
+                 "filters": LIST(), "annotations": STRMAP, "homepage": homepage}, req=("type",))
+    typ = obj({"middlewares": LIST(S(), "Traefik Middlewares every entry of this type runs first"),
+               "gateway": gw})
     return {"$schema": D, "title": "ingress chart values", "type": "object", "additionalProperties": False,
             "properties": {"global": GLOBAL, "enabled": B(), "tailnetDomain": S(), "ingresses": LIST(ing),
                            "httpRoutes": LIST(route), "gateway": gw,
                            "domain": S('Base domain for routes without a host, e.g. "apps.example.com"'),
-                           "accessProfiles": obj({"public": profile, "sso": profile}),
-                           "middlewares": obj({"public": S('Traefik middleware for type "public"; "" = none'),
-                                               "publicSso": S('Traefik middleware for type "public-sso"; "" = none')}),
+                           "types": obj({"internal": typ, "public": typ, "public-sso": typ}),
                            "helm-helpers": {"type": "object"}}}
 
 def external_secrets():

@@ -105,3 +105,36 @@ app.kubernetes.io/version: {{ . | quote }}
 helm.sh/chart: {{ include "helm-helpers.chart" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
+
+{{/*
+Render homepage annotations. Renders nothing when homepage.enabled is false.
+Usage: {{ include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Public" "root" $) }}
+*/}}
+{{- define "helm-helpers.homepageAnnotations" -}}
+{{- $homepage := .ingress.homepage | default dict -}}
+{{- if or (not (hasKey $homepage "enabled")) $homepage.enabled -}}
+gethomepage.dev/enabled: "true"
+gethomepage.dev/name: {{ if and .ingress.homepage .ingress.homepage.name }}{{ .ingress.homepage.name | quote }}{{ else }}{{ .ingress.serviceName | default .ingress.name | default (include "helm-helpers.appName" .root) | quote }}{{ end }}
+gethomepage.dev/description: {{ if and .ingress.homepage .ingress.homepage.description }}{{ .ingress.homepage.description | quote }}{{ else }}{{ .ingress.host | default (printf "%s service" (include "helm-helpers.appName" .root)) | quote }}{{ end }}
+gethomepage.dev/group: {{ if and .ingress.homepage .ingress.homepage.group }}{{ .ingress.homepage.group | quote }}{{ else }}{{ .group | quote }}{{ end }}
+gethomepage.dev/icon: {{ if and .ingress.homepage .ingress.homepage.icon }}{{ .ingress.homepage.icon | quote }}{{ else }}"kubernetes"{{ end }}
+{{- end -}}
+{{- end }}
+
+{{/*
+Hostname of an ingress chart HTTPRoute (shared so the app chart's install
+notes print the same URL), in order: `host` as written, else
+`<subdomain>.<domain>`, else `<app name>.<domain>`. Fails when there is no
+host and no domain to build one from.
+Usage: include "helm-helpers.routeHost" (dict "route" $r "index" $i "domain" $domain "name" $appName)
+*/}}
+{{- define "helm-helpers.routeHost" -}}
+{{- $r := .route -}}
+{{- if $r.host -}}
+{{- $r.host -}}
+{{- else if not .domain -}}
+{{- fail (printf "ingress.httpRoutes[%v] has no host: set host (e.g. \"shop.example.com\"), or set ingress.domain (e.g. \"apps.example.com\") to build one from the app name or subdomain" .index) -}}
+{{- else -}}
+{{- printf "%s.%s" ($r.subdomain | default .name) .domain -}}
+{{- end -}}
+{{- end }}

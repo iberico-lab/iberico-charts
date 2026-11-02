@@ -5,11 +5,11 @@ Ingresses and routes for {{ $name }} in namespace "{{ .Release.Namespace }}":
 {{- $machine := include "ingress.machineName" (dict "ingress" $ing "root" $ "index" $i) }}
   {{ $machine }}-internal   Tailscale only: https://{{ $machine }}.{{ $.Values.tailnetDomain | default "<your-tailnet>.ts.net" }}
 {{- else }}
-  {{ $name }}-{{ .type }}   https://{{ .host }}{{ if eq .type "public-sso" }}   (login via the ingress.middlewares.publicSso Traefik middleware){{ end }}
+  {{ $name }}-{{ .type }}   https://{{ .host }}{{ if eq .type "public-sso" }}   (login required){{ end }}
 {{- end }}
 {{- end }}
 {{- range $i, $r := .Values.httpRoutes }}
-  HTTPRoute {{ include "ingress.routeName" (dict "route" $r "root" $) }}   https://{{ include "ingress.routeHost" (dict "route" $r "index" $i "domain" $.Values.domain "name" $name) }}{{ if eq ($r.access | default "") "sso" }}   (login required){{ end }}   (TLS is set on the Gateway)
+  HTTPRoute {{ include "ingress.routeName" (dict "route" $r "root" $) }}   https://{{ include "helm-helpers.routeHost" (dict "route" $r "index" $i "domain" $.Values.domain "name" $name) }}{{ if eq $r.type "public-sso" }}   (login required){{ else if eq $r.type "internal" }}   (private network only){{ end }}   (TLS is set on the Gateway)
 {{- end }}
 
 Check them:

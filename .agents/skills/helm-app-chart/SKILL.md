@@ -149,11 +149,16 @@ workload:
   issuer defaults to `letsencrypt-staging` (browser warning); set
   `certManagerIssuer: letsencrypt-prod` for real use.
 - One ingress per type per release. `serviceName` picks a different backend Service.
-- Gateway API (`ingress.httpRoutes`): need `ingress.gateway.name`. A route
-  without `host` becomes `<subdomain or app name>.<ingress.domain>`. For login,
-  write `access: sso` (or `public`) and let the environment name the Middleware
-  in `ingress.accessProfiles`; never hard-code a Traefik `ExtensionRef` in app
-  values. `access: sso` without `accessProfiles.sso.middleware` fails.
+- An app only picks a **type** (`internal`, `public`, `public-sso`) for each
+  ingress or route. What a type runs is environment config in
+  `ingress.types.<type>`: `middlewares` (Traefik, run first, e.g. the login) and,
+  for routes, `gateway`. An entry's own `middlewares` run after the type's.
+  Never hard-code a login middleware or `ExtensionRef` in app values.
+  `public-sso` without `types.public-sso.middlewares` fails.
+- Gateway API (`ingress.httpRoutes`): every route needs `type`. A route without
+  `host` becomes `<subdomain or app name>.<ingress.domain>`. Gateway: route's,
+  else the type's, else `ingress.gateway`; `internal` routes need
+  `types.internal.gateway` and never use `ingress.gateway`.
 
 **Availability, scaling, metrics**
 - `autoscaling.enabled` ignores `workload.replicas` and needs

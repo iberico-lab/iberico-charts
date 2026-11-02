@@ -48,8 +48,11 @@ These come from the chart and stop **before** anything is created.
 | `chart requires kubeVersion: >=1.30.0-0 which is incompatible with Kubernetes v1.2x` | The cluster is older than 1.30 | Upgrade the cluster. Older versions no longer get security fixes |
 | `ingress.httpRoutes[…]: set gateway.name` | A route doesn't say which Gateway to use | Set `ingress.gateway.name` (or `gateway` on the route) |
 | `ingress.httpRoutes[…] has no host` | A route has no `host`, and there is no `ingress.domain` to build one | Set `host`, or set `ingress.domain` (per environment) |
-| `ingress.httpRoutes[…].access is sso, but ingress.accessProfiles.sso.middleware is empty` | The route needs a login, but no login Middleware is named | Set `ingress.accessProfiles.sso.middleware` to your SSO Middleware |
-| `ingress.httpRoutes[…].access must be public or sso` / `value must be one of 'public', 'sso'` | A typo in `access` | Use `public`, `sso`, or leave it out |
+| `… is type public-sso, but ingress.types.public-sso.middlewares is empty` | A page needs a login, but no login Middleware is named | Set `ingress.types.public-sso.middlewares` to your SSO Middleware (per environment) |
+| `… is type internal: set ingress.types.internal.gateway.name` | An internal route has no private Gateway (it never uses `ingress.gateway`) | Set `ingress.types.internal.gateway` to a Gateway only your private network reaches |
+| `ingress.ingresses[…] is type internal, … can't run middlewares` | Middlewares on a Tailscale Ingress | Remove them, or use an internal `httpRoute` |
+| `middleware "…" is a Traefik provider reference` | A name with `@` on an HTTPRoute | Give the plain name of a Middleware in the route's namespace |
+| `ingress.httpRoutes[…].type must be internal, public or public-sso` / `missing property 'type'` | A route without a type, or a typo | Set `type` on every route |
 | `no matches for kind "HTTPRoute"` | The cluster has no Gateway API CRDs | Install them, or use `ingresses` instead |
 | `field is immutable` (on upgrade) | A locked field changed | The chart never puts version or chart labels in selectors or disk templates, so this points at a hand-edited object. `kubectl get <kind> <name> -o yaml` and compare |
 
@@ -97,7 +100,7 @@ kubectl describe externalsecret <name>    # the reason if it isn't
 | Browser shows a certificate warning | The ingress uses `letsencrypt-staging` by default. Set `certManagerIssuer` to your production issuer |
 | Public URL gives 404 | DNS for `host` must point at your Traefik load balancer |
 | Tailscale URL doesn't resolve | Check the device is on the tailnet, and the ingress exists: `kubectl get ingress` |
-| Login loop on `public-sso` | The middleware named in `ingress.middlewares.publicSso` must exist in the app's namespace and work |
+| Login loop on `public-sso` | The middleware in `ingress.types.public-sso.middlewares` must exist in the app's namespace and work |
 
 ---
 

@@ -19,15 +19,14 @@ First release. The charts are built to be installed from scratch: read
   `workload.applicationPort`; multiple named ports; an optional headless Service for
   StatefulSets.
 - `ingress`: URLs through the Tailscale operator (`internal`) or Traefik (`public`,
-  `public-sso`), with Gateway API `httpRoutes` and `gateway` as an alternative.
-  The Traefik middleware each public ingress attaches is named in
-  `ingress.middlewares`; empty attaches none.
-- Gateway API routes that work across environments: a route without `host` is
-  named from `ingress.domain` (`<app name>.<domain>`, or `<subdomain>.<domain>`), and
-  `access: public | sso` attaches the Middleware the environment names in
-  `ingress.accessProfiles`, so app values never reference Traefik directly.
-  `access: sso` without an SSO middleware stops the render. HTTPRoutes carry
-  Homepage annotations like ingresses (`homepage.enabled: false` hides one).
+  `public-sso`), as Ingresses or Gateway API `httpRoutes` with the same three types.
+  What each type runs is set once per environment in `ingress.types`: its Traefik
+  middlewares (always run first, so an entry's own `middlewares` can't skip the
+  login) and, for routes, its Gateway. `public-sso` without a login middleware, and
+  an `internal` route without a private Gateway, stop the render.
+- Routes that work across environments: a route without `host` is named from
+  `ingress.domain` (`<app name>.<domain>`, or `<subdomain>.<domain>`). HTTPRoutes
+  carry Homepage annotations like ingresses (`homepage.enabled: false` hides one).
 - `external-secrets`: one switch (`external-secrets.enabled`) to turn 1Password items
   into env vars and files for the pod.
 - Availability and scaling: `autoscaling` (HPA), `podDisruptionBudget`, a

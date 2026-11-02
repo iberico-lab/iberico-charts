@@ -68,7 +68,7 @@ FROM OUTSIDE THE CLUSTER
 {{- else if eq .type "public" }}
   Public:           https://{{ .host }}
 {{- else if eq .type "public-sso" }}
-  Public + login:   https://{{ .host }}   (SSO via the ingress.middlewares.publicSso Traefik middleware)
+  Public + login:   https://{{ .host }}   (login via ingress.types.public-sso.middlewares)
 {{- end }}
 {{- if and (ne .type "internal") (eq (.certManagerIssuer | default "letsencrypt-staging") "letsencrypt-staging") }}
                     ! uses the letsencrypt-staging issuer: browsers will show a
@@ -76,7 +76,7 @@ FROM OUTSIDE THE CLUSTER
 {{- end }}
 {{- end }}
 {{- range $i, $r := .Values.ingress.httpRoutes }}
-  Gateway route:    https://{{ include "ingress.routeHost" (dict "route" $r "index" $i "domain" $.Values.ingress.domain "name" $name) }}{{ if eq ($r.access | default "") "sso" }}   (login required){{ end }}   (HTTPRoute; TLS is set on the Gateway)
+  Gateway route:    https://{{ include "helm-helpers.routeHost" (dict "route" $r "index" $i "domain" $.Values.ingress.domain "name" $name) }}{{ if eq $r.type "public-sso" }}   (login required){{ else if eq $r.type "internal" }}   (private network only){{ end }}   (HTTPRoute; TLS is set on the Gateway)
 {{- end }}
 {{- if not $tailnet }}
 {{- range .Values.ingress.ingresses }}{{ if eq .type "internal" }}

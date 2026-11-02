@@ -37,7 +37,7 @@ tests:
         enabled: true
         ingresses: []
         gateway: { name: gw }
-        httpRoutes: [{ host: new.example.com }]
+        httpRoutes: [{ type: public, host: new.example.com }]
     asserts:
       - matchRegexRaw: { pattern: 'Gateway route:    https://new\.example\.com' }
 
@@ -50,8 +50,8 @@ tests:
         ingresses: []
         domain: apps.example.com
         gateway: { name: gw }
-        accessProfiles: { sso: { middleware: my-sso } }
-        httpRoutes: [{}, { name: shop-admin, subdomain: admin, access: sso }]
+        types: { public-sso: { middlewares: [my-sso] } }
+        httpRoutes: [{ type: public }, { name: shop-admin, type: public-sso, subdomain: admin }]
     asserts:
       - matchRegexRaw: { pattern: 'Gateway route:    https://shop\.apps\.example\.com   \(HTTPRoute' }
       - matchRegexRaw: { pattern: 'Gateway route:    https://admin\.apps\.example\.com   \(login required\)' }

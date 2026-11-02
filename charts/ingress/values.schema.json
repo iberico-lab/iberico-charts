@@ -71,8 +71,11 @@
             }
           },
           "middlewares": {
-            "type": "string",
-            "description": "Traefik middleware name; \"\" = none"
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Extra Traefik Middlewares, run after the type's"
           },
           "homepage": {
             "type": "object",
@@ -107,6 +110,13 @@
       "items": {
         "type": "object",
         "properties": {
+          "type": {
+            "enum": [
+              "internal",
+              "public",
+              "public-sso"
+            ]
+          },
           "name": {
             "type": "string",
             "description": "HTTPRoute name; \"\" = the app's name"
@@ -118,13 +128,6 @@
           "subdomain": {
             "type": "string",
             "description": "Hostname is <subdomain>.<ingress.domain>"
-          },
-          "access": {
-            "enum": [
-              "public",
-              "sso"
-            ],
-            "description": "Access profile (ingress.accessProfiles)"
           },
           "path": {
             "type": "string"
@@ -155,6 +158,13 @@
               }
             },
             "additionalProperties": false
+          },
+          "middlewares": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Extra Traefik Middlewares, run after the type's"
           },
           "filters": {
             "type": "array",
@@ -194,7 +204,10 @@
             "additionalProperties": false
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "required": [
+          "type"
+        ]
       }
     },
     "gateway": {
@@ -219,42 +232,101 @@
       "type": "string",
       "description": "Base domain for routes without a host, e.g. \"apps.example.com\""
     },
-    "accessProfiles": {
+    "types": {
       "type": "object",
       "properties": {
-        "public": {
+        "internal": {
           "type": "object",
           "properties": {
-            "middleware": {
-              "type": "string",
-              "description": "Traefik Middleware name; \"\" = none"
+            "middlewares": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Traefik Middlewares every entry of this type runs first"
+            },
+            "gateway": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Gateway name"
+                },
+                "namespace": {
+                  "type": "string",
+                  "description": "\"\" = the app's namespace"
+                },
+                "sectionName": {
+                  "type": "string",
+                  "description": "Listener name; \"\" = every listener"
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false
         },
-        "sso": {
+        "public": {
           "type": "object",
           "properties": {
-            "middleware": {
-              "type": "string",
-              "description": "Traefik Middleware name; \"\" = none"
+            "middlewares": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Traefik Middlewares every entry of this type runs first"
+            },
+            "gateway": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Gateway name"
+                },
+                "namespace": {
+                  "type": "string",
+                  "description": "\"\" = the app's namespace"
+                },
+                "sectionName": {
+                  "type": "string",
+                  "description": "Listener name; \"\" = every listener"
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-    "middlewares": {
-      "type": "object",
-      "properties": {
-        "public": {
-          "type": "string",
-          "description": "Traefik middleware for type \"public\"; \"\" = none"
         },
-        "publicSso": {
-          "type": "string",
-          "description": "Traefik middleware for type \"public-sso\"; \"\" = none"
+        "public-sso": {
+          "type": "object",
+          "properties": {
+            "middlewares": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Traefik Middlewares every entry of this type runs first"
+            },
+            "gateway": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Gateway name"
+                },
+                "namespace": {
+                  "type": "string",
+                  "description": "\"\" = the app's namespace"
+                },
+                "sectionName": {
+                  "type": "string",
+                  "description": "Listener name; \"\" = every listener"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

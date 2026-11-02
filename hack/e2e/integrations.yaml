@@ -28,6 +28,6 @@ ingress:
     - {type: public, host: e2e.example.com}
   gateway: {name: e2e-gateway}
   httpRoutes:
-    - {host: route.example.com}
+    - {type: public, host: route.example.com}
 metrics:
   serviceMonitor: {enabled: true}

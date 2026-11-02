@@ -1,6 +1,7 @@
 suite: ingress
 release:
   name: shop
+  namespace: web
 tests:
   - it: names the Tailscale machine after the app by default (first tls host)
     templates: [templates/ingress-internal.yaml]
@@ -61,35 +62,54 @@ tests:
     asserts:
       - notExists: { path: 'metadata.annotations["traefik.ingress.kubernetes.io/router.middlewares"]' }
 
-  - it: attaches the middleware named in middlewares.public
+  - it: runs the type's middlewares first, then the ingress's own (namespace-prefixed for Traefik)
     templates: [templates/ingress-public.yaml]
     set:
-      middlewares: { public: my-no-auth }
-      ingresses: [{ type: public, host: a.example.com }]
+      types: { public: { middlewares: [my-no-auth] } }
+      ingresses: [{ type: public, host: a.example.com, middlewares: [my-headers, auth@file] }]
     asserts:
       - equal:
           path: 'metadata.annotations["traefik.ingress.kubernetes.io/router.middlewares"]'
-          value: my-no-auth@kubernetescrd
+          value: web-my-no-auth@kubernetescrd,web-my-headers@kubernetescrd,auth@file
+      - equal: { path: 'metadata.annotations["gethomepage.dev/group"]', value: Public }
 
-  - it: lets one ingress override the middleware
+  - it: runs the public-sso type's login middleware on public-sso ingresses
     templates: [templates/ingress-public.yaml]
     set:
-      middlewares: { public: from-default }
-      ingresses: [{ type: public, host: a.example.com, middlewares: from-ingress }]
-    asserts:
-      - equal:
-          path: 'metadata.annotations["traefik.ingress.kubernetes.io/router.middlewares"]'
-          value: from-ingress@kubernetescrd
-
-  - it: attaches the SSO middleware named in middlewares.publicSso
-    templates: [templates/ingress-public-sso.yaml]
-    set:
-      middlewares: { publicSso: my-sso }
+      types: { public: { middlewares: [my-no-auth] }, public-sso: { middlewares: [my-sso] } }
       ingresses: [{ type: public-sso, host: a.example.com }]
     asserts:
+      - equal: { path: metadata.name, value: shop-public-sso }
       - equal:
           path: 'metadata.annotations["traefik.ingress.kubernetes.io/router.middlewares"]'
-          value: my-sso@kubernetescrd
+          value: web-my-sso@kubernetescrd
+      - equal: { path: 'metadata.annotations["gethomepage.dev/group"]', value: Public SSO }
+
+  - it: renders public and public-sso ingresses side by side
+    templates: [templates/ingress-public.yaml]
+    set:
+      types: { public-sso: { middlewares: [my-sso] } }
+      ingresses: [{ type: public, host: a.example.com }, { type: public-sso, host: b.example.com }]
+    asserts:
+      - hasDocuments: { count: 2 }
+
+  - it: fails for a public-sso ingress when no login middleware is set
+    templates: [templates/ingress-public.yaml]
+    set: { ingresses: [{ type: public-sso, host: a.example.com, middlewares: [my-headers] }] }
+    asserts:
+      - failedTemplate: { errorPattern: 'ingress.ingresses\[0\] is type public-sso, but ingress.types.public-sso.middlewares is empty' }
+
+  - it: rejects middlewares on an internal (Tailscale) ingress
+    templates: [templates/validate.yaml]
+    set: { ingresses: [{ type: internal, middlewares: [my-headers] }] }
+    asserts:
+      - failedTemplate: { errorPattern: "can't run middlewares" }
+
+  - it: ignores types.internal.middlewares for internal ingresses (they are for routes)
+    templates: [templates/ingress-internal.yaml]
+    set: { types: { internal: { middlewares: [lan-only] } } }
+    asserts:
+      - notExists: { path: 'metadata.annotations["traefik.ingress.kubernetes.io/router.middlewares"]' }
 
   - it: sends traffic to serviceName
     templates: [templates/ingress-public.yaml, templates/ingress-internal.yaml]
@@ -112,13 +132,14 @@ tests:
     templates: [templates/httproute.yaml]
     set:
       gateway: { name: traefik-gateway, namespace: traefik, sectionName: websecure }
-      httpRoutes: [{ host: shop.example.com }]
+      httpRoutes: [{ type: public, host: shop.example.com }]
     asserts:
       - equal: { path: metadata.name, value: shop }
       - equal: { path: spec.parentRefs, value: [{ name: traefik-gateway, namespace: traefik, sectionName: websecure }] }
       - equal: { path: spec.hostnames, value: [shop.example.com] }
       - equal: { path: 'spec.rules[0].matches[0].path', value: { type: PathPrefix, value: / } }
       - equal: { path: 'spec.rules[0].backendRefs', value: [{ name: shop, port: 80 }] }
+      - notExists: { path: 'spec.rules[0].filters' }
 
   - it: lets a route pick its own gateway, path, backend and filters
     templates: [templates/httproute.yaml]
@@ -126,25 +147,53 @@ tests:
       gateway: { name: traefik-gateway, namespace: traefik }
       httpRoutes:
         - name: shop-api
+          type: public
           host: api.example.com
           path: /v1
           serviceName: api
           servicePort: 8080
-          gateway: { name: internal-gw, sectionName: https }
+          gateway: { name: other-gw, sectionName: https }
           filters: [{ type: RequestHeaderModifier, requestHeaderModifier: { set: [{ name: X-Env, value: prod }] } }]
     asserts:
       - equal: { path: metadata.name, value: shop-api }
-      - equal: { path: spec.parentRefs, value: [{ name: internal-gw, namespace: traefik, sectionName: https }] }
+      - equal: { path: spec.parentRefs, value: [{ name: other-gw, namespace: traefik, sectionName: https }] }
       - equal: { path: 'spec.rules[0].matches[0].path.value', value: /v1 }
       - equal: { path: 'spec.rules[0].backendRefs', value: [{ name: api, port: 8080 }] }
       - equal: { path: 'spec.rules[0].filters[0].type', value: RequestHeaderModifier }
+
+  - it: attaches a route to its type's gateway before ingress.gateway
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: default-gw, namespace: traefik }
+      types: { public-sso: { middlewares: [my-sso], gateway: { name: sso-gw } } }
+      httpRoutes: [{ type: public-sso, host: a.example.com }]
+    asserts:
+      - equal: { path: spec.parentRefs, value: [{ name: sso-gw, namespace: traefik }] }
+
+  - it: attaches an internal route to the internal type's gateway, never ingress.gateway
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: public-gw, namespace: traefik, sectionName: websecure }
+      types: { internal: { gateway: { name: private-gw, namespace: tailnet } } }
+      httpRoutes: [{ type: internal, host: shop.internal.example.com }]
+    asserts:
+      - equal: { path: spec.parentRefs, value: [{ name: private-gw, namespace: tailnet }] }
+      - equal: { path: 'metadata.annotations["gethomepage.dev/group"]', value: Internal }
+
+  - it: fails for an internal route with no internal gateway, even when ingress.gateway is set
+    templates: [templates/httproute.yaml]
+    set:
+      gateway: { name: public-gw }
+      httpRoutes: [{ type: internal, host: shop.internal.example.com }]
+    asserts:
+      - failedTemplate: { errorPattern: 'set ingress.types.internal.gateway.name' }
 
   - it: builds a route's host from the app name and ingress.domain
     templates: [templates/httproute.yaml]
     set:
       gateway: { name: gw }
       domain: apps.example.com
-      httpRoutes: [{}]
+      httpRoutes: [{ type: public }]
     asserts:
       - equal: { path: spec.hostnames, value: [shop.apps.example.com] }
 
@@ -153,7 +202,7 @@ tests:
     set:
       gateway: { name: gw }
       domain: apps.example.com
-      httpRoutes: [{ subdomain: shop-admin }]
+      httpRoutes: [{ type: public, subdomain: shop-admin }]
     asserts:
       - equal: { path: spec.hostnames, value: [shop-admin.apps.example.com] }
 
@@ -162,7 +211,7 @@ tests:
     set:
       gateway: { name: gw }
       domain: apps.example.com
-      httpRoutes: [{ host: shop.example.org, subdomain: ignored }]
+      httpRoutes: [{ type: public, host: shop.example.org, subdomain: ignored }]
     asserts:
       - equal: { path: spec.hostnames, value: [shop.example.org] }
 
@@ -170,65 +219,50 @@ tests:
     templates: [templates/httproute.yaml]
     set:
       gateway: { name: gw }
-      httpRoutes: [{ subdomain: shop-admin }]
+      httpRoutes: [{ type: public, subdomain: shop-admin }]
     asserts:
       - failedTemplate: { errorPattern: 'httpRoutes\[0\] has no host' }
 
-  - it: renders no filters when a route sets no access
+  - it: runs the type's middlewares first, then the route's own, then its raw filters
     templates: [templates/httproute.yaml]
     set:
       gateway: { name: gw }
-      accessProfiles: { public: { middleware: my-no-auth }, sso: { middleware: my-sso } }
-      httpRoutes: [{ host: shop.example.com }]
-    asserts:
-      - notExists: { path: 'spec.rules[0].filters' }
-
-  - it: puts the public access profile's middleware first, before the route's own filters
-    templates: [templates/httproute.yaml]
-    set:
-      gateway: { name: gw }
-      accessProfiles: { public: { middleware: my-no-auth } }
+      types: { public-sso: { middlewares: [my-sso] } }
       httpRoutes:
-        - host: shop.example.com
-          access: public
+        - type: public-sso
+          host: admin.example.com
+          middlewares: [my-headers]
           filters: [{ type: RequestHeaderModifier, requestHeaderModifier: { set: [{ name: X-Env, value: prod }] } }]
     asserts:
       - equal:
-          path: 'spec.rules[0].filters[0]'
-          value: { type: ExtensionRef, extensionRef: { group: traefik.io, kind: Middleware, name: my-no-auth } }
-      - equal: { path: 'spec.rules[0].filters[1].type', value: RequestHeaderModifier }
-
-  - it: renders no filter for access public when the profile has no middleware
-    templates: [templates/httproute.yaml]
-    set:
-      gateway: { name: gw }
-      httpRoutes: [{ host: shop.example.com, access: public }]
-    asserts:
-      - notExists: { path: 'spec.rules[0].filters' }
-
-  - it: renders the sso access profile's middleware
-    templates: [templates/httproute.yaml]
-    set:
-      gateway: { name: gw }
-      accessProfiles: { sso: { middleware: my-sso } }
-      httpRoutes: [{ host: admin.example.com, access: sso }]
-    asserts:
-      - equal: { path: 'spec.rules[0].filters[0].extensionRef.name', value: my-sso }
+          path: 'spec.rules[0].filters'
+          value:
+            - { type: ExtensionRef, extensionRef: { group: traefik.io, kind: Middleware, name: my-sso } }
+            - { type: ExtensionRef, extensionRef: { group: traefik.io, kind: Middleware, name: my-headers } }
+            - { type: RequestHeaderModifier, requestHeaderModifier: { set: [{ name: X-Env, value: prod }] } }
       - equal: { path: 'metadata.annotations["gethomepage.dev/group"]', value: Public SSO }
 
-  - it: fails when access is sso but no sso middleware is set
+  - it: fails for a public-sso route when no login middleware is set
     templates: [templates/httproute.yaml]
     set:
       gateway: { name: gw }
-      httpRoutes: [{ host: admin.example.com, access: sso }]
+      httpRoutes: [{ type: public-sso, host: admin.example.com, middlewares: [my-headers] }]
     asserts:
-      - failedTemplate: { errorPattern: 'accessProfiles.sso.middleware is empty' }
+      - failedTemplate: { errorPattern: 'ingress.httpRoutes\[0\] is type public-sso, but ingress.types.public-sso.middlewares is empty' }
 
-  - it: rejects an unknown access value
+  - it: rejects a Traefik provider reference on a route
     templates: [templates/httproute.yaml]
     set:
       gateway: { name: gw }
-      httpRoutes: [{ host: shop.example.com, access: private }]
+      httpRoutes: [{ type: public, host: a.example.com, middlewares: [auth@file] }]
+    asserts:
+      - failedTemplate: { errorPattern: 'give its plain name' }
+
+  - it: rejects a route without a type
+    templates: [templates/validate.yaml]
+    set:
+      gateway: { name: gw }
+      httpRoutes: [{ host: a.example.com }]
     asserts:
       - failedTemplate: {}
 
@@ -236,7 +270,7 @@ tests:
     templates: [templates/httproute.yaml]
     set:
       gateway: { name: gw }
-      httpRoutes: [{ host: shop.example.com, annotations: { team: web } }]
+      httpRoutes: [{ type: public, host: shop.example.com, annotations: { team: web } }]
     asserts:
       - equal: { path: 'metadata.annotations["gethomepage.dev/enabled"]', value: "true" }
       - equal: { path: 'metadata.annotations["gethomepage.dev/name"]', value: shop }
@@ -248,13 +282,13 @@ tests:
     templates: [templates/httproute.yaml]
     set:
       gateway: { name: gw }
-      httpRoutes: [{ host: shop.example.com, homepage: { enabled: false } }]
+      httpRoutes: [{ type: public, host: shop.example.com, homepage: { enabled: false } }]
     asserts:
       - notExists: { path: metadata.annotations }
 
   - it: fails without a gateway
     templates: [templates/httproute.yaml]
-    set: { httpRoutes: [{ host: shop.example.com }] }
+    set: { httpRoutes: [{ type: public, host: shop.example.com }] }
     asserts:
       - failedTemplate: { errorPattern: 'set gateway.name' }
 
@@ -262,7 +296,7 @@ tests:
     templates: [templates/validate.yaml]
     set:
       gateway: { name: gw }
-      httpRoutes: [{ host: a.example.com }, { host: b.example.com }]
+      httpRoutes: [{ type: public, host: a.example.com }, { type: public, host: b.example.com }]
     asserts:
       - failedTemplate: { errorPattern: 'Give each route its own name' }
 
@@ -272,7 +306,7 @@ tests:
       tailnetDomain: tail1234.ts.net
       gateway: { name: gw }
       ingresses: [{ type: internal }, { type: public, host: shop.example.com }]
-      httpRoutes: [{ host: new.example.com }]
+      httpRoutes: [{ type: public, host: new.example.com }]
     asserts:
       - matchRegexRaw: { pattern: 'shop-internal   Tailscale only: https://shop\.tail1234\.ts\.net' }
       - matchRegexRaw: { pattern: 'shop-public   https://shop\.example\.com' }
@@ -284,8 +318,8 @@ tests:
     set:
       gateway: { name: gw }
       domain: apps.example.com
-      accessProfiles: { sso: { middleware: my-sso } }
+      types: { public-sso: { middlewares: [my-sso] } }
       ingresses: []
-      httpRoutes: [{ name: shop-admin, subdomain: admin, access: sso }]
+      httpRoutes: [{ name: shop-admin, type: public-sso, subdomain: admin }]
     asserts:
       - matchRegexRaw: { pattern: 'HTTPRoute shop-admin   https://admin\.apps\.example\.com   \(login required\)' }

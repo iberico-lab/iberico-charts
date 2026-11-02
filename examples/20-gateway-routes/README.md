@@ -1,10 +1,10 @@
 # 20 · Gateway routes for several environments
 
-> **In one line:** One values file that works in every environment: the domain and the login middleware come from the environment, not the app.
+> **In one line:** One values file that works in every environment: each URL picks a type (`internal`, `public`, `public-sso`), and the environment decides what that type runs.
 
 **Use this when:**
 - Your cluster has a Gateway (Gateway API) and the same app ships to staging, production and so on
-- Some URLs need a login and some don't
+- Some URLs need a login, some are private, some are open
 
 ## Try it
 
@@ -14,7 +14,7 @@ From the repository root:
 helm template demo charts/app -f examples/20-gateway-routes/values.yaml
 # the same app in production: only the environment part changes
 helm template demo charts/app -f examples/20-gateway-routes/values.yaml \
-  --set ingress.domain=example.com --set ingress.accessProfiles.sso.middleware=prod-sso
+  --set ingress.domain=example.com --set 'ingress.types.public-sso.middlewares={prod-sso}'
 ```
 
 Open [`values.yaml`](values.yaml). The comments explain each line.
@@ -22,12 +22,14 @@ Open [`values.yaml`](values.yaml). The comments explain each line.
 ## What you get
 
 - `shop.staging.example.com`: public, with a Homepage tile
-- `admin.staging.example.com/admin`: needs a login (the `my-sso` Traefik Middleware is attached as a filter), hidden from Homepage
+- `admin.staging.example.com/admin`: the `my-sso` login runs first, then the app's own `shop-admin-headers`; hidden from Homepage
+- `ops.staging.example.com`: attached to the private Gateway only
 
 ## Watch out
 
-- `access: sso` with no `accessProfiles.sso.middleware` stops the render, so a page meant to need a login is never published without one
-- The Middleware must exist in the namespace the route lands in
+- A `public-sso` URL with no `ingress.types.public-sso.middlewares` stops the render, so a page meant to need a login is never published without one
+- An `internal` route needs `ingress.types.internal.gateway`. It never falls back to `ingress.gateway`, which is usually the public one
+- Middlewares must exist in the namespace the route lands in
 - HTTPS is set on the Gateway's listener, not here
 
 ---

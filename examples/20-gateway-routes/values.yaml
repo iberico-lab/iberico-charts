@@ -1,8 +1,8 @@
 # 20 - Gateway API routes, one values file for every environment
-# The app never hard-codes a hostname or a Traefik Middleware: the domain and
-# the access profiles come from the environment (here, set inline so the
-# example renders on its own; in practice, pass them in a second values file
-# per environment, e.g. `-f values.yaml -f env/staging.yaml`).
+# The app picks a type for each URL (internal, public, public-sso) and never
+# names a hostname, Gateway or Traefik Middleware. Those come from the
+# environment (set inline here so the example renders on its own; in practice
+# pass them in a second values file, e.g. `-f values.yaml -f env/staging.yaml`).
 global:
   name: "shop"
 
@@ -18,27 +18,36 @@ ingress:
 
   # --- per environment ---------------------------------------------------
   domain: "staging.example.com"          # routes become <name>.staging.example.com
-  gateway:
+  gateway:                               # default Gateway (the public one)
     name: "traefik-gateway"
     namespace: "traefik"
     sectionName: "websecure"
-  accessProfiles:
+  types:
+    internal:
+      gateway:                           # a Gateway only the private network reaches
+        name: "private-gateway"
+        namespace: "traefik"
     public:
-      middleware: ""                     # no filter: plain forwarding
-    sso:
-      middleware: "my-sso"               # the Middleware that asks for a login
+      middlewares: []                    # plain forwarding
+    public-sso:
+      middlewares: ["my-sso"]            # the login, always run first
 
   # --- per app -----------------------------------------------------------
   httpRoutes:
     # shop.staging.example.com, anyone can open it
-    - access: public
+    - type: public
       homepage:
         name: "Shop"
         icon: "kubernetes"
-    # admin.staging.example.com, login required
+    # admin.staging.example.com/admin: login first, then the app's own middleware
     - name: shop-admin
+      type: public-sso
       subdomain: admin
       path: /admin
-      access: sso
+      middlewares: ["shop-admin-headers"]
       homepage:
         enabled: false                   # keep it off the dashboard
+    # ops.staging.example.com, private network only
+    - name: shop-ops
+      type: internal
+      subdomain: ops

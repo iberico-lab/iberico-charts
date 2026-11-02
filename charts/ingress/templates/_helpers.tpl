@@ -1,16 +1,32 @@
+{{- define "ingress.routeName" -}}
+{{- .route.name | default (include "helm-helpers.fullname" .root) -}}
+{{- end }}
+
+
 {{/*
-Render homepage annotations. Renders nothing when homepage.enabled is false.
-Usage: {{ include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Public" "root" $) }}
+Traefik Middlewares an ingress or route runs, in order: its type's
+(ingress.types.<type>.middlewares, e.g. the login), then the entry's own
+`middlewares`. The type's come first, so an entry can add middlewares but
+never run them before the login, or drop it. A public-sso entry whose type
+has no middlewares fails, so a page meant to need a login is never published
+without one.
+Usage: include "ingress.middlewares" (dict "entry" . "where" "ingress.ingresses[0]" "root" $) | fromYamlArray
 */}}
-{{- define "helm-helpers.homepageAnnotations" -}}
-{{- $homepage := .ingress.homepage | default dict -}}
-{{- if or (not (hasKey $homepage "enabled")) $homepage.enabled -}}
-gethomepage.dev/enabled: "true"
-gethomepage.dev/name: {{ if and .ingress.homepage .ingress.homepage.name }}{{ .ingress.homepage.name | quote }}{{ else }}{{ .ingress.serviceName | default .ingress.name | default (include "helm-helpers.appName" .root) | quote }}{{ end }}
-gethomepage.dev/description: {{ if and .ingress.homepage .ingress.homepage.description }}{{ .ingress.homepage.description | quote }}{{ else }}{{ .ingress.host | default (printf "%s service" (include "helm-helpers.appName" .root)) | quote }}{{ end }}
-gethomepage.dev/group: {{ if and .ingress.homepage .ingress.homepage.group }}{{ .ingress.homepage.group | quote }}{{ else }}{{ .group | quote }}{{ end }}
-gethomepage.dev/icon: {{ if and .ingress.homepage .ingress.homepage.icon }}{{ .ingress.homepage.icon | quote }}{{ else }}"kubernetes"{{ end }}
+{{- define "ingress.middlewares" -}}
+{{- $type := .entry.type -}}
+{{- $fromType := (get (.root.Values.types | default dict) $type | default dict).middlewares | default list -}}
+{{- if and (eq $type "public-sso") (not $fromType) -}}
+{{- fail (printf "%s is type public-sso, but ingress.types.public-sso.middlewares is empty: list the Traefik Middleware that asks for a login, or the page would be public" .where) -}}
 {{- end -}}
+{{- toYaml (concat $fromType (.entry.middlewares | default list)) -}}
+{{- end }}
+
+{{/*
+Homepage group for each type.
+Usage: include "ingress.homepageGroup" "public-sso"
+*/}}
+{{- define "ingress.homepageGroup" -}}
+{{- get (dict "internal" "Internal" "public" "Public" "public-sso" "Public SSO") . -}}
 {{- end }}
 
 {{/*
@@ -20,55 +36,15 @@ Validate ingress entries before anything renders:
 - no two entries may produce the same Ingress name (they used to overwrite
   each other). Names: internal => <host|fullname>-internal,
   public / public-sso => <fullname>-<type>.
+- no two routes may produce the same HTTPRoute name.
 Usage: include "ingress.validate" .
 */}}
-{{- define "ingress.routeName" -}}
-{{- .route.name | default (include "helm-helpers.fullname" .root) -}}
-{{- end }}
-
-{{/*
-Hostname of an HTTPRoute, in order: `host` as written, else
-`<subdomain>.<domain>`, else `<app name>.<domain>`. Fails when there is no
-host and no domain to build one from.
-Usage: include "ingress.routeHost" (dict "route" $r "index" $i "domain" $domain "name" $appName)
-*/}}
-{{- define "ingress.routeHost" -}}
-{{- $r := .route -}}
-{{- if $r.host -}}
-{{- $r.host -}}
-{{- else if not .domain -}}
-{{- fail (printf "ingress.httpRoutes[%v] has no host: set host (e.g. \"shop.example.com\"), or set ingress.domain (e.g. \"apps.example.com\") to build one from the app name or subdomain" .index) -}}
-{{- else -}}
-{{- printf "%s.%s" ($r.subdomain | default .name) .domain -}}
-{{- end -}}
-{{- end }}
-
-{{/*
-Filters of an HTTPRoute: the access profile's Middleware (if any), then the
-route's own `filters`. `access: sso` without a middleware fails, so a route
-meant to need a login is never published without one.
-Usage: include "ingress.routeFilters" (dict "route" $r "index" $i "profiles" $.Values.accessProfiles) | fromYamlArray
-*/}}
-{{- define "ingress.routeFilters" -}}
-{{- $r := .route -}}
-{{- $filters := list -}}
-{{- with $r.access -}}
-{{- if not (has . (list "public" "sso")) -}}
-{{- fail (printf "ingress.httpRoutes[%v].access must be public or sso (got %q)" $.index .) -}}
-{{- end -}}
-{{- $profile := get ($.profiles | default dict) . | default dict -}}
-{{- if $profile.middleware -}}
-{{- $filters = append $filters (dict "type" "ExtensionRef" "extensionRef" (dict "group" "traefik.io" "kind" "Middleware" "name" $profile.middleware)) -}}
-{{- else if eq . "sso" -}}
-{{- fail (printf "ingress.httpRoutes[%v].access is sso, but ingress.accessProfiles.sso.middleware is empty: set it to the Traefik Middleware that asks for a login, or the route would be public" $.index) -}}
-{{- end -}}
-{{- end -}}
-{{- toYaml (concat $filters ($r.filters | default list)) -}}
-{{- end }}
-
 {{- define "ingress.validate" -}}
 {{- $routes := dict -}}
 {{- range $i, $r := .Values.httpRoutes -}}
+{{- if not (has ($r.type | default "") (list "internal" "public" "public-sso")) -}}
+{{- fail (printf "ingress.httpRoutes[%d].type must be internal, public or public-sso (got %q)" $i ($r.type | default "")) -}}
+{{- end -}}
 {{- $n := include "ingress.routeName" (dict "route" $r "root" $) -}}
 {{- if hasKey $routes $n -}}
 {{- fail (printf "ingress.httpRoutes[%d] would create HTTPRoute %q, which entry %v already creates. Give each route its own name" $i $n (get $routes $n)) -}}
@@ -80,6 +56,9 @@ Usage: include "ingress.routeFilters" (dict "route" $r "index" $i "profiles" $.V
 {{- $type := $ing.type | default "" -}}
 {{- if not (has $type (list "internal" "public" "public-sso")) -}}
 {{- fail (printf "ingress.ingresses[%d].type must be internal, public or public-sso (got %q)" $i $type) -}}
+{{- end -}}
+{{- if and (eq $type "internal") $ing.middlewares -}}
+{{- fail (printf "ingress.ingresses[%d] is type internal, which the Tailscale operator serves without Traefik, so it can't run middlewares: remove middlewares, or use an internal httpRoute" $i) -}}
 {{- end -}}
 {{- $name := printf "%s-%s" (include "helm-helpers.fullname" $) $type -}}
 {{- if eq $type "internal" -}}
