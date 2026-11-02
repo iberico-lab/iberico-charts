@@ -3,112 +3,50 @@
 All notable changes to these charts. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions apply to all four charts, which are released together.
 
-Upgrading? Read **[docs/upgrading.md](docs/upgrading.md)** first: it lists every step you have to do by hand.
+## [0.1.0] - 2026-11-02
 
-## [0.3.0] - unreleased
-
-### Breaking
-
-- Resource names default to the **release name** when `global.name` is empty (was always `app`).
-- No Kubernetes API token is mounted by default (`serviceAccount.automount: false`).
-- `persistence` defaults to `ReadWriteOnce` (was `ReadWriteMany`).
-- StatefulSet headless Service settings moved to `service.headless`: `workload.service.*` →
-  `service.headless.*`, `workload.serviceName` → `service.headless.name`. The old keys fail with a
-  message saying where they went.
-- `service.targetPort` defaults to `workload.applicationPort` (was `80`).
-- `ingresses[].name` renamed to `ingresses[].serviceName`; the old key fails with a message.
-- Ingress type `public-protected` renamed to `public-sso`, which says what it does. The
-  Traefik middleware it attaches is no longer hardcoded: name it in `ingress.middlewares.publicSso`
-  (and `ingress.middlewares.public` for `public`). Empty attaches none.
-- Smaller default resources: requests `100m`/`128Mi`, memory limit `512Mi`, no CPU limit
-  (was `300m`/`512Mi` and `1000m`/`800Mi`).
-- Unknown or mistyped values are rejected by `values.schema.json`.
-- Needs Kubernetes 1.30 or newer (`kubeVersion` in every chart). CI installs on 1.30, 1.34 and 1.37,
-  with Helm 3 and 4.
-- Rolling updates start new pods before stopping old ones (`maxUnavailable: 0`); Deployments with a
-  ReadWriteOnce disk use `Recreate` (`workload.strategy.type: ""` = automatic).
-- `enableServiceLinks: false`: no `<SERVICE>_PORT`-style env vars (`workload.enableServiceLinks`).
+First release. The charts are built to be installed from scratch: read
+[docs/getting-started.md](docs/getting-started.md), or copy `examples/`.
 
 ### Added
 
+- `app`: runs any container image as a Deployment or StatefulSet from a values file.
+  Image, replicas, ports, command/args, environment, ConfigMaps from values, volumes,
+  persistence, extra containers and init containers, resource limits.
+- Health checks (liveness, readiness, startup) defaulting to HTTP on `applicationPort`,
+  with TCP, exec and raw-spec variants.
+- `service`: ClusterIP/NodePort/LoadBalancer on port 80, forwarding to
+  `workload.applicationPort`; multiple named ports; an optional headless Service for
+  StatefulSets.
+- `ingress`: URLs through the Tailscale operator (`internal`) or Traefik (`public`,
+  `public-sso`), with Gateway API `httpRoutes` and `gateway` as an alternative.
+  The Traefik middleware each public ingress attaches is named in
+  `ingress.middlewares`; empty attaches none.
+- `external-secrets`: one switch (`external-secrets.enabled`) to turn 1Password items
+  into env vars and files for the pod.
+- Availability and scaling: `autoscaling` (HPA), `podDisruptionBudget`, a
+  `topologySpread` preset that prefers different nodes, `priorityClassName`.
+- Safety: `networkPolicy` (opt-in), `securityPreset: restricted` for the restricted
+  Pod Security Standard, seccomp `RuntimeDefault`, no privilege escalation, and no
+  Service-account token mounted by default.
+- Operations: `metrics.serviceMonitor`, `extraManifests`, `workload.lifecycle`,
+  `workload.shutdownDelaySeconds` (stopping pods keep serving briefly), rolling updates
+  that start new pods before stopping old ones, and `helm test` connection checks.
+- `values.schema.json` for the app, ingress and external-secrets charts: unknown or
+  mistyped settings are rejected instead of silently ignored, and cross-field mistakes
+  stop the render with a message naming the fix.
+- Docs for every feature, 19 working examples, and per-chart READMEs.
+- CI: helm-unittest suites, schema freshness, documentation coverage, kubeconform
+  validation against Kubernetes 1.30 and current, every example rendered, and an
+  end-to-end install, `helm test` and upgrade on kind clusters (Kubernetes 1.30, 1.34,
+  1.37; Helm 3 and 4) including 1Password secrets through the real External Secrets
+  Operator, config files, ingress and ServiceMonitor.
 - Releases: tag `vX.Y.Z` to publish all four charts as a Helm repository on GitHub Pages
-  (`https://iberico-lab.github.io/iberico-charts`) with a GitHub Release carrying the `.tgz` files.
-- `values.schema.json` for the app, ingress and external-secrets charts.
-- Install notes that print in-cluster DNS, Tailscale/public URLs and a port-forward command; `ingress.tailnetDomain`.
-- `podDisruptionBudget`, `autoscaling` (HPA), `topologySpread` preset (on by default: pods prefer
-  different nodes), `topologySpreadConstraints`, `priorityClassName`.
-- Install notes warn when fewer than 2 replicas run, note that 3 is needed for high availability,
-  and warn when nothing spreads the pods across nodes.
-- `metrics.serviceMonitor` (Prometheus Operator).
-- `securityPreset: restricted`: everything the restricted Pod Security Standard requires, also on
-  sidecars; forbidden settings fail the render.
-- Gateway API: `ingress.httpRoutes` and `ingress.gateway` create HTTPRoutes next to (or instead of)
-  Ingresses.
-- `networkPolicy` (opt-in): only the app's namespace and listed namespaces may connect.
-- `workload.extraEnv`, `workload.extraEnvFrom`, `workload.pod.labels`, `workload.lifecycle`,
-  `workload.podManagementPolicy`, `workload.reloadOnSecretChange` (Stakater Reloader).
-- `extraManifests` for shipping extra objects with the release.
-- `workload.shutdownDelaySeconds` (default 5): stopping pods keep serving briefly, so updates don't
-  drop requests.
-- `workload.image.digest` to pin the exact image (`repo:tag@sha256:...`).
-- `workload.configFiles`: write config files in your values (`/path: contents`); pods restart
-  when a file changes.
-- `helm test` support: a pod that checks every Service port accepts connections (`helmTest`).
-- `service.portName`; `homepage.enabled` per ingress.
-- An `app.kubernetes.io/version` label taken from the image tag (not the placeholder chart
-  `appVersion`, which is removed).
-- Safe security defaults: seccomp `RuntimeDefault`, `allowPrivilegeEscalation: false`.
-- One switch for secrets: `external-secrets.enabled` (1Password is on by default inside it).
-- Docs: security, availability & scaling, metrics, extra manifests, troubleshooting, versions
-  (what to change for a new app release vs a chart release), per-chart READMEs.
-- `make bump VERSION=x.y.z` sets one version on all four charts; CI checks they agree.
-- CI: unit tests (helm-unittest), schema freshness check, kubeconform validation, and an
-  end-to-end install, `helm test` and upgrade of real scenarios on a kind cluster (`make e2e`),
-  including 1Password secrets through the real External Secrets Operator (fake store), config
-  files, ingress and ServiceMonitor.
+  (`https://iberico-lab.github.io/iberico-charts`), with a GitHub Release carrying the
+  packaged charts.
 
-### Fixed
+### Notes
 
-- Clear errors instead of broken output for: invalid names, unquoted numeric image tags,
-  duplicate container names, unknown `workload.type`, `ReadWriteOnce` disks shared by several
-  pods, impossible PodDisruptionBudgets and autoscaling ranges, unknown ServiceMonitor ports.
-- Deployments now honour `workload.terminationGracePeriodSeconds`; one pod template is shared by
-  Deployments and StatefulSets.
-- No Services are created when `workload.enabled: false`.
-- Tailscale ingress: the machine name now comes only from `host` (or the app's name), placed in
-  `spec.tls.hosts` where the operator reads it. The `tailscale.com/hostname` annotation, which the
-  operator only documents for Services and which disagreed with `host`, is gone. A full domain or
-  invalid name in `host` now fails with a clear error.
-- StatefulSets with `persistence` can be upgraded: disk templates no longer carry the
-  version and chart labels, which Kubernetes refuses to change. Needs a one-time
-  `--cascade=orphan` step (see docs/upgrading.md).
-
-### Removed
-
-- `charts/app/values.example.yaml` (use `examples/`).
-
-## [0.2.0] - unreleased
-
-### Breaking
-
-- `app.kubernetes.io/version` removed from pod selectors, so `appVersion` bumps no longer break
-  upgrades. Needs a one-time `--cascade=orphan` step.
-
-### Fixed
-
-- Several `onepassword.secrets` entries are merged into one ExternalSecret per kind instead of
-  overwriting each other; duplicate keys fail.
-- `tailscale.com/hostname` moved under annotations.
-- StatefulSet PVC annotations rendered once; no bogus persistence volumes on StatefulSet pods.
-- Unknown `workload.type`, missing public ingress `host`, and clashing or unknown ingress types fail
-  with clear errors.
-- StatefulSet headless Service follows `applicationPort`.
-- Secrets are only wired into pods when the ExternalSecrets are actually rendered.
-
-### Removed
-
-- Unused values: `global.namespaceOverride`, `onepassword.secretStore`, maintainer emails.
-
-## [0.1.0]
-
-- Initial charts: app, external-secrets, ingress, helm-helpers.
+- Needs Kubernetes 1.30 or newer (`kubeVersion` in every chart) and Helm 3 or 4.
+- There are no `appVersion`s: these charts run your image, so the
+  `app.kubernetes.io/version` label comes from your image tag.

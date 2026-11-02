@@ -36,10 +36,6 @@
             "type": "string",
             "description": "Backend Service name (default: the app's Service)"
           },
-          "name": {
-            "type": "string",
-            "description": "Removed: use serviceName"
-          },
           "type": {
             "enum": [
               "internal",

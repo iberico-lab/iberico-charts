@@ -29,7 +29,6 @@
 | Look up one exact setting | [Values Reference](values-reference.md) |
 | Understand how the charts fit together | [Architecture](architecture.md) |
 | Ship a new version of my app, or know which version to bump | [Versions](versioning.md) |
-| Upgrade to a new chart version | [Upgrading](upgrading.md) |
 
 Want working files to copy? See **[examples/](../examples/README.md)**.
 

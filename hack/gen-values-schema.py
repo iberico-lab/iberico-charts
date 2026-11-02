@@ -67,9 +67,6 @@ def app():
         "updateStrategy": ANYMAP, "terminationGracePeriodSeconds": I(mn=0),
         "shutdownDelaySeconds": I("Seconds a stopping pod keeps serving before the stop signal; 0 = off", mn=0),
         "enableServiceLinks": B("Add env vars for every Service in the namespace"),
-        # removed in 0.3.0; accepted only so the chart can say where they moved
-        "service": {"description": "Removed: use service.headless"},
-        "serviceName": {"description": "Removed: use service.headless.name"},
     })
     service = obj({"enabled": B(), "type": {"enum": ["ClusterIP", "NodePort", "LoadBalancer"]},
                    "port": PORT, "targetPort": {"type": ["integer", "string", "null"]},
@@ -111,7 +108,6 @@ def app():
 
 def ingress():
     ing = obj({"serviceName": S("Backend Service name (default: the app's Service)"),
-               "name": S("Removed: use serviceName"),
                "type": {"enum": ["internal", "public", "public-sso"]},
                "host": S(), "servicePort": PORT, "servicePortName": S(),
                "certManagerIssuer": S(), "tailscaleExpose": B(), "annotations": STRMAP,

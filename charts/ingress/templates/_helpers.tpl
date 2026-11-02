@@ -37,9 +37,6 @@ Usage: include "ingress.validate" .
 {{- end -}}
 {{- $seen := dict -}}
 {{- range $i, $ing := .Values.ingresses -}}
-{{- if hasKey $ing "name" -}}
-{{- fail (printf "ingress.ingresses[%d].name was renamed to serviceName in 0.3.0 (same meaning: the backend Service). See docs/upgrading.md" $i) -}}
-{{- end -}}
 {{- $type := $ing.type | default "" -}}
 {{- if not (has $type (list "internal" "public" "public-sso")) -}}
 {{- fail (printf "ingress.ingresses[%d].type must be internal, public or public-sso (got %q)" $i $type) -}}

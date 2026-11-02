@@ -120,7 +120,7 @@ design rules, and breaking one needs a strong reason.
   `hack/gen-values-schema.py`, `make schema`.
 - Every new validation `fail` message: add it to `docs/troubleshooting.md`.
 - Every new setting: a row in `docs/values-reference.md` and its feature page.
-- `CHANGELOG.md` entry. Breaking changes also go in `docs/upgrading.md`.
+- `CHANGELOG.md` entry, with a `### Breaking` section if anyone has to act.
 - Add a unit test under `charts/*/tests` for the happy path and each `fail`.
 
 ## Versions

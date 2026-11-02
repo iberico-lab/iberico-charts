@@ -29,8 +29,10 @@ Never render something broken or silently ignore a value. Two layers:
   without a CPU request, duplicate container names, a domain in a Tailscale
   machine name.
 
-A message names the setting, what's wrong, and what to do:
-`workload.serviceName was removed in 0.3.0: use service.headless.name`.
+A message names the setting, what's wrong, and what to do, e.g.
+`persistence "data" is ReadWriteOnce, so only one pod can use it, but this
+Deployment runs several pods: use replicas: 1, a ReadWriteMany storage class,
+or workload.type: StatefulSet`.
 Add each new message to `docs/troubleshooting.md`.
 
 ## 4. Upgrades must keep working
@@ -40,9 +42,8 @@ Add each new message to `docs/troubleshooting.md`.
   anything else Kubernetes won't let you change later.
 - Pods that aren't app pods (e.g. the `helm test` pod) must **not** carry
   `app.kubernetes.io/name`, or Services and PDBs select them.
-- Renaming or removing a setting: keep the old key in the schema only so a
-  template `fail` can name the new one (see `app.removedSettings`), and document it
-  in `docs/upgrading.md`.
+- Renaming or removing a setting is a breaking change: say so in `CHANGELOG.md`,
+  and keep upgrades working (see rule 4).
 
 ## 5. Names
 
@@ -75,5 +76,5 @@ settings table, "Next". Short sentences, no emojis.
 - [ ] Default in `values.yaml` with a comment; key in `hack/gen-values-schema.py`; `make schema`
 - [ ] Unit test in `charts/*/tests` (happy path and each `fail`)
 - [ ] Docs: the feature page, `docs/values-reference.md`, troubleshooting for new errors
-- [ ] `CHANGELOG.md`; `docs/upgrading.md` if anyone has to act
+- [ ] `CHANGELOG.md`, with a `### Breaking` section if anyone has to act
 - [ ] `make docs-check test validate examples` pass; `make e2e` for anything pod-level

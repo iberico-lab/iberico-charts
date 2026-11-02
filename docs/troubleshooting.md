@@ -39,7 +39,6 @@ These come from the chart and stop **before** anything is created.
 | `… which entry … already creates` | Two ingresses of the same type | Keep one per type |
 | `serviceMonitor.port "…" is not a Service port name` | Prometheus would scrape a port that doesn't exist | Use one of the names listed in the error |
 | `… is mapped more than once in onepassword.secrets` | Same env var or file name used twice | Rename one of them |
-| `… was removed in 0.3.0` / `… was renamed to serviceName` | Your values use a 0.2.x setting | The message names the new key. See [Upgrading](upgrading.md) |
 | `… this is the Tailscale machine name only` | A full domain in an `internal` ingress `host` | `host: store`, and the tailnet in `ingress.tailnetDomain` |
 | `… is not a valid Tailscale machine name` | Uppercase, `_` or too long | Up to 63 lowercase letters, numbers and `-` |
 | `workload.configFiles: … must be a full file path` / `invalid propertyName` | A config file path without a leading `/` | Write the full path: `/etc/app/config.yaml` |
@@ -49,8 +48,7 @@ These come from the chart and stop **before** anything is created.
 | `chart requires kubeVersion: >=1.30.0-0 which is incompatible with Kubernetes v1.2x` | The cluster is older than 1.30 | Upgrade the cluster. Older versions no longer get security fixes |
 | `ingress.httpRoutes[…]: set gateway.name` | A route doesn't say which Gateway to use | Set `ingress.gateway.name` (or `gateway` on the route) |
 | `no matches for kind "HTTPRoute"` | The cluster has no Gateway API CRDs | Install them, or use `ingresses` instead |
-| `field is immutable` (on upgrade) | A locked field changed | See [Upgrading](upgrading.md) |
-| `updates to statefulset spec for fields other than ... are forbidden` | StatefulSet installed with 0.2.x and has disks | One-time `--cascade=orphan` step in [Upgrading](upgrading.md#statefulsets-with-disks-one-time-step) |
+| `field is immutable` (on upgrade) | A locked field changed | The chart never puts version or chart labels in selectors or disk templates, so this points at a hand-edited object. `kubectl get <kind> <name> -o yaml` and compare |
 
 ---
 

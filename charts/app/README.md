@@ -28,6 +28,6 @@ port-forward command). See it again with `helm get notes my-app`.
 - [Getting started](https://github.com/iberico-lab/iberico-charts/blob/main/docs/getting-started.md)
 - [All docs](https://github.com/iberico-lab/iberico-charts/blob/main/docs/index.md) · [Values reference](https://github.com/iberico-lab/iberico-charts/blob/main/docs/values-reference.md)
 - [Examples](https://github.com/iberico-lab/iberico-charts/blob/main/examples/README.md) · [Troubleshooting](https://github.com/iberico-lab/iberico-charts/blob/main/docs/troubleshooting.md)
-- [Upgrading](https://github.com/iberico-lab/iberico-charts/blob/main/docs/upgrading.md) · [Changelog](https://github.com/iberico-lab/iberico-charts/blob/main/CHANGELOG.md)
+- [Versions](https://github.com/iberico-lab/iberico-charts/blob/main/docs/versioning.md) · [Changelog](https://github.com/iberico-lab/iberico-charts/blob/main/CHANGELOG.md)
 
 Values are checked against `values.schema.json`, so typos fail with a clear message.

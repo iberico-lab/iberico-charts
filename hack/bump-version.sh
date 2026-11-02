@@ -39,4 +39,4 @@ for f in charts/*/Chart.yaml; do
     }' "$f" > "$f.tmp" && mv "$f.tmp" "$f" && rm -f "$f.bak"
 done
 "$0" --check
-echo "Next: move CHANGELOG.md's unreleased notes under [$new], and add docs/upgrading.md steps if anyone has to act."
+echo "Next: move CHANGELOG.md's unreleased notes under [$new], and mark any breaking change."

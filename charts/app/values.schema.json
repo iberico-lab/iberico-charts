@@ -544,12 +544,6 @@
         "enableServiceLinks": {
           "type": "boolean",
           "description": "Add env vars for every Service in the namespace"
-        },
-        "service": {
-          "description": "Removed: use service.headless"
-        },
-        "serviceName": {
-          "description": "Removed: use service.headless.name"
         }
       },
       "additionalProperties": false

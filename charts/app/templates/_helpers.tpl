@@ -20,19 +20,6 @@ Name of the StatefulSet headless Service: service.headless.name or <app>-cluster
 {{- end }}
 
 {{/*
-Settings removed in 0.3.0. They're still allowed by the schema only so this
-can say where they went, instead of a bare "additional property" error.
-*/}}
-{{- define "app.removedSettings" -}}
-{{- if hasKey .Values.workload "service" -}}
-{{- fail "workload.service was removed in 0.3.0: move its keys to service.headless (same names). See docs/upgrading.md" -}}
-{{- end -}}
-{{- if hasKey .Values.workload "serviceName" -}}
-{{- fail "workload.serviceName was removed in 0.3.0: use service.headless.name. See docs/upgrading.md" -}}
-{{- end -}}
-{{- end }}
-
-{{/*
 Validated workload type: "Deployment" (default) or "StatefulSet".
 Fails on anything else (e.g. a lowercase typo) instead of rendering nothing.
 */}}

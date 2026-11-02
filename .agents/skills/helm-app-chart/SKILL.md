@@ -174,10 +174,6 @@ workload:
   ReadWriteOnce `persistence` disk; `shutdownDelaySeconds: 5` drains traffic
   (a custom `preStop` replaces it); `enableServiceLinks: false`.
 
-**Removed in 0.3.0** (they fail with a message naming the replacement):
-`workload.service` → `service.headless`, `workload.serviceName` →
-`service.headless.name`, `ingress.ingresses[].name` → `serviceName`.
-
 ## Versions
 
 - New release of the app = change `workload.image.tag` (real versions, never
@@ -195,8 +191,6 @@ workload:
 3. Anything the chart has no setting for goes in `extraManifests` (templated
    with `tpl`, so `{{ include "helm-helpers.fullname" . }}` works).
 4. Render, then compare with the old manifests: names, ports, probes, mounts.
-5. Moving from chart 0.2.x? Follow `docs/upgrading.md` (StatefulSets with disks
-   need a one-time `--cascade=orphan` step).
 
 ## Changing the charts themselves
 
@@ -214,5 +208,5 @@ make e2e           # optional: real install on a throwaway cluster (KUBE_CONTEXT
 ```
 
 Add a unit test for new behaviour, a row in `docs/values-reference.md` and the
-feature's page, and a `CHANGELOG.md` entry. Breaking changes also go in
-`docs/upgrading.md`.
+feature's page, and a `CHANGELOG.md` entry. A breaking change gets its own
+section in the changelog.

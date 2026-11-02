@@ -72,8 +72,8 @@ your app's version is the image tag, not something baked into the chart.
 
 ## Update to a newer chart version
 
-1. Read [CHANGELOG.md](../CHANGELOG.md) for what changed, and
-   [Upgrading](upgrading.md) for any step you must do by hand.
+1. Read [CHANGELOG.md](../CHANGELOG.md) for what changed, including any breaking
+   change you have to act on.
 2. Preview, then upgrade, with the new `--version`:
    ```bash
    helm repo update
@@ -142,7 +142,7 @@ setting → minor, fix → patch.
 1. `make bump VERSION=x.y.z`
 2. In [CHANGELOG.md](../CHANGELOG.md), the notes sit under `## [x.y.z] - unreleased`.
    Replace `unreleased` with today's date.
-3. Breaking change? Make sure [Upgrading](upgrading.md) has a section for it.
+3. Breaking change? Say so in its own section of [CHANGELOG.md](../CHANGELOG.md).
    Raised the minimum Kubernetes? Change `kubeVersion` in every `Chart.yaml`
    and `MIN_KUBE_VERSION` plus the oldest matrix entry in `.github/workflows/lint.yml`.
 4. Merge to `main`, then tag the merge and push the tag:
@@ -185,5 +185,4 @@ everyone, so it's left out, and the version label comes from your image tag.
 
 ## Next
 
-- Before a chart update → [Upgrading](upgrading.md)
 - Pin the exact image → [Workload](workload.md)
