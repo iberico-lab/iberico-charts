@@ -1,32 +1,50 @@
 global:
   name: ""
 
-# Your Tailscale tailnet domain (e.g. "tail1234.ts.net"). Only used to print
-# the full Tailscale URL in the install notes.
+# Your Tailscale tailnet (e.g. "tail1234.ts.net"). Internal Ingresses get
+# https://<label>.<tailnet>, and the install notes print it.
 tailnetDomain: ""
 
-# Ingress definitions
-# Default internal ingress - name will be generated from helm-helpers
-ingresses:
-  - serviceName: ""   # backend Service; "" = the app's own Service
-    type: "internal"
-    host: ""  # Leave empty for defaultBackend approach
-    servicePort: 80
-    # servicePortName: "https"  # Uncomment for HTTPS backend
+# Base domain for entries without a `host`, usually set per environment
+# (e.g. "apps.example.com"): an entry gets "<subdomain or app name>.<domain>".
+domain: ""
 
-# Traefik middlewares attached to public ingresses (traefik.io Middleware
-# objects, in the app's namespace). Set to "" for none.
-#   public      -> no login, plain forwarding
-#   public-sso  -> a forward-auth style middleware that adds SSO
-middlewares:
-  public: ""       # e.g. "my-no-auth"
-  publicSso: ""    # e.g. "my-sso"
+# Ingresses (docs/ingress.md). Each entry: type (required), plus subdomain or
+# host, serviceName, servicePort, servicePortName, certManagerIssuer,
+# tailscaleExpose, annotations, middlewares, homepage. Empty = none.
+#   - type: internal       # https://<app>.<tailnet>, private (Tailscale)
+#   - type: public         # https://<app>.<domain>, anyone
+ingresses: []
+
+# What each type means in this environment, shared by `ingresses` and
+# `httpRoutes`. Set these once per environment; apps then only pick a type.
+#   middlewares  Traefik Middleware names (in the app's namespace) that run
+#                before the entry's own `middlewares`. On Ingresses a name
+#                with "@" (e.g. "auth@file") is passed to Traefik as written.
+#   domain       base domain for this type's entries; "" = ingress.domain.
+#                Internal Ingresses always use tailnetDomain (Tailscale).
+#   gateway      HTTPRoutes only: the Gateway this type attaches to
+#                (name, namespace, sectionName); empty = ingress.gateway.
+types:
+  internal:          # private network only
+    middlewares: []  # internal routes only (Tailscale Ingresses run none)
+    domain: ""       # internal routes; "" = "internal.<ingress.domain>"
+    gateway: {}      # internal routes: required, a Gateway only your private
+                     # network reaches. They never use ingress.gateway.
+  public:            # anyone can open it
+    middlewares: []  # e.g. ["my-no-auth"]
+    domain: ""
+    gateway: {}
+  public-sso:        # anyone, after signing in
+    middlewares: []  # required: the login, e.g. ["my-sso"]
+    domain: ""
+    gateway: {}
 
 # Gateway API routes (HTTPRoute), the successor to Ingress (docs/ingress.md).
-# Each entry: host (required), plus name, path, serviceName, servicePort,
-# gateway, filters, annotations.
+# Each entry: type (required), plus subdomain or host, name, path,
+# serviceName, servicePort, gateway, middlewares, filters, annotations, homepage.
 httpRoutes: []
-# The Gateway every route attaches to, unless a route sets its own `gateway`.
+# The Gateway routes attach to when neither the route nor its type names one.
 gateway:
   name: ""          # e.g. "traefik-gateway"
   namespace: ""     # "" = the app's namespace

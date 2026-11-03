@@ -1,12 +1,26 @@
 {{/*
-Gateway API HTTPRoutes: the successor to Ingress. Each route attaches to a
-Gateway (yours, e.g. Traefik's) and sends one host to the app's Service. TLS
-is set on the Gateway's listener, not here.
+Gateway API HTTPRoutes: the successor to Ingress. Each route has a `type`
+(internal, public, public-sso) that the environment configures once in
+ingress.types: its Gateway, hostname domain, and Traefik Middlewares.
+Filters run in order: the type's middlewares, the route's own
+`middlewares`, then its raw `filters`. A public-sso route needs its own
+Gateway (ingress.types.public-sso.gateway); the login can be a middleware or
+the Gateway's entryPoint. TLS is set on the Gateway.
 */}}
 {{- range $i, $route := .Values.httpRoutes }}
-{{- $gw := merge (deepCopy ($route.gateway | default dict)) (deepCopy ($.Values.gateway | default dict)) }}
-{{- $gwName := required (printf "ingress.httpRoutes[%d]: set gateway.name (here or in ingress.gateway) to the Gateway this route attaches to" $i) $gw.name }}
-{{- $host := required (printf "ingress.httpRoutes[%d] requires a host" $i) $route.host }}
+{{- $where := printf "ingress.httpRoutes[%d]" $i }}
+{{- $gw := include "ingress.routeGateway" (dict "route" $route "where" $where "root" $) | fromYaml }}
+{{- $host := include "ingress.host" (dict "entry" $route "where" $where "root" $) }}
+{{- $filters := list }}
+{{- range include "ingress.middlewares" (dict "entry" $route "where" $where "root" $ "route" true) | fromYamlArray }}
+{{- if contains "@" . }}
+{{- fail (printf "%s: middleware %q is a Traefik provider reference; an HTTPRoute can only use a Middleware in its own namespace, so give its plain name" $where .) }}
+{{- end }}
+{{- $filters = append $filters (dict "type" "ExtensionRef" "extensionRef" (dict "group" "traefik.io" "kind" "Middleware" "name" .)) }}
+{{- end }}
+{{- $filters = concat $filters ($route.filters | default list) }}
+{{- $group := include "ingress.homepageGroup" $route.type }}
+{{- $homepage := include "helm-helpers.homepageAnnotations" (dict "entry" $route "host" $host "group" $group "root" $) }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -16,13 +30,18 @@ metadata:
   labels:
     {{- include "helm-helpers.labels" $ | nindent 4 }}
     app.kubernetes.io/component: httproute
-  {{- with $route.annotations }}
+  {{- if or $homepage $route.annotations }}
   annotations:
+    {{- with $homepage }}
+    {{- . | nindent 4 }}
+    {{- end }}
+    {{- with $route.annotations }}
     {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- end }}
 spec:
   parentRefs:
-    - name: {{ $gwName }}
+    - name: {{ $gw.name }}
       {{- with $gw.namespace }}
       namespace: {{ . }}
       {{- end }}
@@ -36,7 +55,7 @@ spec:
         - path:
             type: PathPrefix
             value: {{ $route.path | default "/" }}
-      {{- with $route.filters }}
+      {{- with $filters }}
       filters:
         {{- toYaml . | nindent 8 }}
       {{- end }}

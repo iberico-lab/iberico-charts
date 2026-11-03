@@ -1,0 +1,53 @@
+# 20 - Gateway API routes, one values file for every environment
+# The app picks a type for each URL (internal, public, public-sso) and never
+# names a hostname, Gateway or Traefik Middleware. Those come from the
+# environment (set inline here so the example renders on its own; in practice
+# pass them in a second values file, e.g. `-f values.yaml -f env/staging.yaml`).
+global:
+  name: "shop"
+
+workload:
+  image:
+    repository: nginx
+    tag: "1.25"
+  applicationPort: 80
+
+ingress:
+  enabled: true                          # no `ingresses`: only routes
+
+  # --- per environment ---------------------------------------------------
+  domain: "dev.apps.example.com"         # public:   <name>.dev.apps.example.com
+                                         # internal: <name>.internal.dev.apps.example.com
+  gateway:                               # default Gateway (the open public one)
+    name: "traefik-gateway"
+    namespace: "traefik"
+    sectionName: "websecure"
+  types:
+    internal:
+      gateway:                           # a Gateway only the tailnet reaches
+        name: "private-gateway"
+        namespace: "traefik-private"
+    public-sso:
+      gateway:                           # a Gateway whose Traefik entryPoint
+        name: "sso-gateway"              # runs the login for every route on it
+        namespace: "traefik"
+
+  # --- per app -----------------------------------------------------------
+  httpRoutes:
+    # shop.dev.apps.example.com, anyone can open it
+    - type: public
+      homepage:
+        name: "Shop"
+        icon: "kubernetes"
+    # admin.dev.apps.example.com/admin: the Gateway's login first, then the app's own middleware
+    - name: shop-admin
+      type: public-sso
+      subdomain: admin
+      path: /admin
+      middlewares: ["shop-admin-headers"]
+      homepage:
+        enabled: false                   # keep it off the dashboard
+    # ops.internal.dev.apps.example.com, tailnet only
+    - name: shop-ops
+      type: internal
+      subdomain: ops

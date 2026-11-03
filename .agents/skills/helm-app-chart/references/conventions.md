@@ -26,8 +26,9 @@ Never render something broken or silently ignore a value. Two layers:
   `additionalProperties: false`) catches typos, wrong types and bad enums.
 - **Template `fail`** catches cross-field mistakes the schema can't, e.g.
   `ReadWriteOnce` with several Deployment pods, `minAvailable >= replicas`, HPA
-  without a CPU request, duplicate container names, a domain in a Tailscale
-  machine name.
+  without a CPU request, duplicate container names, a dotted Tailscale
+  hostname, a `public-sso` Ingress without a login middleware, an `internal` or
+  `public-sso` route without its own Gateway.
 
 A message names the setting, what's wrong, and what to do, e.g.
 `persistence "data" is ReadWriteOnce, so only one pod can use it, but this

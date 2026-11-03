@@ -61,27 +61,30 @@ INSIDE THE CLUSTER (other apps, ingress controllers)
 
 FROM OUTSIDE THE CLUSTER
 {{- if .Values.ingress.enabled }}
-{{- $tailnet := .Values.ingress.tailnetDomain }}
-{{- range .Values.ingress.ingresses }}
-{{- if eq .type "internal" }}
-  Tailscale only:   https://{{ .host | default $name }}.{{ $tailnet | default "<your-tailnet>.ts.net" }}
-{{- else if eq .type "public" }}
-  Public:           https://{{ .host }}
-{{- else if eq .type "public-sso" }}
-  Public + login:   https://{{ .host }}   (SSO via the ingress.middlewares.publicSso Traefik middleware)
+{{- $ing := .Values.ingress }}
+{{- range $i, $e := $ing.ingresses }}
+{{- $args := dict "entry" $e "where" (printf "ingress.ingresses[%d]" $i) "tailscale" (eq $e.type "internal") "values" $ing "name" $name }}
+{{- $host := include "helm-helpers.ingressHost" $args }}
+{{- if eq $e.type "internal" }}
+  Tailscale only:   https://{{ $host }}{{ if not $ing.tailnetDomain }}.<your-tailnet>.ts.net
+                    (set ingress.tailnetDomain, e.g. "tail1234.ts.net", to print the full URL){{ end }}
+{{- else if eq $e.type "public" }}
+  Public:           https://{{ $host }}
+{{- else if eq $e.type "public-sso" }}
+  Public + login:   https://{{ $host }}
 {{- end }}
-{{- if and (ne .type "internal") (eq (.certManagerIssuer | default "letsencrypt-staging") "letsencrypt-staging") }}
+{{- if and (ne $e.type "internal") (eq ($e.certManagerIssuer | default "letsencrypt-staging") "letsencrypt-staging") }}
                     ! uses the letsencrypt-staging issuer: browsers will show a
                       certificate warning. Set certManagerIssuer for real use.
 {{- end }}
 {{- end }}
-{{- range .Values.ingress.httpRoutes }}
-  Gateway route:    https://{{ .host }}   (HTTPRoute; TLS is set on the Gateway)
+{{- range $i, $r := $ing.httpRoutes }}
+{{- $host := include "helm-helpers.ingressHost" (dict "entry" $r "where" (printf "ingress.httpRoutes[%d]" $i) "values" $ing "name" $name) }}
+{{- $note := get (dict "public-sso" "   (login required)" "internal" "   (private network only)") $r.type }}
+  Gateway route:    https://{{ $host }}{{ $note }}   (HTTPRoute; TLS is set on the Gateway)
 {{- end }}
-{{- if not $tailnet }}
-{{- range .Values.ingress.ingresses }}{{ if eq .type "internal" }}
-  (set ingress.tailnetDomain, e.g. "tail1234.ts.net", to print the full Tailscale URL)
-{{- break }}{{ end }}{{ end }}
+{{- if not (or $ing.ingresses $ing.httpRoutes) }}
+  ingress.enabled is true, but there are no ingresses or httpRoutes listed.
 {{- end }}
 {{- else }}
   No ingress. To give the app a URL, set ingress.enabled: true

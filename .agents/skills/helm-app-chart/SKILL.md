@@ -79,6 +79,7 @@ workload:
 | reads a config file | `15-config-files` | `volumes.md` |
 | needs passwords | `16-secrets-and-urls` | `external-secrets.md` |
 | needs a URL (Tailscale and/or public) | `12-ingress`, `16-secrets-and-urls` | `ingress.md` |
+| needs Gateway API routes, the same values in several environments | `20-gateway-routes` | `ingress.md` |
 | is a database / needs a disk per pod | `13-statefulset` | `statefulset.md`, `persistence.md` |
 | needs a disk that survives restarts (one pod) | `09-persistence` | `persistence.md` |
 | isn't HTTP (TCP, gRPC) or has odd health checks | `08-probes-custom` | `probes.md` |
@@ -141,13 +142,30 @@ workload:
   (`name` default `<app>-cluster`, `port`, `targetPort`, `ports`, `annotations`).
 
 **URLs (ingress)**
-- `type: internal` = Tailscale only. `host` is the **machine name** (`store`), not a
-  domain; empty = the app's name. URL: `https://<host>.<tailnet>.ts.net`. Set
-  `ingress.tailnetDomain` so the install notes print it.
-- `type: public` / `public-sso` (SSO) need `host: app.example.com`. The
-  issuer defaults to `letsencrypt-staging` (browser warning); set
+- `ingress.enabled: true` creates nothing until you list `ingresses` (Ingress)
+  or `httpRoutes` (Gateway API). Both take the same `type`: `internal`
+  (private, Tailscale), `public`, `public-sso` (login).
+- Hostname, same rule everywhere: `host` as written, else
+  `<subdomain or app name>.<types.<type>.domain or ingress.domain>`;
+  internal routes default to `internal.<ingress.domain>`. App values usually
+  set neither: the environment sets `ingress.domain` (e.g. `dev.apps.example.com`),
+  usually through a Flux `valuesFrom` ConfigMap (`docs/environments.md`).
+- Tailscale Ingresses (`internal` in `ingresses`) are always
+  `<one label>.<tailnetDomain>`: no dots in the label. Use `subdomain`, never
+  a dotted name. For dotted
+  private URLs use `internal` routes with `types.internal.domain`.
+- What a type runs is environment config in `ingress.types.<type>`:
+  `middlewares` (Traefik, run first, e.g. the login) and, for routes,
+  `gateway`. An entry's own `middlewares` run after. Never hard-code a login
+  middleware or `ExtensionRef` in app values. `internal` and `public-sso`
+  routes need `types.<type>.gateway` and never use `ingress.gateway` (the
+  login can live on the SSO Gateway's Traefik entryPoint,
+  `docs/environments.md`); a `public-sso` Ingress needs
+  `types.public-sso.middlewares`.
+- Public HTTPS defaults to `letsencrypt-staging` (browser warning); set
   `certManagerIssuer: letsencrypt-prod` for real use.
-- One ingress per type per release. `serviceName` picks a different backend Service.
+- One Ingress per type per release; routes need a unique `name` each.
+  `serviceName` picks a different backend Service.
 
 **Availability, scaling, metrics**
 - `autoscaling.enabled` ignores `workload.replicas` and needs

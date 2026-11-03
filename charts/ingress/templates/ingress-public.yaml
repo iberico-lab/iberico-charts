@@ -1,26 +1,37 @@
 {{/*
-Public Ingress - No authentication required
-Attaches the ingress.middlewares.public Traefik middleware, if one is set.
+Public Ingresses through Traefik, with HTTPS from cert-manager:
+- public      runs ingress.types.public.middlewares (e.g. plain forwarding)
+- public-sso  runs ingress.types.public-sso.middlewares (the login; required)
+then the entry's own `middlewares`. Middlewares are Traefik Middleware objects
+in the app's namespace; a name with "@" (e.g. "auth@file", or
+"other-ns-name@kubernetescrd") is passed to Traefik as written.
 */}}
-{{- if .Values.ingresses }}
-{{- range .Values.ingresses }}
-{{- if eq .type "public" }}
-{{- $host := required (printf "ingress.ingresses[]: type %q requires a host" .type) .host }}
+{{- $ns := include "helm-helpers.namespace" . }}
+{{- range $i, $ing := .Values.ingresses }}
+{{- if has $ing.type (list "public" "public-sso") }}
+{{- $where := printf "ingress.ingresses[%d]" $i }}
+{{- $host := include "ingress.host" (dict "entry" $ing "where" $where "root" $) }}
+{{- /* Traefik references a Middleware CRD as <namespace>-<name>@kubernetescrd */}}
+{{- $refs := list }}
+{{- range include "ingress.middlewares" (dict "entry" $ing "where" $where "root" $) | fromYamlArray }}
+{{- $refs = append $refs (ternary . (printf "%s-%s@kubernetescrd" $ns .) (contains "@" .)) }}
+{{- end }}
+{{- $group := include "ingress.homepageGroup" $ing.type }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "helm-helpers.fullname" $ }}-{{ .type }}
-  namespace: {{ include "helm-helpers.namespace" $ }}
+  name: {{ include "helm-helpers.fullname" $ }}-{{ $ing.type }}
+  namespace: {{ $ns }}
   labels:
     {{- include "helm-helpers.labels" $ | nindent 4 }}
     app.kubernetes.io/component: ingress
   annotations:
-    {{- with .middlewares | default $.Values.middlewares.public }}
-    traefik.ingress.kubernetes.io/router.middlewares: {{ . }}@kubernetescrd
+    {{- with $refs }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ join "," . }}
     {{- end }}
-    cert-manager.io/cluster-issuer: {{ .certManagerIssuer | default "letsencrypt-staging" }}
-    {{- with include "helm-helpers.homepageAnnotations" (dict "ingress" . "group" "Public" "root" $) }}
+    cert-manager.io/cluster-issuer: {{ $ing.certManagerIssuer | default "letsencrypt-staging" }}
+    {{- with include "helm-helpers.homepageAnnotations" (dict "entry" $ing "host" $host "group" $group "root" $) }}
     {{- . | nindent 4 }}
     {{- end }}
 spec:
@@ -33,14 +44,12 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "ingress.serviceName" (dict "ingress" . "root" $) }}
+                name: {{ include "ingress.serviceName" (dict "ingress" $ing "root" $) }}
                 port:
-                  number: {{ .servicePort | default 80 }}
+                  number: {{ $ing.servicePort | default 80 }}
   tls:
     - hosts:
         - {{ $host | quote }}
       secretName: {{ $host }}-tls
----
-{{- end }}
 {{- end }}
 {{- end }}

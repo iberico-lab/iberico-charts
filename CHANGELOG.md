@@ -3,7 +3,7 @@
 All notable changes to these charts. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions apply to all four charts, which are released together.
 
-## [0.1.0] - 2026-11-02
+## [0.4.0] - 2026-11-02
 
 First release. The charts are built to be installed from scratch: read
 [docs/getting-started.md](docs/getting-started.md), or copy `examples/`.
@@ -19,9 +19,23 @@ First release. The charts are built to be installed from scratch: read
   `workload.applicationPort`; multiple named ports; an optional headless Service for
   StatefulSets.
 - `ingress`: URLs through the Tailscale operator (`internal`) or Traefik (`public`,
-  `public-sso`), with Gateway API `httpRoutes` and `gateway` as an alternative.
-  The Traefik middleware each public ingress attaches is named in
-  `ingress.middlewares`; empty attaches none.
+  `public-sso`), as Ingresses or Gateway API `httpRoutes` with the same three types.
+  Nothing is created until you list one.
+- One hostname rule for every type: `host` as written, else
+  `<subdomain or app name>.<domain>`, with the domain set per environment
+  (`ingress.domain`, `ingress.types.<type>.domain`), so app values don't need
+  hostnames. Internal routes default to `internal.<domain>`, so one
+  domain per environment gives `shop.<domain>` and `shop.internal.<domain>`.
+  Tailscale Ingresses use the one-label `<label>.<tailnetDomain>` form.
+- `docs/environments.md`: the Gateways, DNS (including Tailscale split DNS),
+  certificates and Flux wiring behind one domain per environment.
+- What each type runs is set once per environment in `ingress.types`: its Traefik
+  middlewares (always run first, so an entry's own `middlewares` can't skip the
+  login) and, for routes, its Gateway. `internal` and `public-sso` routes never use
+  the default `ingress.gateway`, so the login can live on the SSO Gateway's Traefik
+  entryPoint, where no route can skip it. A route of either type without its own
+  Gateway, and a `public-sso` Ingress without a login middleware, stop the render. HTTPRoutes carry
+  Homepage annotations like ingresses (`homepage.enabled: false` hides one).
 - `external-secrets`: one switch (`external-secrets.enabled`) to turn 1Password items
   into env vars and files for the pod.
 - Availability and scaling: `autoscaling` (HPA), `podDisruptionBudget`, a
@@ -35,7 +49,7 @@ First release. The charts are built to be installed from scratch: read
 - `values.schema.json` for the app, ingress and external-secrets charts: unknown or
   mistyped settings are rejected instead of silently ignored, and cross-field mistakes
   stop the render with a message naming the fix.
-- Docs for every feature, 19 working examples, and per-chart READMEs.
+- Docs for every feature, 20 working examples, and per-chart READMEs.
 - CI: helm-unittest suites, schema freshness, documentation coverage, kubeconform
   validation against Kubernetes 1.30 and current, every example rendered, and an
   end-to-end install, `helm test` and upgrade on kind clusters (Kubernetes 1.30, 1.34,

@@ -35,18 +35,24 @@ These come from the chart and stop **before** anything is created.
 | `minAvailable … must be lower than …` | The disruption budget would block every node drain | Lower `minAvailable` or add replicas |
 | `minReplicas … must not be greater than maxReplicas` | Autoscaling range is upside down | Swap the numbers |
 | `… needs workload.resources.requests.cpu` | Autoscaling has nothing to measure against | Set `workload.resources.requests.cpu` (and memory if you target it) |
-| `type "public" requires a host` | Public ingress without a hostname | Add `host: app.example.com` |
-| `… which entry … already creates` | Two ingresses of the same type | Keep one per type |
+| `ingress.ingresses[…] has no host` / `ingress.httpRoutes[…] has no host` | No `host`, and no domain to build one | Set `host`, or set `ingress.domain` (or `ingress.types.<type>.domain`) per environment |
+| `… which entry … already creates` | Two ingresses of the same type, or two routes with the same name | Keep one Ingress per type (internal ones may differ by `subdomain`); give each route a `name` |
 | `serviceMonitor.port "…" is not a Service port name` | Prometheus would scrape a port that doesn't exist | Use one of the names listed in the error |
 | `… is mapped more than once in onepassword.secrets` | Same env var or file name used twice | Rename one of them |
-| `… this is the Tailscale machine name only` | A full domain in an `internal` ingress `host` | `host: store`, and the tailnet in `ingress.tailnetDomain` |
-| `… is not a valid Tailscale machine name` | Uppercase, `_` or too long | Up to 63 lowercase letters, numbers and `-` |
+| `… a Tailscale URL is <one label>.<tailnet>` | An `internal` ingress `host` that isn't `<label>.<tailnetDomain>`, or `tailnetDomain` unset | Drop `host` and use `subdomain` |
+| `hostname label "…" … must be up to 63 lowercase letters, numbers and "-", with no dots` | Uppercase, `_`, too long, or a Tailscale name with subdomains | Fix `subdomain` or the app's name. For dotted private URLs use an internal route ([docs](ingress.md#private-urls-on-your-own-domain)) |
 | `workload.configFiles: … must be a full file path` / `invalid propertyName` | A config file path without a leading `/` | Write the full path: `/etc/app/config.yaml` |
 | `maxUnavailable and maxSurge can't both be 0` | No pod could ever be replaced | Set `workload.strategy.rollingUpdate.maxSurge: 1` |
 | `workload.shutdownDelaySeconds (…) must be lower than workload.terminationGracePeriodSeconds` | The pod would be killed while it waits | Lower the delay or raise the grace period |
 | `securityPreset restricted: … can't be …` / `may only contain NET_BIND_SERVICE` | A setting breaks the restricted standard | Remove that setting, or drop `securityPreset` |
 | `chart requires kubeVersion: >=1.30.0-0 which is incompatible with Kubernetes v1.2x` | The cluster is older than 1.30 | Upgrade the cluster. Older versions no longer get security fixes |
-| `ingress.httpRoutes[…]: set gateway.name` | A route doesn't say which Gateway to use | Set `ingress.gateway.name` (or `gateway` on the route) |
+| `ingress.httpRoutes[…]: set gateway.name` | A route doesn't say which Gateway to use | Set `ingress.gateway.name` (or the type's or route's `gateway`) |
+| `… is type public-sso, but ingress.types.public-sso.middlewares is empty` | A `public-sso` Ingress, but no login Middleware is named | Set `ingress.types.public-sso.middlewares` to your SSO Middleware (per environment), or use an `httpRoute` |
+| `… is type public-sso: set ingress.types.public-sso.gateway.name` | A `public-sso` route has no login Gateway (it never uses `ingress.gateway`) | Set `ingress.types.public-sso.gateway` to the Gateway whose entryPoint asks for the login ([docs](environments.md#logins-on-the-gateway)) |
+| `… is type internal: set ingress.types.internal.gateway.name` | An internal route has no private Gateway (it never uses `ingress.gateway`) | Set `ingress.types.internal.gateway` to a Gateway only your private network reaches |
+| `ingress.ingresses[…] is type internal, … can't run middlewares` | Middlewares on a Tailscale Ingress | Remove them, or use an internal `httpRoute` |
+| `middleware "…" is a Traefik provider reference` | A name with `@` on an HTTPRoute | Give the plain name of a Middleware in the route's namespace |
+| `ingress.httpRoutes[…].type must be internal, public or public-sso` / `missing property 'type'` | A route without a type, or a typo | Set `type` on every route |
 | `no matches for kind "HTTPRoute"` | The cluster has no Gateway API CRDs | Install them, or use `ingresses` instead |
 | `field is immutable` (on upgrade) | A locked field changed | The chart never puts version or chart labels in selectors or disk templates, so this points at a hand-edited object. `kubectl get <kind> <name> -o yaml` and compare |
 
@@ -94,7 +100,7 @@ kubectl describe externalsecret <name>    # the reason if it isn't
 | Browser shows a certificate warning | The ingress uses `letsencrypt-staging` by default. Set `certManagerIssuer` to your production issuer |
 | Public URL gives 404 | DNS for `host` must point at your Traefik load balancer |
 | Tailscale URL doesn't resolve | Check the device is on the tailnet, and the ingress exists: `kubectl get ingress` |
-| Login loop on `public-sso` | The middleware named in `ingress.middlewares.publicSso` must exist in the app's namespace and work |
+| Login loop on `public-sso` | The login service itself must not sit behind the login (keep it off the SSO entryPoint). A middleware in `ingress.types.public-sso.middlewares` must exist in the app's namespace |
 
 ---
 

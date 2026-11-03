@@ -2,7 +2,7 @@ apiVersion: v2
 name: helm-helpers
 description: A shared Helm chart containing common helper functions
 type: library
-version: 0.3.0
+version: 0.4.0
 kubeVersion: ">=1.30.0-0"
 keywords:
   - helpers

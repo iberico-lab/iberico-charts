@@ -30,7 +30,7 @@ ingress:
         description: "Public demo app"
         group: "Applications"
         icon: "kubernetes"
-    # Internal route via Tailscale. host = machine name (empty = the app's name).
+    # Internal URL via Tailscale: https://<subdomain>.<tailnet>, one label only.
+    # subdomain defaults to the app's name.
     - type: "internal"
-      host: ""
       servicePort: 80

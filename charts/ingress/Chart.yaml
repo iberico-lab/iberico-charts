@@ -2,7 +2,7 @@ apiVersion: v2
 name: ingress
 description: A Helm chart for managing Tailscale-based ingress
 type: application
-version: 0.3.0
+version: 0.4.0
 kubeVersion: ">=1.30.0-0"
 keywords:
   - ingress
@@ -17,5 +17,5 @@ maintainers:
 
 dependencies:
   - name: helm-helpers
-    version: "0.3.0"
+    version: "0.4.0"
     repository: "file://../helm-helpers"

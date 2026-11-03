@@ -105,3 +105,79 @@ app.kubernetes.io/version: {{ . | quote }}
 helm.sh/chart: {{ include "helm-helpers.chart" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
+
+{{/*
+Homepage (gethomepage.dev) annotations for an Ingress or HTTPRoute. Renders
+nothing when homepage.enabled is false. Each field falls back to a default:
+  name         the backend Service, else the entry's name, else the app's name
+  description  the entry's hostname
+  group        the type's group (Internal, Public, Public SSO)
+  icon         "kubernetes"
+Usage: include "helm-helpers.homepageAnnotations" (dict "entry" $e "host" $host "group" "Public" "root" $)
+*/}}
+{{- define "helm-helpers.homepageAnnotations" -}}
+{{- $hp := .entry.homepage | default dict -}}
+{{- if or (not (hasKey $hp "enabled")) $hp.enabled -}}
+{{- $name := .entry.serviceName | default .entry.name | default (include "helm-helpers.appName" .root) -}}
+gethomepage.dev/enabled: "true"
+gethomepage.dev/name: {{ $hp.name | default $name | quote }}
+gethomepage.dev/description: {{ $hp.description | default .host | quote }}
+gethomepage.dev/group: {{ $hp.group | default .group | quote }}
+gethomepage.dev/icon: {{ $hp.icon | default "kubernetes" | quote }}
+{{- end -}}
+{{- end }}
+
+{{/*
+Hostname of an ingress chart entry (Ingress or HTTPRoute). It lives here
+because both the ingress chart and the app chart's install notes need it.
+
+  host set   -> used as written
+  otherwise  -> <label>.<domain>
+    label  = subdomain (default: the app's name)
+    domain = ingress.types.<type>.domain, else ingress.domain; internal
+             routes default to "internal.<ingress.domain>", so one
+             environment domain gives shop.<domain> and
+             shop.internal.<domain> (separate DNS zone and certificate)
+
+Internal Ingresses are Tailscale machines, whose URL is always
+<one label>.<tailnet>: their domain is ingress.tailnetDomain, and a `host`
+must be <label>.<tailnetDomain>. Without a tailnetDomain the result is just
+the label (the machine name); Tailscale adds the tailnet.
+
+Usage: include "helm-helpers.ingressHost" (dict "entry" $e "where" "ingress.ingresses[0]" "tailscale" true "values" $ingressValues "name" $appName)
+*/}}
+{{- define "helm-helpers.ingressHost" -}}
+{{- $v := .values -}}
+{{- $type := get ($v.types | default dict) .entry.type | default dict -}}
+{{- $host := .entry.host | default "" -}}
+{{- if and $host (not .tailscale) -}}
+{{- $host -}}
+{{- else -}}
+  {{- $label := .entry.subdomain | default .name -}}
+  {{- $domain := $type.domain | default $v.domain -}}
+  {{- if and (eq .entry.type "internal") (not $type.domain) $v.domain -}}
+    {{- $domain = printf "internal.%s" $v.domain -}}
+  {{- end -}}
+  {{- if .tailscale -}}
+    {{- $domain = $v.tailnetDomain -}}
+    {{- if $host -}}
+      {{- $tail := printf ".%s" ($domain | default "<tailnet>") -}}
+      {{- if not (and $domain (hasSuffix $tail $host)) -}}
+        {{- fail (printf "%s.host %q: a Tailscale URL is <one label>.<tailnet>, e.g. \"shop.tail1234.ts.net\", and needs ingress.tailnetDomain set. Tailscale has no subdomains: use subdomain instead of host, e.g. shop-dev.tail1234.ts.net" .where $host) -}}
+      {{- end -}}
+      {{- $label = trimSuffix $tail $host -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if not (regexMatch "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" $label) -}}
+    {{- $from := ternary "host: Tailscale gives each machine one label, so join the parts with \"-\" (e.g. shop-dev-apps), or use subdomain" "subdomain or the app's name" (and .tailscale (ne $host "")) -}}
+    {{- fail (printf "%s: hostname label %q must be up to 63 lowercase letters, numbers and \"-\", with no dots (from %s)" .where $label $from) -}}
+  {{- end -}}
+  {{- if $domain -}}
+    {{- printf "%s.%s" $label $domain -}}
+  {{- else if .tailscale -}}
+    {{- $label -}}
+  {{- else -}}
+    {{- fail (printf "%s has no host: set host (e.g. \"shop.example.com\"), or set ingress.domain (or ingress.types.%s.domain) to build one from the app's name or subdomain" .where .entry.type) -}}
+  {{- end -}}
+{{- end -}}
+{{- end }}
