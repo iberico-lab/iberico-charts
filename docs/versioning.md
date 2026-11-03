@@ -61,6 +61,19 @@ helm show chart iberico/app --version 0.3.0
 The site is public, so no login is needed. Each version is also attached to its
 GitHub Release as a `.tgz`, which is what the repository index is built from.
 
+The same charts are also published to GHCR as OCI artifacts, for tools that
+prefer a registry to an index file:
+
+```bash
+helm show chart oci://ghcr.io/iberico-lab/charts/app --version 0.4.0
+```
+
+Both carry the same built `.tgz` files. The Pages repository is the default: it
+needs no login, and `helm repo add` works with any Helm version. OCI works
+without an index, and Flux can watch it as an `OCIRepository`, but each chart is
+fetched by full reference. The packages must be public for OCI pulls without a
+pull Secret.
+
 ## Which chart version am I on?
 
 ```bash
@@ -153,8 +166,9 @@ setting → minor, fix → patch.
    The release workflow (`.github/workflows/release.yml`) checks the tag matches
    the chart version and the CHANGELOG is dated, then packages all four charts,
    attaches them to a GitHub Release, rebuilds `index.yaml` from every released
-   version, and deploys that repository to GitHub Pages at
-   `https://iberico-lab.github.io/iberico-charts`. A version that is already
+   version, deploys that repository to GitHub Pages at
+   `https://iberico-lab.github.io/iberico-charts`, and pushes the same `.tgz`
+   files to `oci://ghcr.io/iberico-lab/charts`. A version that is already
    published is never overwritten: bump instead.
 
    Pages sites are always public, so the deploy step runs only when the

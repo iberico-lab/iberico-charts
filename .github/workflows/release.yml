@@ -9,6 +9,12 @@ name: Release Charts
 # Those release assets are the source of truth: the index is rebuilt from all of
 # them on every run, so earlier versions stay installable.
 #
+# The same .tgz files are pushed to GHCR as OCI artifacts, for installs that
+# prefer a registry over an index file:
+#   helm show chart oci://ghcr.io/iberico-lab/charts/app --version x.y.z
+# The packages must be public for that to work without a pull Secret (first
+# publish: Package settings -> Change visibility).
+#
 # How to release (see docs/versioning.md#release-checklist):
 #   make bump VERSION=x.y.z, date CHANGELOG, merge to main,
 #   git tag vx.y.z && git push origin vx.y.z
@@ -33,11 +39,15 @@ permissions:
   contents: write # GitHub Release + download earlier release assets
   pages: write # deploy the chart repository
   id-token: write # Pages deployment
+  packages: write # push the charts to ghcr.io/iberico-lab/charts
 
 env:
   HELM_VERSION: v3.22.1
   # Where the chart repository is served. Must match the Pages site URL.
   PAGES_URL: https://iberico-lab.github.io/iberico-charts
+  # OCI registry the same charts are pushed to. helm push appends the chart
+  # name, so the app chart lands at oci://ghcr.io/iberico-lab/charts/app.
+  OCI_URL: ghcr.io/iberico-lab/charts
   # Dependencies first: the app bundle is built from the sub-charts.
   CHARTS: helm-helpers external-secrets ingress app
 
@@ -103,6 +113,23 @@ jobs:
           mkdir -p pkg
           for c in $CHARTS; do helm package "charts/$c" -d pkg; done
           ls -l pkg
+
+      - name: Log in to GHCR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GH_TOKEN" | helm registry login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      # Same .tgz files as the Release and the Pages index. Already-published
+      # versions are skipped, so re-running a tag is safe.
+      - name: Push the charts to GHCR (OCI)
+        run: |
+          for f in pkg/*.tgz; do
+            echo "==> $f"
+            helm push "$f" "oci://${OCI_URL}" 2>&1 | tee push.log
+            if grep -q "already exists" push.log; then
+              echo "::notice::$f is already published; skipping"
+            fi
+          done
 
       # index.yaml must list every published version, not just this one, so it
       # is rebuilt from the .tgz files attached to all earlier releases.
